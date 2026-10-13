@@ -1,0 +1,45 @@
+US weekly units 2,800 | weekly BOM $1,043,600 | weekly value locked at EOL $666,000
+
+== China tariff 10% -> Indonesia 0%, GSM strong  (median, P10–P90 for net)
+  tariff saved / yr            7,321,600
+  - extra EOL MWD / yr           749,366
+  - pipeline carry / yr          834,880
+  - new-site conv. / yr          271,273
+  = net, steady state          5,466,521   [5,319,650 .. 5,633,914]
+  - ramp tariff leakage          841,248
+  - rush expediting               67,200
+  = net, transfer year         4,563,484   [4,294,997 .. 4,827,224]
+
+== China tariff 10% -> Indonesia 0%, GSM weak  (median, P10–P90 for net)
+  tariff saved / yr            7,321,600
+  - extra EOL MWD / yr           749,366
+  - pipeline carry / yr          834,880
+  - new-site conv. / yr          271,273
+  = net, steady state          5,466,521   [5,319,650 .. 5,633,914]
+  - ramp tariff leakage        1,612,984
+  - rush expediting              134,400
+  = net, transfer year         3,723,939   [3,308,852 .. 4,132,241]
+
+== China tariff 25% -> Indonesia 0%, GSM strong  (median, P10–P90 for net)
+  tariff saved / yr           18,304,000
+  - extra EOL MWD / yr           749,366
+  - pipeline carry / yr          834,880
+  - new-site conv. / yr          271,273
+  = net, steady state         16,448,921   [16,302,050 .. 16,616,314]
+  - ramp tariff leakage        2,103,120
+  - rush expediting               67,200
+  = net, transfer year        14,281,548   [13,710,371 .. 14,849,171]
+
+== China tariff 25% -> Indonesia 0%, GSM weak  (median, P10–P90 for net)
+  tariff saved / yr           18,304,000
+  - extra EOL MWD / yr           749,366
+  - pipeline carry / yr          834,880
+  - new-site conv. / yr          271,273
+  = net, steady state         16,448,921   [16,302,050 .. 16,616,314]
+  - ramp tariff leakage        4,032,460
+  - rush expediting              134,400
+  = net, transfer year        12,289,208   [11,287,355 .. 13,269,486]
+
+Break-even China tariff (transfer year, median), GSM strong: 3.0%
+
+Break-even China tariff (transfer year, median), GSM weak: 3.5%

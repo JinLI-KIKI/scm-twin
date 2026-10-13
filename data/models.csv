@@ -1,0 +1,4 @@
+model,platform,npi_week,eol_week,peak_weekly_units,ramp_up_weeks,ramp_down_weeks,customs_value_usd,board_extra_usd
+P1-14,P1,-52,30,5000,4,4,480.0,35.0
+P1-16,P1,-52,30,2000,4,4,560.0,38.0
+P2-14,P2,26,156,6000,4,4,520.0,36.0

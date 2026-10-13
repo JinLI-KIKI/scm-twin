@@ -1,0 +1,443 @@
+<title>Laptop Network Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>/*__LEAFLET_CSS__*/</style>
+<style>
+/* Layout: a two-pane atlas. The map fills the left; a route ledger (shipping-manifest style) sits on the right; stacks on phones. */
+:root {
+  --paper: #f6f7f5; --panel: #fbfcfb; --ink: #14181c; --ink-2: #4a525a; --muted: #6f777e;
+  --rule: #d9dde0; --ocean: #dce5ec; --land: #e9e7e1; --land-line: #c9c6bd;
+  --sea: #2a78d6; --air: #eb6834; --inland: #1baf7a;
+  --d0: #9d90e6; --d5: #7464d9; --d16: #4a3aa7;
+  --chip: #eceeec; --hl: #fff3c4;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1316; --panel: #12171b; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+    --rule: #262d33; --ocean: #141a20; --land: #2b2b28; --land-line: #3d3d39;
+    --sea: #3987e5; --air: #d95926; --inland: #199e70;
+    --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+    --chip: #1c2328; --hl: #3a3410; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1316; --panel: #12171b; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+  --rule: #262d33; --ocean: #141a20; --land: #2b2b28; --land-line: #3d3d39;
+  --sea: #3987e5; --air: #d95926; --inland: #199e70;
+  --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+  --chip: #1c2328; --hl: #3a3410; color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--paper); color: var(--ink); font: 14px/1.5 var(--f-body); }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: 100%; }
+#map { height: 100%; min-height: 360px; background: var(--ocean); }
+.panel { background: var(--panel); border-left: 1px solid var(--rule); overflow-y: auto;
+  padding-block: 20px 28px; padding-inline: 20px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; height: auto; }
+  #map { height: min(62vh, 560px); }
+  .panel { border-left: 0; border-top: 1px solid var(--rule); overflow: visible; }
+}
+h1 { font: 600 30px/1 var(--f-display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--ink-2); margin: 6px 0 0; max-width: 60ch; }
+h2 { font: 600 15px/1.2 var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 8px; }
+.controls { display: grid; gap: 12px; }
+.ctl-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; display: block; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; flex-wrap: wrap; }
+.seg button { font: 500 13px var(--f-body); color: var(--ink-2); background: transparent; border: 0;
+  padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.toggles { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.toggles label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--ink-2); font-size: 13px; }
+.key { width: 22px; height: 0; border-top: 2.5px solid; display: inline-block; }
+.key.sea { border-color: var(--sea); }
+.key.air { border-color: var(--air); border-top-style: dashed; }
+.key.inland { border-color: var(--inland); border-top-style: dotted; border-top-width: 3px; }
+button:focus-visible, input:focus-visible, .row:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+.note-tiles { font-size: 12px; color: var(--muted); }
+table.ledger { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.ledger th { font: 500 11px var(--f-body); color: var(--muted); text-align: right; padding: 0 0 6px; border-bottom: 1px solid var(--rule); letter-spacing: .03em; }
+.ledger th:first-child, .ledger td:first-child { text-align: left; }
+.ledger td { padding: 8px 0; border-bottom: 1px solid var(--rule); text-align: right; font-family: var(--f-mono); font-size: 13px; }
+.ledger tr.row { cursor: pointer; }
+.ledger tr.row:hover td { background: var(--chip); }
+.ledger tr.row.sel td { background: var(--hl); }
+.mgi-code { font: 500 13px var(--f-mono); }
+.mgi-city { display: block; font: 12px var(--f-body); color: var(--muted); }
+.duty-pill { display: inline-block; min-width: 38px; text-align: center; border-radius: 4px; padding: 1px 6px; font-size: 12px;
+  border: 1px solid var(--rule); }
+.bd-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.bd-total { font: 600 26px/1 var(--f-display); }
+.bd-total small { font: 13px var(--f-body); color: var(--muted); margin-left: 4px; }
+.steps { display: grid; gap: 6px; margin-top: 10px; }
+.step { display: grid; grid-template-columns: minmax(0, 1fr) 46px; gap: 8px; align-items: center; font-size: 13px; }
+.step .bar { grid-column: 1 / -1; height: 6px; background: var(--chip); border-radius: 3px; overflow: hidden; }
+.step .bar i { display: block; height: 100%; border-radius: 3px; }
+.step .d { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.feed { display: grid; gap: 6px; }
+.feed button { all: unset; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px;
+  border: 1px solid var(--rule); border-radius: 6px; font-size: 13px; }
+.feed button:hover { background: var(--chip); }
+.feed button:focus-visible { outline: 2px solid var(--sea); }
+.feed .d { font-family: var(--f-mono); }
+.callout { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px; font-size: 13px; color: var(--ink-2); }
+.callout b { color: var(--ink); font-weight: 600; }
+.legend-duty { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 12px; color: var(--ink-2); align-items: center; }
+.sw { width: 14px; height: 10px; display: inline-block; border-radius: 2px; vertical-align: -1px; margin-right: 5px; border: 1px solid var(--land-line); }
+ul.plain { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 13px; display: grid; gap: 4px; }
+.sources a { color: var(--ink-2); word-break: break-word; }
+.footer-meta { font: 12px var(--f-mono); color: var(--muted); }
+/* Leaflet theming */
+.leaflet-container { background: var(--ocean); font-family: var(--f-body); }
+.leaflet-tooltip { background: var(--panel); color: var(--ink); border: 1px solid var(--rule); box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  font: 12px/1.4 var(--f-body); border-radius: 4px; }
+.leaflet-tooltip-top:before { border-top-color: var(--rule); }
+.leaflet-tooltip.lbl { background: transparent; border: 0; box-shadow: none; padding: 0 4px; font: 600 13px var(--f-display);
+  letter-spacing: .04em; color: var(--ink); text-shadow: 0 0 3px var(--paper), 0 0 3px var(--paper), 0 0 3px var(--paper); }
+.leaflet-tooltip.lbl:before { display: none; }
+.leaflet-control-attribution { background: color-mix(in srgb, var(--panel) 85%, transparent) !important; color: var(--muted); }
+.leaflet-control-attribution a { color: var(--ink-2); }
+.leaflet-bar a { background: var(--panel); color: var(--ink); border-bottom-color: var(--rule); }
+.leaflet-bar a:hover { background: var(--chip); }
+.flow { animation: flow 1.6s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -26; } }
+.dim { opacity: .18; }
+@media (prefers-reduced-motion: reduce) { .flow { animation: none; opacity: 0; } }
+.node-sq { width: 12px; height: 12px; background: var(--ink); border: 2px solid var(--paper); box-sizing: border-box; }
+.node-mgi { width: 14px; height: 14px; border-radius: 50%; background: var(--paper); border: 3px solid var(--ink); box-sizing: border-box; }
+.node-off { opacity: .35; }
+</style>
+
+<div class="app">
+  <div id="map" role="region" aria-label="World map of lanes from the factory to regional distribution centres"></div>
+  <aside class="panel">
+    <header>
+      <h1>Laptop Network Atlas</h1>
+      <p class="sub">Finished laptops from an Asian ODM site to five regional distribution centres (MGI). Sea lanes follow real shipping routes; times are first estimates.</p>
+    </header>
+
+    <section class="controls" aria-label="Map controls">
+      <div>
+        <span class="ctl-label" id="lbl-origin">Ship from</span>
+        <div class="seg" role="group" aria-labelledby="lbl-origin" id="seg-origin">
+          <button type="button" id="o-CN" data-v="CN" aria-pressed="true">China · Kunshan</button>
+          <button type="button" id="o-ID" data-v="ID" aria-pressed="false">Indonesia · Cikarang</button>
+        </div>
+      </div>
+      <div>
+        <span class="ctl-label" id="lbl-var">Asia–Europe ocean routing</span>
+        <div class="seg" role="group" aria-labelledby="lbl-var" id="seg-var">
+          <button type="button" id="v-cape" data-v="cape" aria-pressed="true">Cape of Good Hope</button>
+          <button type="button" id="v-suez" data-v="suez" aria-pressed="false">Suez Canal</button>
+        </div>
+      </div>
+      <div class="toggles" aria-label="Layers">
+        <label><input type="checkbox" id="t-sea" checked> <span class="key sea"></span>Ocean</label>
+        <label><input type="checkbox" id="t-air"> <span class="key air"></span>Air</label>
+        <label><input type="checkbox" id="t-inland" checked> <span class="key inland"></span>Truck</label>
+        <label><input type="checkbox" id="t-duty" checked> Import duty</label>
+        <label><input type="checkbox" id="t-tiles"> Street map</label>
+      </div>
+      <div class="note-tiles" id="tiles-note" hidden>Street tiles from OpenStreetMap could not load in this viewer. They load on the GitHub Pages version.</div>
+    </section>
+
+    <section aria-labelledby="h-ledger">
+      <h2 id="h-ledger">Door to MGI</h2>
+      <table class="ledger" id="ledger">
+        <thead><tr><th scope="col">MGI</th><th scope="col">Ocean, days</th><th scope="col">Air, days</th><th scope="col">Ocean, nm</th><th scope="col">Duty</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section aria-labelledby="h-bd" id="breakdown">
+      <div class="bd-head">
+        <h2 id="h-bd">Lead-time breakdown</h2>
+        <div class="seg" role="group" aria-label="Mode for breakdown" id="seg-mode">
+          <button type="button" id="m-sea" data-v="sea" aria-pressed="true">Ocean</button>
+          <button type="button" id="m-air" data-v="air" aria-pressed="false">Air</button>
+        </div>
+      </div>
+      <div id="bd-title" class="sub"></div>
+      <div class="bd-total" id="bd-total"></div>
+      <div class="steps" id="bd-steps"></div>
+    </section>
+
+    <section aria-labelledby="h-feed" id="feed-sec" hidden>
+      <h2 id="h-feed">Parts feed into Indonesia</h2>
+      <div class="feed" id="feed"></div>
+      <p class="callout" style="margin-top:10px"><b>Practitioner note:</b> after moving assembly to a new Southeast Asian site, plan for several more weeks of lead time (4 by default here), take quarterly plans from sales, and pull in long-lead parts such as OLED panels earlier.</p>
+    </section>
+
+    <section aria-labelledby="h-duty">
+      <h2 id="h-duty">Import duty on laptops</h2>
+      <div class="legend-duty">
+        <span><i class="sw" style="background:var(--d0)"></i>0%</span>
+        <span><i class="sw" style="background:var(--d5)"></i>5%</span>
+        <span><i class="sw" style="background:var(--d16)"></i>16%</span>
+        <span><i class="sw" style="background:var(--land)"></i>not modelled</span>
+      </div>
+      <p class="callout" style="margin-top:10px"><b>US duty on laptops is 0% today</b>, from China or Indonesia. The open risk is a second phase of the Section 232 semiconductor tariff, which may extend to laptops; no rate was announced as of September 2026.</p>
+    </section>
+
+    <section aria-labelledby="h-real">
+      <h2 id="h-real">What is real here</h2>
+      <ul class="plain">
+        <li>Ocean paths and distances: the open-source <i>searoute</i> maritime network, with Suez and Bab-el-Mandeb closed for the Cape option.</li>
+        <li>Country shapes: Natural Earth, public domain.</li>
+        <li>Duty rates: public sources, linked below, as of September 2026.</li>
+        <li>Factory and MGI locations are illustrative. Every handling and transit day is a first estimate to be calibrated.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="h-src" class="sources">
+      <h2 id="h-src">Sources</h2>
+      <ul class="plain" id="sources"></ul>
+    </section>
+    <div class="footer-meta">scm-twin · network atlas v0.1</div>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+const NET = /*__DATA__*/null;
+(function () {
+  if (!NET || !window.L) { document.getElementById('map').textContent = 'Map data or Leaflet failed to load.'; return; }
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const state = { origin: 'CN', variant: 'cape', modes: { sea: true, air: false, inland: true },
+                  duty: true, tiles: false, sel: 'M_US', bdMode: 'sea', feedSel: null };
+  try { const s = JSON.parse(localStorage.getItem('atlas-state') || '{}');
+        ['origin', 'variant', 'sel', 'bdMode'].forEach(k => { if (s[k]) state[k] = s[k]; }); } catch (e) {}
+  if (!['CN', 'ID'].includes(state.origin)) state.origin = 'CN';
+  const save = () => { try { localStorage.setItem('atlas-state', JSON.stringify(
+    { origin: state.origin, variant: state.variant, sel: state.sel, bdMode: state.bdMode })); } catch (e) {} };
+
+  const N = NET.nodes, LANES = NET.lanes, ROUTES = NET.routes, T = NET.tariffs;
+  const map = L.map('map', { worldCopyJump: false, zoomSnap: 0.25, minZoom: 0.5, attributionControl: true });
+  map.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
+  map.attributionControl.addAttribution('Countries: Natural Earth · Sea lanes: searoute');
+
+  // ---- countries (three copies so lanes that cross the Pacific stay over land)
+  const dutyOf = (tkey) => {
+    if (!tkey || !T[tkey]) return null;
+    return Number(state.origin === 'CN' ? T[tkey].duty_cn_origin_pct : T[tkey].duty_id_origin_pct);
+  };
+  const dutyColor = (d) => d === null ? css('--land') : d >= 10 ? css('--d16') : d > 0 ? css('--d5') : css('--d0');
+  const countryLayers = [-360, 0, 360].map(off => L.geoJSON(NET.countries, {
+    coordsToLatLng: c => L.latLng(c[1], c[0] + off),
+    style: f => ({ color: css('--land-line'), weight: 0.6, fillOpacity: 1,
+                   fillColor: state.duty ? dutyColor(dutyOf(f.properties.tkey)) : css('--land') }),
+    onEachFeature: (f, layer) => {
+      const k = f.properties.tkey;
+      if (!k) return;
+      layer.bindTooltip(() => {
+        const t = T[k];
+        const d = dutyOf(k);
+        return `<b>${f.properties.name}</b><br>Duty on ${state.origin === 'CN' ? 'China' : 'Indonesia'}-made laptops: <b>${d}%</b>` +
+          (t.other_barrier ? `<br>${t.other_barrier}` : '') + `<br><span style="color:${css('--muted')}">${t.note}</span>`;
+      }, { sticky: true });
+    }
+  }).addTo(map));
+  const restyleCountries = () => countryLayers.forEach(l => l.setStyle(l.options.style));
+
+  // ---- street tiles (optional)
+  const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { maxZoom: 12, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', opacity: 0.85 });
+  let tileErrors = 0;
+  tiles.on('tileerror', () => { if (++tileErrors === 3) { document.getElementById('tiles-note').hidden = false; } });
+
+  // ---- lanes
+  const laneGroup = L.layerGroup().addTo(map);
+  const nodeGroup = L.layerGroup().addTo(map);
+  const drawn = {};
+  const modeStyle = (mode) => mode === 'sea' ? { color: css('--sea'), weight: 2.2 }
+    : mode === 'air' ? { color: css('--air'), weight: 1.6, dashArray: '6 6' }
+    : { color: css('--inland'), weight: 2.6, dashArray: '1 6', lineCap: 'round' };
+  const name = (id) => N[id].name;
+  const laneTip = (l) => `<b>${name(l.from)} → ${name(l.to)}</b><br>${l.mode === 'sea' ? 'Ocean' : l.mode === 'air' ? 'Air' : 'Truck'} · ` +
+    `${l.km.toLocaleString()} km` + (l.mode !== 'inland' ? ` · ${l.nm.toLocaleString()} nm` : '') +
+    (l.passages && l.passages.length ? `<br><span style="color:${css('--muted')}">via ${l.passages.join(', ').replace('south_africa', 'Cape of Good Hope').replace('babalmandab', 'Bab-el-Mandeb')}</span>` : '');
+
+  function activeRoutes() {
+    return ROUTES.filter(r => r.origin === state.origin &&
+      (r.variant === 'any' || r.variant === state.variant));
+  }
+  function render() {
+    laneGroup.clearLayers(); nodeGroup.clearLayers();
+    Object.keys(drawn).forEach(k => delete drawn[k]);
+    const used = new Set(), nodesUsed = new Set();
+    const sets = activeRoutes().filter(r => state.modes[r.mode] || (r.mode === 'sea' && state.modes.inland));
+    activeRoutes().forEach(r => r.lanes.forEach(id => {
+      const l = LANES[id];
+      if (state.modes[l.mode]) used.add(id);
+      nodesUsed.add(l.from); nodesUsed.add(l.to);
+    }));
+    if (state.origin === 'ID') NET.feed.forEach(f => f.lanes.forEach(id => {  // parts feed: always shown
+      const l = LANES[id]; used.add(id); nodesUsed.add(l.from); nodesUsed.add(l.to);
+    }));
+    used.forEach(id => {
+      const l = LANES[id];
+      const base = L.polyline(l.path, { ...modeStyle(l.mode), opacity: 0.95, interactive: true }).bindTooltip(laneTip(l), { sticky: true });
+      base.addTo(laneGroup);
+      const parts = [base];
+      if (l.mode === 'sea') {
+        parts.push(L.polyline(l.path, { color: css('--panel'), weight: 1.4, opacity: 0.9, dashArray: '2 24',
+                                        lineCap: 'round', className: 'flow', interactive: false }).addTo(laneGroup));
+      }
+      drawn[id] = parts;
+    });
+    // nodes
+    nodesUsed.forEach(id => {
+      const n = N[id];
+      const ll = [n.lat, n.dlon];
+      let m;
+      if (n.kind === 'factory') {
+        const src = state.origin === 'ID' && id === 'F_CN';
+        m = L.marker(ll, { icon: L.divIcon({ className: '', html: `<div class="node-sq${src ? ' node-off' : ''}"></div>`, iconSize: [12, 12] }), keyboard: false });
+        m.bindTooltip(`${n.code} · ${n.name}${src ? ' (parts source)' : ''}`, { permanent: true, direction: 'right', className: 'lbl', offset: [6, 0] });
+      } else if (n.kind === 'mgi') {
+        const left = id === 'M_US' || id === 'M_UK';
+        m = L.marker(ll, { icon: L.divIcon({ className: '', html: '<div class="node-mgi"></div>', iconSize: [14, 14] }), keyboard: false });
+        m.bindTooltip(n.code, { permanent: true, direction: left ? 'left' : 'right', className: 'lbl', offset: [left ? -7 : 7, 0] });
+        m.on('click', () => select(id));
+      } else {
+        m = L.circleMarker(ll, { radius: 3.5, color: css('--muted'), weight: 1.2, fillColor: css('--panel'), fillOpacity: 1 });
+        m.bindTooltip(`<b>${n.code}</b> · ${n.name}<br><span style="color:${css('--muted')}">${n.role}</span>`);
+      }
+      m.addTo(nodeGroup);
+    });
+    highlight();
+    renderLedger(); renderBreakdown(); renderFeed();
+  }
+  function highlight() {
+    let focus = null;
+    if (state.feedSel !== null) focus = new Set(NET.feed[state.feedSel].lanes);
+    else if (state.sel) {
+      const r = activeRoutes().find(r => r.mgi === state.sel && r.mode === state.bdMode);
+      if (r) focus = new Set(r.lanes);
+    }
+    Object.entries(drawn).forEach(([id, parts]) => parts.forEach(p => {
+      const el = p.getElement && p.getElement();
+      if (!el) return;
+      el.classList.toggle('dim', !!focus && !focus.has(id));
+      if (focus && focus.has(id) && p.options.className !== 'flow') p.bringToFront();
+    }));
+  }
+
+  // ---- panel
+  const fmt = (x) => (Math.round(x * 10) / 10).toFixed(1);
+  const textOn = (hex) => {  // readable text on a coloured pill, in either theme
+    const h = hex.replace('#', ''); const c = [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16) / 255)
+      .map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] > 0.3 ? '#14181c' : '#ffffff';
+  };
+  function renderLedger() {
+    const tb = document.querySelector('#ledger tbody');
+    tb.innerHTML = '';
+    Object.keys(NET.mgis).forEach(m => {
+      const rs = activeRoutes().filter(r => r.mgi === m);
+      const sea = rs.find(r => r.mode === 'sea'), air = rs.find(r => r.mode === 'air');
+      const d = dutyOf(NET.mgis[m].tkey);
+      const tr = document.createElement('tr');
+      tr.className = 'row' + (state.sel === m ? ' sel' : '');
+      tr.tabIndex = 0;
+      tr.innerHTML = `<td><span class="mgi-code">${N[m].code}</span><span class="mgi-city">${N[m].name}</span></td>` +
+        `<td>${fmt(sea.days)}</td><td>${fmt(air.days)}</td><td>${sea.nm.toLocaleString()}</td>` +
+        `<td><span class="duty-pill" style="background:${dutyColor(d)};color:${textOn(dutyColor(d))}">${d}%</span></td>`;
+      tr.addEventListener('click', () => select(m, true));
+      tr.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(m, true); } });
+      tb.appendChild(tr);
+    });
+  }
+  function renderBreakdown() {
+    const r = activeRoutes().find(r => r.mgi === state.sel && r.mode === state.bdMode);
+    if (!r) return;
+    const o = NET.origins[state.origin];
+    document.getElementById('bd-title').textContent =
+      `${N[o.factory].name} → ${N[r.mgi].name}, by ${r.mode === 'sea' ? 'ocean' : 'air'}` +
+      (r.mode === 'sea' && r.variant !== 'any' ? (r.variant === 'cape' ? ' around the Cape' : ' through Suez') : '');
+    document.getElementById('bd-total').innerHTML = `${fmt(r.days)}<small>days door to MGI</small>`;
+    const color = r.mode === 'sea' ? css('--sea') : css('--air');
+    document.getElementById('bd-steps').innerHTML = r.steps.map(([k, d]) =>
+      `<div class="step"><span>${k}</span><span class="d">${fmt(d)}</span>` +
+      `<div class="bar"><i style="width:${Math.max(2, d / r.days * 100)}%;background:${color}"></i></div></div>`).join('');
+    ['sea', 'air'].forEach(v => document.getElementById('m-' + v).setAttribute('aria-pressed', String(state.bdMode === v)));
+  }
+  function renderFeed() {
+    const sec = document.getElementById('feed-sec');
+    sec.hidden = state.origin !== 'ID';
+    if (sec.hidden) return;
+    const box = document.getElementById('feed');
+    box.innerHTML = '';
+    NET.feed.forEach((f, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.innerHTML = `<span>${f.name}</span><span class="d">${fmt(f.days)} days</span>`;
+      b.setAttribute('aria-pressed', String(state.feedSel === i));
+      b.style.background = state.feedSel === i ? css('--hl') : '';
+      b.addEventListener('click', () => { state.feedSel = state.feedSel === i ? null : i; render(); fitFocus(); });
+      box.appendChild(b);
+    });
+  }
+
+  function fitFocus() {
+    let ids;
+    if (state.feedSel !== null) ids = NET.feed[state.feedSel].lanes;
+    else {
+      const r = activeRoutes().find(r => r.mgi === state.sel && r.mode === state.bdMode);
+      ids = r ? r.lanes : [];
+    }
+    const pts = ids.flatMap(id => LANES[id].path);
+    if (pts.length) map.fitBounds(L.latLngBounds(pts), { padding: [30, 30], maxZoom: 6 });
+  }
+  function fitAll() {
+    const pts = activeRoutes().flatMap(r => r.lanes.flatMap(id => LANES[id].path));
+    map.fitBounds(L.latLngBounds(pts), { paddingTopLeft: [24, 24], paddingBottomRight: [24, 24] });
+  }
+  function select(m, fly) { state.sel = m; state.feedSel = null; save(); render(); if (fly) fitFocus(); }
+
+  // ---- controls
+  const seg = (id, key, after) => document.querySelectorAll(`#${id} button`).forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.v === state[key]));
+    b.addEventListener('click', () => {
+      state[key] = b.dataset.v;
+      document.querySelectorAll(`#${id} button`).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      save(); after && after();
+    });
+  });
+  seg('seg-origin', 'origin', () => { state.feedSel = null; restyleCountries(); render(); });
+  seg('seg-var', 'variant', () => render());
+  seg('seg-mode', 'bdMode', () => { if (state.bdMode === 'air' && !state.modes.air) { state.modes.air = true; document.getElementById('t-air').checked = true; } render(); fitFocus(); });
+  ['sea', 'air', 'inland'].forEach(k => {
+    const el = document.getElementById('t-' + k);
+    el.checked = state.modes[k];
+    el.addEventListener('change', () => { state.modes[k] = el.checked; render(); });
+  });
+  document.getElementById('t-duty').addEventListener('change', e => { state.duty = e.target.checked; restyleCountries(); });
+  document.getElementById('t-tiles').addEventListener('change', e => {
+    state.tiles = e.target.checked;
+    if (state.tiles) { tileErrors = 0; tiles.addTo(map); tiles.bringToBack(); countryLayers.forEach(l => l.setStyle({ fillOpacity: 0.35 })); }
+    else { map.removeLayer(tiles); document.getElementById('tiles-note').hidden = true; countryLayers.forEach(l => l.setStyle({ fillOpacity: 1 })); }
+  });
+
+  // sources
+  const src = new Map();
+  Object.values(T).forEach(t => { if (t.source) src.set(t.source, `${t.country}: ${t.source.replace(/^https?:\/\//, '').split('/')[0]}`); });
+  src.set('https://github.com/genthalili/searoute-py', 'Sea lanes: searoute (open source)');
+  src.set('https://www.naturalearthdata.com/', 'Countries: Natural Earth');
+  document.getElementById('sources').innerHTML = [...src].map(([u, t]) => `<li><a href="${u}" target="_blank" rel="noopener">${t}</a></li>`).join('');
+
+  // theme changes repaint colours drawn into SVG
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const repaint = () => { restyleCountries(); render(); };
+  mq.addEventListener ? mq.addEventListener('change', repaint) : mq.addListener(repaint);
+  new MutationObserver(repaint).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  render();
+  fitAll();
+})();
+</script>

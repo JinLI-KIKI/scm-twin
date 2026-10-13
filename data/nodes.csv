@@ -1,0 +1,23 @@
+node_id,kind,name,code,country_iso3,lat,lon,role,status
+F_CN,factory,"Kunshan, Jiangsu",KSN,CHN,31.385,120.981,"Current ODM assembly site (laptop cluster near Shanghai)",ILLUSTRATIVE
+F_ID,factory,"Cikarang, West Java",CKR,IDN,-6.300,107.150,"New ODM assembly site after transfer",ILLUSTRATIVE
+P_SHA,port,"Shanghai Yangshan",CNSHA,CHN,30.630,122.070,"Export seaport for Kunshan",WEB-KNOWN
+P_JKT,port,"Jakarta Tanjung Priok",IDTPP,IDN,-6.100,106.880,"Export seaport for Cikarang",WEB-KNOWN
+A_PVG,airport,"Shanghai Pudong",PVG,CHN,31.144,121.808,"Export air gateway for Kunshan",WEB-KNOWN
+A_CGK,airport,"Jakarta Soekarno-Hatta",CGK,IDN,-6.126,106.656,"Export air gateway for Cikarang",WEB-KNOWN
+P_LAX,port,"Los Angeles / Long Beach",USLAX,USA,33.740,-118.260,"US West Coast gateway",WEB-KNOWN
+P_RTM,port,"Rotterdam",NLRTM,NLD,51.950,4.050,"EU gateway",WEB-KNOWN
+P_FXT,port,"Felixstowe",GBFXT,GBR,51.950,1.320,"UK gateway",WEB-KNOWN
+P_YOK,port,"Yokohama",JPYOK,JPN,35.450,139.660,"Japan gateway",WEB-KNOWN
+P_SSZ,port,"Santos",BRSSZ,BRA,-23.980,-46.300,"Brazil gateway",WEB-KNOWN
+A_LAX,airport,"Los Angeles Intl",LAX,USA,33.942,-118.408,"US air gateway",WEB-KNOWN
+A_AMS,airport,"Amsterdam Schiphol",AMS,NLD,52.310,4.768,"EU air gateway",WEB-KNOWN
+A_LHR,airport,"London Heathrow",LHR,GBR,51.470,-0.454,"UK air gateway",WEB-KNOWN
+A_NRT,airport,"Tokyo Narita",NRT,JPN,35.772,140.393,"Japan air gateway",WEB-KNOWN
+A_VCP,airport,"Campinas Viracopos",VCP,BRA,-23.007,-47.134,"Brazil air gateway (main cargo airport)",WEB-KNOWN
+A_FRA,airport,"Frankfurt",FRA,DEU,50.038,8.562,"Air transit hub for Asia to Brazil",WEB-KNOWN
+M_US,mgi,"Inland Empire, California",MGI-US,USA,34.063,-117.651,"US regional DC (post-customs)",ILLUSTRATIVE
+M_EU,mgi,"Venlo, Netherlands",MGI-EU,NLD,51.370,6.172,"EU regional DC serving DE/FR (post-customs)",ILLUSTRATIVE
+M_UK,mgi,"Daventry, England",MGI-UK,GBR,52.257,-1.163,"UK regional DC (post-customs)",ILLUSTRATIVE
+M_JP,mgi,"Atsugi, Kanagawa",MGI-JP,JPN,35.443,139.362,"Japan regional DC (post-customs)",ILLUSTRATIVE
+M_BR,mgi,"Campinas, Sao Paulo",MGI-BR,BRA,-22.906,-47.061,"Brazil regional DC (post-customs)",ILLUSTRATIVE

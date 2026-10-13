@@ -1,0 +1,6 @@
+mgi_id,region,site,lat,lon,operator,customs_status,serves,status
+M_US,North America,"Inland Empire, California",34.063,-117.651,brand-run or 3PL-leased (never ODM),post-customs,US,ILLUSTRATIVE
+M_EU,Europe,"Venlo, Netherlands",51.370,6.172,brand-run or 3PL-leased (never ODM),post-customs,"DE, FR",ILLUSTRATIVE
+M_UK,United Kingdom,"Daventry, England",52.257,-1.163,brand-run or 3PL-leased (never ODM),post-customs,UK,ILLUSTRATIVE
+M_JP,Japan,"Atsugi, Kanagawa",35.443,139.362,brand-run or 3PL-leased (never ODM),post-customs,JP,ILLUSTRATIVE
+M_BR,Brazil,"Campinas, Sao Paulo",-22.906,-47.061,brand-run or 3PL-leased (never ODM),post-customs,BR,ILLUSTRATIVE

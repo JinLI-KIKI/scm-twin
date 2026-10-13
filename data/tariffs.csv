@@ -1,0 +1,9 @@
+iso3,country,duty_cn_origin_pct,duty_id_origin_pct,other_barrier,note,source,as_of,status
+USA,United States,0,0,"Section 232 semiconductor Phase 2 may extend to laptops (rate not announced)","Laptops (HTS 8471) exempt from the 60-economy Section 301 action of 24 Jul 2026; Section 122 surcharge expired 24 Jul 2026","https://technode.global/2026/07/24/u-s-section-301-hits-southeast-asia-10-for-three-12-5-for-singapore-vietnam-technology-escapes/",2026-09,WEB
+MEX,Mexico,0,0,,"MFN 0% on 8471.30.01; plus 16% VAT and 0.8% customs processing fee","https://www.camtomx.com/aranceles/laptop/china",2026,WEB
+BRA,Brazil,16,16,"IPI 15% on top","Import duty (II) 16% on NCM 8471.30.12, no FTA with China or Indonesia","https://treayo.com/en/hs/brazil/84713012",2026,WEB
+IND,India,0,0,"Import licence required (IMS authorisation, valid to 31 Dec 2026)","0% basic customs duty under WTO ITA; laptops are a restricted import","https://a2ztaxcorp.net/government-notifies-procedure-for-import-management-system-for-restricted-it-hardware-for-calendar-year-2026/",2026,WEB
+ARE,United Arab Emirates,5,5,,"GCC common tariff 5% of CIF; some sources list laptops as duty-free","https://golocad.com/blog/uae-import-duties-and-customs-e-commerce-guide/",2025,WEB-CONFLICTING
+GBR,United Kingdom,0,0,,"Zero duty on laptops under the WTO Information Technology Agreement",,,ITA-TO-VERIFY
+JPN,Japan,0,0,,"Zero duty on laptops under the WTO Information Technology Agreement",,,ITA-TO-VERIFY
+EU,European Union (27),0,0,,"Zero duty on laptops (CN 8471 30) under the WTO Information Technology Agreement",,,ITA-TO-VERIFY

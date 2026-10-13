@@ -1,0 +1,16 @@
+key,value,unit,status,note
+sea_speed_knots,15,kn,PLACEHOLDER,"Slow-steaming container service speed"
+sea_port_call_days,4,days,PLACEHOLDER,"Intermediate calls and transshipment on the voyage"
+truck_km_per_day,500,km/day,PLACEHOLDER,"Domestic trucking incl. loading"
+origin_sea_handling_days,4,days,PLACEHOLDER,"Booking, CY cut-off, export clearance, waiting for the vessel"
+origin_air_handling_days,2,days,PLACEHOLDER,"Build-up and export clearance at the airport"
+dest_handling_days_USA,4,days,PLACEHOLDER,"Discharge, import clearance"
+dest_handling_days_NLD,4,days,PLACEHOLDER,
+dest_handling_days_GBR,4,days,PLACEHOLDER,
+dest_handling_days_JPN,3,days,PLACEHOLDER,
+dest_handling_days_BRA,8,days,PLACEHOLDER,"Santos clearance is typically slower"
+air_dest_handling_days,2,days,PLACEHOLDER,
+air_dest_handling_days_BRA,4,days,PLACEHOLDER,
+air_hub_transit_days,1,days,PLACEHOLDER,"Added when the air lane goes via a hub"
+mgi_receiving_days,1,days,PLACEHOLDER,"Receiving and put-away at the MGI"
+dest_handling_days_IDN,5,days,PLACEHOLDER,"Import clearance of parts at Tanjung Priok"

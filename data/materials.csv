@@ -1,0 +1,42 @@
+material_id,name,route_class,unit_cost_usd,lead_time_weeks,decay_type,rework_cost_usd,industry_standard,cancel_window_weeks,on_board
+CPU_P1,"CPU + chipset, platform P1",1,120.0,16,policy,0,1,2,1
+CPU_P2,"CPU + chipset, platform P2",1,135.0,16,policy,0,1,2,1
+MEM_16G,16GB memory (shared P1 & P2),1,40.0,8,policy,0,1,2,1
+SSD_512,512GB SSD (shared P1 & P2),1,35.0,8,policy,0,1,2,0
+PANEL_14,14in panel (shared P1-14 & P2-14),1,60.0,12,obsolescence,0,1,2,0
+PANEL_16,16in panel (P1-16 only),1,75.0,12,obsolescence,0,1,2,0
+BATT_P1,"Battery pack, platform P1 (custom)",1,30.0,10,physical,0,0,10,0
+BATT_P2,"Battery pack, platform P2 (custom)",1,32.0,10,physical,0,0,10,0
+ADAPTER_65W,65W adapter body (all models),1,12.0,6,obsolescence,0,0,6,0
+HOUSING_P1-14,Housing set P1-14,1,40.0,10,obsolescence,0,0,10,0
+HOUSING_P1-16,Housing set P1-16,1,45.0,10,obsolescence,0,0,10,0
+HOUSING_P2-14,Housing set P2-14,1,42.0,10,obsolescence,0,0,10,0
+KB_P1-14_US,Keyboard + C-cover P1-14 US,3,25.0,8,obsolescence,0,0,8,0
+KB_P1-14_UK,Keyboard + C-cover P1-14 UK,3,25.0,8,obsolescence,0,0,8,0
+KB_P1-14_FR,Keyboard + C-cover P1-14 FR,3,25.0,8,obsolescence,0,0,8,0
+KB_P1-14_DE,Keyboard + C-cover P1-14 DE,3,25.0,8,obsolescence,0,0,8,0
+KB_P1-14_JP,Keyboard + C-cover P1-14 JP,3,25.0,8,obsolescence,0,0,8,0
+KB_P1-14_BR,Keyboard + C-cover P1-14 BR,3,25.0,8,obsolescence,0,0,8,0
+KB_P1-16_US,Keyboard + C-cover P1-16 US,3,25.0,8,obsolescence,0,0,8,0
+KB_P1-16_UK,Keyboard + C-cover P1-16 UK,3,25.0,8,obsolescence,0,0,8,0
+KB_P1-16_FR,Keyboard + C-cover P1-16 FR,3,25.0,8,obsolescence,0,0,8,0
+KB_P1-16_DE,Keyboard + C-cover P1-16 DE,3,25.0,8,obsolescence,0,0,8,0
+KB_P1-16_JP,Keyboard + C-cover P1-16 JP,3,25.0,8,obsolescence,0,0,8,0
+KB_P1-16_BR,Keyboard + C-cover P1-16 BR,3,25.0,8,obsolescence,0,0,8,0
+KB_P2-14_US,Keyboard + C-cover P2-14 US,3,25.0,8,obsolescence,0,0,8,0
+KB_P2-14_UK,Keyboard + C-cover P2-14 UK,3,25.0,8,obsolescence,0,0,8,0
+KB_P2-14_FR,Keyboard + C-cover P2-14 FR,3,25.0,8,obsolescence,0,0,8,0
+KB_P2-14_DE,Keyboard + C-cover P2-14 DE,3,25.0,8,obsolescence,0,0,8,0
+KB_P2-14_JP,Keyboard + C-cover P2-14 JP,3,25.0,8,obsolescence,0,0,8,0
+KB_P2-14_BR,Keyboard + C-cover P2-14 BR,3,25.0,8,obsolescence,0,0,8,0
+CORD_BR,Power cord BR plug,2,2.0,4,obsolescence,2.5,0,4,0
+CORD_EU,Power cord EU plug,2,2.0,4,obsolescence,2.5,0,4,0
+CORD_JP,Power cord JP plug,2,2.0,4,obsolescence,2.5,0,4,0
+CORD_UK,Power cord UK plug,2,2.0,4,obsolescence,2.5,0,4,0
+CORD_US,Power cord US plug,2,2.0,4,obsolescence,2.5,0,4,0
+PKG_US,"Box, manuals, labels US",2,3.0,2,obsolescence,1.0,0,2,0
+PKG_UK,"Box, manuals, labels UK",2,3.0,2,obsolescence,1.0,0,2,0
+PKG_FR,"Box, manuals, labels FR",2,3.0,2,obsolescence,1.0,0,2,0
+PKG_DE,"Box, manuals, labels DE",2,3.0,2,obsolescence,1.0,0,2,0
+PKG_JP,"Box, manuals, labels JP",2,3.0,2,obsolescence,1.0,0,2,0
+PKG_BR,"Box, manuals, labels BR",2,3.0,2,obsolescence,1.0,0,2,0

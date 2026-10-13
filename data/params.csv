@@ -1,0 +1,14 @@
+key,value,note
+liability_window_weeks,16,Practitioner input (virtualized): cancelled plan inside the window counts as MWD
+tracking_window_weeks,156,"Practitioner input (virtualized): tracked 36 months, adjustable"
+carrying_rate_annual,0.2,PLACEHOLDER
+battery_recharge_interval_weeks,26,"Web: Apple, recharge to 50% every 6 months"
+battery_recharge_cost_usd,0.5,PLACEHOLDER
+date_code_limit_weeks,104,Web: industry 2-year date-code convention
+retest_cost_usd,1.0,PLACEHOLDER: re-test/bake per unit past date-code limit
+rework_accept_rate,0.8,PLACEHOLDER: share of route-2 remainder another BU accepts
+odm_hedge_ratio,0.0,PLACEHOLDER: share of claimed MWD the ODM never actually stocked
+boards_built_ahead_weeks,2,PLACEHOLDER (Q10): SMT runs this many weeks ahead of final assembly
+relocation_weeks,3,PLACEHOLDER: old factory -> new factory transit + receiving
+new_site_lt_adder_weeks,4,"Practitioner input (virtualized): new SE Asia site, +4 weeks lead time by default"
+relocation_cost_rate,0.03,"PLACEHOLDER: freight + handling as share of material value; bonded, no duty"
