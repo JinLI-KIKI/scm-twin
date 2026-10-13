@@ -1,1 +1,3 @@
 searoute>=1.6
+shapely>=2.0
+networkx>=3.0

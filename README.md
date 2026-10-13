@@ -25,7 +25,8 @@ and one-time costs (tariff leakage during ramp, rush expediting), by GSM strengt
 **Network atlas** (`docs/index.html`): a world map of the network — two factory sites
 (China, Indonesia), real export gateways, five regional distribution centres (MGI), real
 ocean lanes (Cape of Good Hope vs Suez), air lanes, the parts feed from China into Indonesia,
-door-to-MGI lead-time breakdowns and import duty by country. Open the file in a browser.
+door-to-MGI lead-time breakdowns, import duty by country, and major highways (truck lanes
+follow them). One complete world, no repeated copies. Open the file in a browser.
 Rebuild after editing `data/nodes.csv`, `data/tariffs.csv` or `data/leadtime_params.csv`:
 `pip install -r requirements-map.txt && python3 src/build_map.py`.
 

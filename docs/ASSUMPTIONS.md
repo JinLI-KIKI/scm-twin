@@ -43,6 +43,9 @@ Last updated: 2026-10-13 (v0.5: virtualized — 16-week window, 36-month trackin
 | Factory sites | Kunshan, Jiangsu (current) and Cikarang, West Java, Indonesia (new) — `data/nodes.csv` | ILLUSTRATIVE |
 | MGI sites | Inland Empire CA, Venlo NL, Daventry UK, Atsugi JP, Campinas BR — `data/mgi_sites.csv` | ILLUSTRATIVE (typical electronics DC hubs) |
 | Ports and airports | Real gateways (UN/LOCODE, IATA codes) | WEB-KNOWN |
+| Map frame | One complete Pacific-centred world, cut in the mid-Atlantic at 28°W; no repeated copies when zooming out | Design choice |
+| Country shapes | Natural Earth 1:50m, public domain | WEB / open data |
+| Highways and truck lanes | Natural Earth 1:10m major highways shown when zoomed in; truck lanes routed over the Natural Earth road network (straight line × 1.3 where no road route is found) | WEB / open data |
 | Ocean paths and distances | `searoute` open-source maritime network; Cape option closes Suez, Bab-el-Mandeb and Panama | WEB / open source |
 | Red Sea status | Most Asia–Europe services still go around the Cape in 2026 → Cape is the default | WEB (see sources in Q&A log) |
 | Ocean speed / port-call allowance | 15 kn + 4 days | PLACEHOLDER (`data/leadtime_params.csv`) |

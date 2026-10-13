@@ -2,14 +2,17 @@
 Build the network atlas (docs/index.html) from the editable data files.
 
 Inputs  data/nodes.csv, data/tariffs.csv, data/leadtime_params.csv
-        Natural Earth 1:110m countries (public domain), downloaded once to data/geo/
+        Natural Earth 1:50m countries and 1:10m roads (public domain), downloaded once to
+        data/geo/ (git-ignored; only the processed result goes into docs/index.html)
 Outputs data/network.json   lanes with real sea-lane geometry, distances, lead-time steps
         docs/index.html     self-contained Leaflet map (open it in a browser, or GitHub Pages)
 
 Sea lanes come from the open-source `searoute` package (pip install searoute), which routes
 over a global maritime network and lets us close passages (Suez / Bab-el-Mandeb) to model the
-Red Sea situation. Air lanes are great circles. Inland lanes are straight lines with a road
-factor. Every time value is a PLACEHOLDER from data/leadtime_params.csv.
+Red Sea situation. Air lanes are great circles. Truck lanes follow the Natural Earth road
+network (straight line x road factor where no road route is found). The map is one complete,
+Pacific-centred world (see src/geo_layers.py). Every time value is a PLACEHOLDER from
+data/leadtime_params.csv.
 
 Run:  python3 src/build_map.py
 """
@@ -18,12 +21,11 @@ import json
 import math
 import os
 import sys
-import urllib.request
+
+import geo_layers as GL
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
-NE_URL = ("https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/"
-          "geojson/ne_110m_admin_0_countries.geojson")
 EU27 = ["AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN", "FRA", "DEU", "GRC",
         "HUN", "IRL", "ITA", "LVA", "LTU", "LUX", "MLT", "NLD", "POL", "PRT", "ROU", "SVK",
         "SVN", "ESP", "SWE"]
@@ -54,69 +56,14 @@ def load_inputs():
     nodes = {}
     for r in read_csv("nodes.csv"):
         r["lat"], r["lon"] = float(r["lat"]), float(r["lon"])
-        # Pacific-centred display: the Americas north of the equator sit east of Asia
-        r["dlon"] = r["lon"] + 360 if r["country_iso3"] in ("USA", "MEX", "CAN") else r["lon"]
+        r["dlon"] = GL.disp_lon(r["lon"])  # longitude inside the one-world display window
         nodes[r["node_id"]] = r
     params = {r["key"]: float(r["value"]) for r in read_csv("leadtime_params.csv")}
     tariffs = {r["iso3"]: r for r in read_csv("tariffs.csv")}
     return nodes, params, tariffs
 
 
-def load_countries(tariffs):
-    path = os.path.join(DATA, "geo", "ne_110m_admin_0_countries.geojson")
-    if not os.path.exists(path):
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        print("downloading Natural Earth countries ...")
-        urllib.request.urlretrieve(NE_URL, path)
-    with open(path, encoding="utf-8") as f:
-        gj = json.load(f)
-
-    def rnd(c):
-        if isinstance(c[0], (int, float)):
-            return [round(c[0], 2), round(c[1], 2)]
-        return [rnd(x) for x in c]
-
-    feats = []
-    for ft in gj["features"]:
-        p = ft["properties"]
-        iso = p.get("ADM0_A3")
-        if iso == "ATA":
-            continue
-        key = "EU" if iso in EU27 else iso
-        feats.append({"type": "Feature",
-                      "properties": {"iso": iso, "name": p.get("NAME"),
-                                     "tkey": key if key in tariffs else None},
-                      "geometry": {"type": ft["geometry"]["type"],
-                                   "coordinates": rnd(ft["geometry"]["coordinates"])}})
-    return {"type": "FeatureCollection", "features": feats}
-
-
-# ----------------------------------------------------------------------------- geometry
-def haversine_km(lat1, lon1, lat2, lon2):
-    p1, p2 = math.radians(lat1), math.radians(lat2)
-    dp, dl = p2 - p1, math.radians(lon2 - lon1)
-    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
-    return 2 * EARTH_R * math.asin(math.sqrt(a))
-
-
-def unwrap(coords, start_lon, end_lon):
-    """coords: [[lon, lat], ...]. Make longitudes continuous, anchored to the display
-    longitude of the start node, and check the end lands on the end node's display lon."""
-    out, prev = [], None
-    for lon, lat in coords:
-        if prev is not None:
-            while lon - prev > 180:
-                lon -= 360
-            while lon - prev < -180:
-                lon += 360
-        out.append([lon, lat])
-        prev = lon
-    shift = round((start_lon - out[0][0]) / 360) * 360
-    out = [[lon + shift, lat] for lon, lat in out]
-    gap = end_lon - out[-1][0]
-    if abs(gap) > 5:  # lane reached the end node "the other way round" the globe
-        raise ValueError(f"lane end lon {out[-1][0]:.1f} does not match node {end_lon:.1f}")
-    return [[round(lat, 3), round(lon, 3)] for lon, lat in out]  # Leaflet order
+haversine_km = GL.haversine_km
 
 
 def great_circle(a, b, n=64):
@@ -151,21 +98,28 @@ def build():
         sys.exit("This script needs the open-source searoute package:  pip install searoute")
 
     nodes, P, tariffs = load_inputs()
+    geo_dir = os.path.join(DATA, "geo")
+    roads = GL.Roads(geo_dir)
     lanes = {}
 
     def add_lane(lid, mode, a, b, coords, km, extra=None):
-        A, B = nodes[a], nodes[b]
+        segs = GL.window_segments(coords)
+        end = segs[-1][-1][1]
+        if abs(end - nodes[b]["dlon"]) > 2:
+            raise ValueError(f"{lid}: lane ends at lon {end:.1f}, node is at {nodes[b]['dlon']:.1f}")
         lanes[lid] = {"id": lid, "mode": mode, "from": a, "to": b, "km": round(km),
-                      "nm": round(km / 1.852),
-                      "path": unwrap(coords, A["dlon"], B["dlon"]), **(extra or {})}
+                      "nm": round(km / 1.852), "path": segs, **(extra or {})}
 
-    def truck_lane(a, b, via=None):
+    def truck_lane(a, b):
         A, B = nodes[a], nodes[b]
-        pts = [A] + (via or []) + [B]
-        km = sum(haversine_km(p["lat"], p["lon"], q["lat"], q["lon"])
-                 for p, q in zip(pts, pts[1:])) * ROAD_FACTOR
+        routed = roads.route(A, B)
+        if routed:
+            coords, km = routed
+        else:
+            coords = [[A["lon"], A["lat"]], [B["lon"], B["lat"]]]
+            km = haversine_km(A["lat"], A["lon"], B["lat"], B["lon"]) * ROAD_FACTOR
         lid = f"T:{a}>{b}"
-        add_lane(lid, "inland", a, b, [[p["lon"], p["lat"]] for p in pts], km)
+        add_lane(lid, "inland", a, b, coords, km, {"road_routed": bool(routed)})
         return lid
 
     def air_lane(a, b):
@@ -252,7 +206,8 @@ def build():
     for f in feed:
         f["days"] = r1(sum(d for _, d in f["steps"]))
 
-    countries = load_countries(tariffs)
+    countries = GL.countries(geo_dir, tariffs, EU27)
+    road_layer = roads.display_layer()
     net = {
         "nodes": nodes, "lanes": lanes, "routes": routes, "feed": feed,
         "tariffs": tariffs, "origins": ORIGINS,
@@ -267,7 +222,9 @@ def build():
         tpl = f.read()
     with open(os.path.join(ROOT, "src", "vendor", "leaflet-1.9.4.css"), encoding="utf-8") as f:
         leaflet_css = f.read()
-    payload = json.dumps({**net, "countries": countries}, separators=(",", ":"),
+    payload = json.dumps({**net, "countries": countries, "roads": road_layer,
+                          "window": [GL.WINDOW_WEST, GL.WINDOW_EAST, GL.LAT_SOUTH, GL.LAT_NORTH]},
+                         separators=(",", ":"),
                          ensure_ascii=False).replace("</", "<\\/")
     body = tpl.replace("/*__LEAFLET_CSS__*/", leaflet_css).replace("/*__DATA__*/null", payload)
     os.makedirs(os.path.join(ROOT, "docs"), exist_ok=True)
@@ -289,6 +246,10 @@ def build():
                   f"{r['days']:>5} days")
     for f in feed:
         print(f"  parts feed: {f['name']:<40} {f['days']} days")
+    for l in lanes.values():
+        if l["mode"] == "inland":
+            print(f"  truck {l['from']:>6} -> {l['to']:<6} {l['km']:>5} km  "
+                  f"{'road network' if l['road_routed'] else 'straight line x road factor'}")
 
 
 if __name__ == "__main__":

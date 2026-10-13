@@ -29,6 +29,8 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   countries, real `searoute` ocean lanes with a Cape / Suez switch, China vs Indonesia origin,
   door-to-MGI lead-time breakdown, parts feed into Indonesia, import-duty layer.
 - Project made anonymous: no real brand, illustrative sites, all English.
+- Map fixed to one complete world (no repeated copies); highways drawn from Natural Earth and
+  truck lanes routed along them; 1:50m country shapes.
 - Practitioner numbers virtualized: 16-week liability window, 36-month tracking, new site in Indonesia.
 
 ## Next — Day 2
