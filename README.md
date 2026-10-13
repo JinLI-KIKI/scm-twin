@@ -3,6 +3,8 @@
 Work in progress, built one module at a time with a practitioner's input.
 Pure Python 3.9+, no external packages. Progress: [`docs/LOG.md`](docs/LOG.md).
 
+**Live map:** [jinli-kiki.github.io/scm-twin/docs](https://jinli-kiki.github.io/scm-twin/docs/)
+
 **Module 1 — MWD engine** (`src/mwd_engine.py`): when plans are cancelled or a region's
 production leaves a factory, route every freed material to one of three fates —
 absorbed by other plans (same part number), converted at a cost, or MWD — and price
