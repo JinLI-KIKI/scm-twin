@@ -72,7 +72,12 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   GEOs that habitually lock high.
 - Rework pays for gaming and consumer lines and not for education or convertibles, matching R11.
 
-## Next
-- Q27: what is the BU's FY shipment target counted in? (opens Module 5, demand and KPI view)
-- Roadmap A2, Module 5: demand and KPI view (tariff → price → units → FY shipment gap; BU vs
-  company view).
+## Next — Day 3
+
+- **Ranges instead of single numbers.** Every input gets a low / base / high range on the page,
+  and the model responds when a range moves (pulled forward from Roadmap F1). Needs a decision
+  on how: port the core formulas to JavaScript, or sample the ranges in Python and ship the
+  response surface.
+- **Formula and algorithm review with Jin**, module by module, before Module 5.
+- Then Roadmap A2, Module 5: demand and KPI view. Q27 answered: the BU's FY shipment target is
+  counted in sell-in units (R33).
