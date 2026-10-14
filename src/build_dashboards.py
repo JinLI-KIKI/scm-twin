@@ -167,9 +167,11 @@ FG_SUMMARY = ["demand_units", "sold_units", "builds_units", "kits_ordered", "sel
               "channel_at_launch_units", "excess_units", "returned_units", "lost_units", "mwd_kits",
               "price_protection_usd", "launch_markdown_usd", "markdown_floor_usd",
               "markdown_above_floor_usd", "excess_loss_usd", "mwd_usd", "lost_margin_usd",
-              "duty_sunk_usd", "avoidable_cost_usd"] + ["mix_" + p for p in FG.PATHS]
+              "duty_sunk_usd", "avoidable_cost_usd", "dealer_kept_units", "dealer_loss_usd",
+              "system_cost_usd", "trued_up_units"] + ["mix_" + p for p in FG.PATHS]
 FG_REGION = ["excess_units", "lost_units", "price_protection_usd", "excess_loss_usd", "mwd_usd",
-             "lost_margin_usd", "duty_sunk_usd", "avoidable_cost_usd", "demand_units"]
+             "lost_margin_usd", "duty_sunk_usd", "avoidable_cost_usd", "demand_units",
+             "dealer_kept_units", "dealer_loss_usd", "system_cost_usd"]
 FG_TRAJ = ["demand", "forecast", "sold", "lost", "builds", "sell_in", "mgi", "channel", "kits"]
 
 

@@ -9,7 +9,7 @@
     <div>
       <p class="eyebrow">Module 4 · finished goods at MGI and in the channel</p>
       <h1>Old Stock at Successor Launch</h1>
-      <p class="sub">What happens to an old laptop model's finished units when its successor reaches the market: the price-protection bill, units left over, material left over (MWD) and sales lost, under four ways of running the last months.</p>
+      <p class="sub">What happens to an old laptop model's finished units when its successor reaches the market: the price-protection bill, units left with the brand or with dealers, material left over (MWD) and sales lost, under five ways of running the last months.</p>
     </div>
     <div class="asof">Model run __TODAY__ · 300 Monte Carlo runs per cell</div>
   </div>
@@ -19,13 +19,14 @@
     <div class="slicer"><span class="s-label" id="l-d">Net price drop at launch</span><div class="seg" role="group" aria-labelledby="l-d" id="f-d"></div></div>
     <div class="slicer"><span class="s-label" id="l-b">Sales forecast optimism</span><div class="seg" role="group" aria-labelledby="l-b" id="f-b"></div></div>
     <div class="slicer"><span class="s-label" id="l-c">US duty and MGI customs status</span><div class="seg" role="group" aria-labelledby="l-c" id="f-c"></div></div>
+    <div class="slicer"><span class="s-label" id="l-v">Whose cost</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
   </section>
 
   <section class="kpis" id="kpis" aria-live="polite"></section>
 
   <section class="canvas">
     <div class="viz w7">
-      <div class="viz-h"><h2>Avoidable cost by strategy</h2><span class="hint">Mean of 300 runs · click a bar to select it</span></div>
+      <div class="viz-h"><h2 id="h-stack">Avoidable cost by strategy</h2><span class="hint">Mean of 300 runs · click a bar to select it</span></div>
       <div id="c-stack" class="chart"></div>
     </div>
     <div class="viz w5">
@@ -59,14 +60,16 @@
   <footer class="notes">
     <p><b>How it is computed.</b> Two old models (P1-14, P1-16) sell through five MGI regions. Builds follow the sales forecast through an order-up-to rule and need material kits ordered 16 weeks ahead (the liability window); the MGI refills dealers to a forward cover. The successor reaches the market in week <span id="n-launch"></span>; the old model's last build is week <span id="n-eol"></span> (EOL, R29). Units held by dealers at launch get price protection (R27). At the end, MGI stock and dealer leftovers go down the disposition paths; unused kits of platform-only parts are counted as MWD.</p>
     <p><b>Avoidable cost</b> = price protection and post-launch markdown above the unavoidable floor (units that only sell after launch) + loss on excess finished goods (landed cost minus recovery, re-inspection, carrying, return handling) + EOL MWD + half the margin on lost sales (the other half is assumed to buy the successor).</p>
-    <p><b>Status.</b> Dealer lock 22 weeks before EOL, ±2 weeks by region: practitioner input, virtualized (R28). Whether the locked volume binds the dealer is open (Q23), so the lock is modelled as information only. All other numbers are placeholders; see <a href="rules.html">Rules register</a> and <code>data/fg_params.csv</code>. Drawback rules: <a href="https://gingercontrol.com/resources/duty-drawback">GingerControl drawback matrix</a>.</p>
+    <p><b>Dealer leftovers (R30).</b> What dealers still hold at the end comes back through stock rotation up to 10% of their last-quarter purchases, against a new order; the rest the dealer clears itself. Once sold in, most of the risk has left the brand, so the brand view and the brand + dealer view can pick different strategies. Lost goodwill and smaller future orders from dealers left with stock are not modelled.</p>
+    <p><b>Status.</b> Dealer lock 22 weeks before EOL, ±2 weeks by region: practitioner input, virtualized (R28). Whether dealers must take the full locked volume is open (Q24); the binding-lock strategy shows the case where they do. All other numbers are placeholders; see <a href="rules.html">Rules register</a> and <code>data/fg_params.csv</code>. Drawback rules: <a href="https://gingercontrol.com/resources/duty-drawback">GingerControl drawback matrix</a>.</p>
   </footer>
 </main>
 <script>/*__JS__*/</script>
 <script>
 const D = /*__DATA__*/null;
 const ST = Object.keys(D.strategies);
-const SHORT = { push: 'Push sell-in', plan: 'Sales plan', lock: 'Dealer lock', lock_drain: 'Lock + drain' };
+const SHORT = { push: 'Push sell-in', plan: 'Sales plan', lock: 'Dealer lock', lock_drain: 'Lock + drain', lock_binding: 'Binding lock' };
+const SCOL = { push: 1, plan: 6, lock: 0, lock_drain: 2, lock_binding: 3 };
 const CUST = { base: 'Current duties', us25_post: 'US 25% · post-customs MGI', us25_ftz: 'US 25% · FTZ MGI' };
 const saved = R.load();
 const S = {
@@ -74,7 +77,9 @@ const S = {
   d: D.drops.includes(saved.d) ? saved.d : 0.15,
   b: D.biases.includes(saved.b) ? saved.b : 0.08,
   c: D.customs.includes(saved.c) ? saved.c : 'base',
+  v: ['brand', 'system'].includes(saved.v) ? saved.v : 'brand',
 };
+const COSTK = () => (S.v === 'brand' ? 'avoidable_cost_usd' : 'system_cost_usd');
 const key = (s, d = S.d, b = S.b, c = S.c) => `${s}|${d.toFixed(2)}|${b.toFixed(2)}|${c}`;
 const cell = (s = S.s, d, b, c) => D.cells[key(s, d, b, c)];
 const M = D.meta;
@@ -85,13 +90,16 @@ const segS = R.seg(R.$('#f-s'), ST.map((s) => [s, SHORT[s]]), S.s, (v) => { S.s 
 R.seg(R.$('#f-d'), D.drops.map((v) => [v, R.pct(v)]), S.d, (v) => { S.d = v; draw(); });
 R.seg(R.$('#f-b'), D.biases.map((v) => [v, '+' + R.pct(v)]), S.b, (v) => { S.b = v; draw(); });
 R.seg(R.$('#f-c'), D.customs.map((v) => [v, CUST[v]]), S.c, (v) => { S.c = v; draw(); });
+R.seg(R.$('#f-v'), [['brand', 'Brand'], ['system', 'Brand + dealers']], S.v, (v) => { S.v = v; draw(); });
 
 const COMP = [
-  ['markdown_above_floor_usd', 'Launch markdown above floor', 1],
-  ['excess_loss_usd', 'Excess finished goods', 3],
-  ['mwd_usd', 'EOL material (MWD)', 5],
-  ['lost_margin_usd', 'Lost sales margin', 6],
+  ['markdown_above_floor_usd', 'Markdown above floor', 1],
+  ['excess_loss_usd', 'Excess stock', 3],
+  ['mwd_usd', 'EOL MWD', 5],
+  ['lost_margin_usd', 'Lost margin', 6],
+  ['dealer_loss_usd', 'Dealer leftovers', 4],
 ];
+const comps = () => COMP.filter((c) => S.v === 'system' || c[0] !== 'dealer_loss_usd');
 
 function kpis() {
   const s = cell().s, base = cell('plan').s;
@@ -102,9 +110,10 @@ function kpis() {
   };
   const card = (label, value, sub) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span></div>`;
   R.$('#kpis').innerHTML = [
-    card('Avoidable cost', R.usd(s.avoidable_cost_usd[0]), `P10–P90 ${R.usd(s.avoidable_cost_usd[1])}–${R.usd(s.avoidable_cost_usd[2])}${delta('avoidable_cost_usd')}`),
+    card(S.v === 'brand' ? 'Avoidable cost to the brand' : 'Avoidable cost, brand + dealers', R.usd(s[COSTK()][0]), `P10–P90 ${R.usd(s[COSTK()][1])}–${R.usd(s[COSTK()][2])}${delta(COSTK())}`),
     card('Price-protection bill', R.usd(s.price_protection_usd[0]), `${R.kunits(s.channel_at_launch_units[0])} units with dealers at launch${delta('price_protection_usd')}`),
-    card('Excess finished goods', R.kunits(s.excess_units[0]) + ' units', `${R.kunits(s.returned_units[0])} back from dealers · loss ${R.usd(s.excess_loss_usd[0])}`),
+    card('Excess finished goods', R.kunits(s.excess_units[0]) + ' units', `${R.kunits(s.returned_units[0])} back by stock rotation · loss ${R.usd(s.excess_loss_usd[0])}`),
+    card('Left with dealers', R.kunits(s.dealer_kept_units[0]) + ' units', `dealers clear them · their loss ${R.usd(s.dealer_loss_usd[0])}`),
     card('Material left at EOL', R.kunits(s.mwd_kits[0]) + ' kits', `MWD ${R.usd(s.mwd_usd[0])} in platform-only parts`),
     card('Sales lost', R.kunits(s.lost_units[0]) + ' units', `${R.pct(s.lost_units[0] / s.demand_units[0], 1)} of demand · margin ${R.usd(s.lost_margin_usd[0])}`),
     card('Duty sunk', R.usd(s.duty_sunk_usd[0]), `on excess units · ${CUST[S.c]}`),
@@ -116,12 +125,12 @@ const cStack = R.chart('c-stack', (t) => {
   return {
     ...o,
     tooltip: { ...o.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' },
-      formatter: (ps) => R.tip(t, ps.map((p) => [p.color, p.seriesName, R.usd(p.value)]).concat([[t.ink, 'Total', R.usd(cell(ST[ps[0].dataIndex]).s.avoidable_cost_usd[0])]]), D.strategies[ST[ps[0].dataIndex]]) },
+      formatter: (ps) => R.tip(t, ps.map((p) => [p.color, p.seriesName, R.usd(p.value)]).concat([[t.ink, 'Total', R.usd(cell(ST[ps[0].dataIndex]).s[COSTK()][0])]]), D.strategies[ST[ps[0].dataIndex]]) },
     grid: { ...o.grid, top: 40 },
     xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
     yAxis: R.axis(t, { type: 'category', inverse: true, data: ST.map((s) => SHORT[s]), axisLabel: { color: t.ink2, fontSize: 12, fontFamily: t.fBody },
       splitLine: { show: false } }),
-    series: COMP.map(([k, name, ci]) => ({
+    series: comps().map(([k, name, ci]) => ({
       type: 'bar', stack: 'a', name, barWidth: '58%',
       itemStyle: { color: t.c[ci] },
       emphasis: { focus: 'series' },
@@ -135,8 +144,8 @@ const cTrade = R.chart('c-trade', (t) => {
   const o = R.base(t);
   const pts = ST.map((s, i) => {
     const x = cell(s).s;
-    return { name: SHORT[s], value: [x.lost_units[0], x.excess_units[0] + x.mwd_kits[0]], s, label: { position: ['top', 'bottom', 'left', 'bottom'][i] },
-      itemStyle: { color: t.c[[1, 7, 0, 2][i] ?? 0], opacity: s === S.s ? 1 : .55, borderColor: s === S.s ? t.ink : 'transparent', borderWidth: 2 } };
+    return { name: SHORT[s], value: [x.lost_units[0], x.excess_units[0] + x.mwd_kits[0]], s, label: { position: { push: 'right', plan: 'top', lock: 'left', lock_drain: 'top', lock_binding: 'bottom' }[s] || 'top' },
+      itemStyle: { color: t.c[SCOL[s] ?? 0], opacity: s === S.s ? 1 : .55, borderColor: s === S.s ? t.ink : 'transparent', borderWidth: 2 } };
   });
   return {
     ...o,
@@ -211,10 +220,10 @@ const cFtz = R.chart('c-ftz', (t) => {
 });
 
 function regionTable() {
-  const r = cell().r, regs = Object.keys(r).sort((a, b) => r[b].demand_units - r[a].demand_units);
-  const max = Math.max(...regs.map((g) => r[g].avoidable_cost_usd));
-  R.$('#t-region').innerHTML = '<thead><tr><th>MGI</th><th>Demand</th><th>Excess</th><th>Lost</th><th>Price protection</th><th>Duty sunk</th><th>Avoidable cost</th></tr></thead><tbody>' +
-    regs.map((g) => { const x = r[g]; return `<tr><td>MGI-${g}</td><td>${R.kunits(x.demand_units)}</td><td>${R.num(x.excess_units)}</td><td>${R.num(x.lost_units)}</td><td>${R.usd(x.price_protection_usd)}</td><td>${R.usd(x.duty_sunk_usd)}</td><td class="bar-cell"><i style="width:${(100 * x.avoidable_cost_usd / max).toFixed(1)}%"></i><span>${R.usd(x.avoidable_cost_usd)}</span></td></tr>`; }).join('') + '</tbody>';
+  const r = cell().r, k = COSTK(), regs = Object.keys(r).sort((a, b) => r[b].demand_units - r[a].demand_units);
+  const max = Math.max(...regs.map((g) => r[g][k]));
+  R.$('#t-region').innerHTML = '<thead><tr><th>MGI</th><th>Demand</th><th>Excess</th><th>Left with dealers</th><th>Lost</th><th>Price protection</th><th>Duty sunk</th><th>' + (S.v === 'brand' ? 'Brand cost' : 'Brand + dealers') + '</th></tr></thead><tbody>' +
+    regs.map((g) => { const x = r[g]; return `<tr><td>MGI-${g}</td><td>${R.kunits(x.demand_units)}</td><td>${R.num(x.excess_units)}</td><td>${R.num(x.dealer_kept_units)}</td><td>${R.num(x.lost_units)}</td><td>${R.usd(x.price_protection_usd)}</td><td>${R.usd(x.duty_sunk_usd)}</td><td class="bar-cell"><i style="width:${(100 * x[k] / max).toFixed(1)}%"></i><span>${R.usd(x[k])}</span></td></tr>`; }).join('') + '</tbody>';
 }
 
 function archTable() {
@@ -228,13 +237,13 @@ function archTable() {
 }
 
 function insight() {
-  const p = cell('plan').s, push = cell('push').s, lk = cell('lock').s, dr = cell('lock_drain').s;
-  const best = ST.reduce((a, s) => cell(s).s.avoidable_cost_usd[0] < cell(a).s.avoidable_cost_usd[0] ? s : a, ST[0]);
+  const p = cell('plan').s, push = cell('push').s, lk = cell('lock').s, dr = cell('lock_drain').s, bd = cell('lock_binding').s;
+  const bestBy = (k) => ST.reduce((a, x) => (cell(x).s[k][0] < cell(a).s[k][0] ? x : a), ST[0]);
+  const bB = bestBy('avoidable_cost_usd'), bS = bestBy('system_cost_usd');
   R.$('#insight').innerHTML = `
-    <p><b>Lowest avoidable cost with these settings: ${D.strategies[best]}.</b></p>
-    <p>Pushing sell-in before launch adds ${R.usd(push.price_protection_usd[0] - p.price_protection_usd[0])} of price protection, but most of it is a shift: the same units would otherwise be sold in after launch at the lower price. Its real cost is the leftover that comes back from dealers (${R.usd(push.avoidable_cost_usd[0] - p.avoidable_cost_usd[0])} more avoidable cost than the plan).</p>
-    <p>The dealer lock cuts excess finished goods from ${R.num(p.excess_units[0])} to ${R.num(lk.excess_units[0])} units, because builds follow what dealers actually sell. Most material for those builds is already ordered, so part of the cut reappears as EOL MWD (${R.usd(p.mwd_usd[0])} → ${R.usd(lk.mwd_usd[0])}), and lost sales rise from ${R.num(p.lost_units[0])} to ${R.num(lk.lost_units[0])} units. Draining the channel on top mainly moves the protection bill (${R.usd(lk.price_protection_usd[0])} → ${R.usd(dr.price_protection_usd[0])}) from the channel to MGI.</p>
-    <p>Here the lock is modelled as information only. If the locked volume binds the dealer (open question Q23), dealer leftovers stop coming back and the lock's value goes up.</p>`;
+    <p><b>Cheapest for the brand: ${SHORT[bB]}. Cheapest for brand and dealers together: ${SHORT[bS]}.</b> ${bB !== bS ? 'Once units are sold in, dealers carry most of the leftover risk (R30), so pushing stock into the channel looks better from the brand side than it is for the chain.' : ''}</p>
+    <p>Pushing sell-in adds ${R.usd(push.price_protection_usd[0] - p.price_protection_usd[0])} of price protection and leaves ${R.num(push.dealer_kept_units[0])} units with dealers (their loss ${R.usd(push.dealer_loss_usd[0])}), against ${R.num(p.dealer_kept_units[0])} under the plan. Stock rotation brings back only ${R.num(push.returned_units[0])}; the cap is 10% of their last-quarter purchases.</p>
+    <p>The dealer lock cuts excess finished goods from ${R.num(p.excess_units[0])} to ${R.num(lk.excess_units[0])} units, but most material for the cut builds is already ordered, so EOL MWD rises (${R.usd(p.mwd_usd[0])} → ${R.usd(lk.mwd_usd[0])}) and lost sales rise (${R.num(p.lost_units[0])} → ${R.num(lk.lost_units[0])}). If dealers must take the full locked volume, the brand's excess falls to ${R.num(bd.excess_units[0])} units and ${R.num(bd.dealer_kept_units[0])} more sit with dealers (open question Q24). Draining the channel mainly moves the protection bill (${R.usd(lk.price_protection_usd[0])} → ${R.usd(dr.price_protection_usd[0])}).</p>`;
 }
 
 function draw() {
@@ -242,6 +251,7 @@ function draw() {
   kpis(); regionTable(); insight();
   [cStack, cTrade, cWeek, cMix, cFtz].forEach(R.update);
   R.$('#h-week').textContent = `${D.strategies[S.s]} · mean units per week (flows) and on hand (stock), both models, all regions`;
+  R.$('#h-stack').textContent = S.v === 'brand' ? 'Avoidable cost to the brand' : 'Avoidable cost, brand + dealers';
 }
 archTable();
 draw();

@@ -16,14 +16,17 @@ Flow:  factory -> MGI (regional DC after customs) -> dealer channel -> end custo
   launch      The successor launches; the old model's net price steps down (R26). Units the
               dealers hold get price protection (R27); MGI units sold in afterwards are
               invoiced at the lower price. The old model keeps selling until EOL, tapering.
-  EOL         Dealer leftovers come back (stock rotation, OPEN - Q23) and join MGI leftovers
-              as excess. Excess is re-inspected (R26) and sent down paths 2-6 of R11 by net
+  end         Dealer leftovers come back through stock rotation, capped at a share of the
+              dealer's last-quarter purchases; the rest the dealer clears itself (R30). Once
+              sold in, most of the risk has left the brand. Returns join MGI leftovers as
+              excess. Excess is re-inspected (R26) and sent down paths 2-6 of R11 by net
               recovery per unit, within capacity: divert, rework, tear down, liquidate, scrap.
   customs     Post-customs MGI: duty was paid on entry; exported or destroyed units get back
               only drawback_share of it. FTZ: duty is paid only on units that enter domestic
               commerce (R25).
 
-Strategies:  push · plan (no lock) · lock · lock + drain. Common random numbers: every
+Strategies:  push · plan (no lock) · lock · lock + drain · binding lock (dealers must take
+the volume they committed at the lock; open question Q24). Common random numbers: every
 strategy sees the same demand draws, so differences come from the decision, not the dice.
 
 Run:  python3 src/finished_goods.py
@@ -45,6 +48,8 @@ STRATEGIES = {
     "plan": dict(lock=False, cover="normal", label="Sales plan, no lock"),
     "lock": dict(lock=True, cover="normal", label="Dealer lock (R28)"),
     "lock_drain": dict(lock=True, cover="drain", label="Dealer lock + drain channel"),
+    "lock_binding": dict(lock=True, cover="normal", binding=True,
+                         label="Dealer lock, volume binding (Q24)"),
 }
 PATHS = ["divert", "rework", "teardown", "liquidate", "scrap"]
 
@@ -156,7 +161,9 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs):
         kit[b] = f(b + T + C)                   # ordered before the start (inside liability)
     bank = 0.0
     c = dict(lost=0.0, sold_pre=0.0, sold_post=0.0, sell_in_pre=0.0, sell_in_post=0.0,
-             chan_launch=0.0, builds=0.0, kits=sum(kit[:L]), fc_peak=bias)
+             chan_launch=0.0, builds=0.0, kits=sum(kit[:L]), fc_peak=bias, trued_up=0.0)
+    sell_in = [0.0] * n
+    committed = None                            # dealer purchase commitment at the lock
     for w in range(n):
         seen = range(max(0, w - 4), w)
         r = sum(A[i] for i in seen) / max(1e-9, sum(S[i] for i in seen)) if w >= 4 else 1.0
@@ -167,6 +174,9 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs):
             mult = r_d * (1 + P["dealer_bias"])
             for i in range(w, n):
                 fc[i] = min(fc[i], S[i] * mult)
+            # what dealers agree to buy from now on: expected sell-through minus their stock
+            committed = max(0.0, sum(fc[w:]) - chan)
+            taken_from = w
         elif not locked:                        # sales chases upside, never cuts below plan
             mult = bias * (1 + P["sales_chase"] * max(0.0, r - 1))
             c["fc_peak"] = max(c["fc_peak"], mult)
@@ -207,11 +217,21 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs):
         ship = min(mgi, max(0.0, cover - chan))
         mgi -= ship
         chan += ship
+        if cfg.get("binding") and committed is not None and w == n - 1:
+            # take-or-pay: at the end dealers take the rest of what they committed (Q24)
+            due = max(0.0, committed - sum(sell_in[taken_from:w]) - ship)
+            extra = min(mgi, due)
+            mgi -= extra
+            chan += extra
+            ship += extra
+            c["trued_up"] = extra
+        sell_in[w] = ship
         c["sell_in_pre" if w < launch else "sell_in_post"] += ship
         for key, val in (("demand", A[w]), ("forecast", fc[w]), ("sold", s), ("lost", A[w] - s),
                          ("builds", build), ("arrivals", pipe[w]), ("sell_in", ship),
                          ("mgi", mgi), ("channel", chan), ("kits", bank)):
             traj[key][w] += val / runs
+    c["rotation_base"] = sum(sell_in[max(0, n - int(P["stock_rotation_window_weeks"])):])
     return mgi + sum(pipe[n:]), chan, bank, c
 
 
@@ -270,7 +290,11 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
                 t_lock = int(im["eol"] - P["lock_lead_weeks"] + spread)
                 mgi_left, chan_left, kits_left, c = _region_run(
                     S, A, P, cfg, launch, im["eol"], liability, t_lock, traj, runs)
-                returned = chan_left * P["channel_leftover_brand_share"]
+                # R30: dealer leftovers come back through stock rotation (capped by the
+                # dealer's recent purchases); the rest the dealer clears on its own
+                returned = min(chan_left, P["stock_rotation_cap"] * c["rotation_base"])
+                kept = chan_left - returned
+                dealer_loss = kept * price * (1 - P["launch_drop_pct"]) * (1 - P["dealer_clearance_recovery"])
                 excess = mgi_left + returned
                 loss, mix, sunk = disposition(excess, price, cost, duty_unit, ftz, P,
                                               im["rw"], im["td"], im["lq"])
@@ -286,12 +310,15 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
                     "sell_in_pre_launch_units": c["sell_in_pre"],
                     "channel_at_launch_units": c["chan_launch"],
                     "excess_units": excess, "returned_units": returned, "lost_units": c["lost"],
+                    "dealer_kept_units": kept, "dealer_loss_usd": dealer_loss,
+                    "trued_up_units": c["trued_up"],
                     "mwd_kits": kits_left,
                     "price_protection_usd": prot, "launch_markdown_usd": markdown,
                     "markdown_floor_usd": floor, "markdown_above_floor_usd": markdown - floor,
                     "excess_loss_usd": loss, "mwd_usd": mwd,
                     "lost_margin_usd": lost_margin, "duty_sunk_usd": sunk,
                     "avoidable_cost_usd": (markdown - floor) + loss + mwd + lost_margin,
+                    "system_cost_usd": (markdown - floor) + loss + mwd + lost_margin + dealer_loss,
                 }
                 for p_ in PATHS:
                     row["mix_" + p_] = mix.get(p_, 0.0)
@@ -337,9 +364,9 @@ def archetype_table(overrides=None):
 
 def main():
     show = ["demand_units", "kits_ordered", "builds_units", "sell_in_pre_launch_units", "channel_at_launch_units",
-            "excess_units", "mwd_kits", "lost_units", "price_protection_usd",
-            "markdown_above_floor_usd", "excess_loss_usd", "mwd_usd", "lost_margin_usd",
-            "duty_sunk_usd", "avoidable_cost_usd"]
+            "excess_units", "returned_units", "dealer_kept_units", "mwd_kits", "lost_units",
+            "price_protection_usd", "markdown_above_floor_usd", "excess_loss_usd", "mwd_usd",
+            "lost_margin_usd", "duty_sunk_usd", "avoidable_cost_usd", "dealer_loss_usd", "system_cost_usd"]
     cases = [(s, {}) for s in STRATEGIES] + [
         ("lock", dict(duty_override={"US": 0.25})),
         ("lock", dict(duty_override={"US": 0.25}, ftz=True)),
