@@ -44,6 +44,11 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   BU absorbs it or resells through other GEOs (R31).
 - Q24: lock accuracy varies by GEO and salesperson, high or low → modelled as a ±10% spread
   between GEOs; new chart of cost against lock accuracy.
+- Q25: locked is locked — material is ordered at the lock, nothing moves afterwards, a cut at the
+  lock stands. The lock is now a frozen build plan with a final material buy; the no-lock
+  strategies became benchmarks.
+- Q26: the hedge at the lock is set by IBP from sales history and can be negative (R32) → new
+  strategy "lock + IBP hedge".
 - **Module 4 `src/finished_goods.py`** (Roadmap A1): weekly Monte Carlo of two old models in five
   MGI regions — order-up-to builds limited by material ordered 16 weeks ahead, dealer cover,
   sales volume lock, price protection at launch, excess disposition by net recovery, post-customs vs
@@ -57,15 +62,17 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   those units would otherwise be invoiced after launch at the lower price. It is the cheapest
   strategy for the brand, because dealers keep most leftovers beyond the stock-rotation cap (R30).
   Counted with the dealers' loss, the plain sales plan wins.
-- The sales lock cuts the BU's excess finished goods sharply, but most material for the cut builds
-  is already ordered, so EOL MWD and lost sales rise. Because the lock can only cut, a GEO that
-  locks low is expensive and one that locks high changes nothing; in this model the lock never
-  beats the plain plan. Once a kit is bought, building it and reselling through another GEO loses
-  less than leaving it as MWD. The lock's value hinges on whether it still sets the last material
-  buy (Q25).
+- A frozen lock costs more than a plan that keeps adjusting to the end: GEOs that lock high keep
+  excess units, GEOs that lock low lose sales, and nothing is rebalanced until the end. The
+  no-lock plan is only a benchmark (component end-of-life forces a final buy); the gap is what
+  better lock accuracy or a hedge could recover.
+- Lean high, not low: a low lock strands material already ordered and loses sales; a high lock
+  leaves finished units that other GEOs can still take.
+- An IBP hedge learned from sales history recovers part of the lock's cost, mostly by trimming
+  GEOs that habitually lock high.
 - Rework pays for gaming and consumer lines and not for education or convertibles, matching R11.
 
 ## Next
-- Q25: when sales locks, is the material for the last builds still unordered?
+- Q27: what is the BU's FY shipment target counted in? (opens Module 5, demand and KPI view)
 - Roadmap A2, Module 5: demand and KPI view (tariff → price → units → FY shipment gap; BU vs
   company view).

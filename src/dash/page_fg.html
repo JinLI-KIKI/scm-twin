@@ -9,7 +9,7 @@
     <div>
       <p class="eyebrow">Module 4 · finished goods at MGI and in the channel</p>
       <h1>Old Stock at Successor Launch</h1>
-      <p class="sub">What happens to an old laptop model's finished units when its successor reaches the market: the price-protection bill, units left with the brand or with dealers, material left over (MWD) and sales lost, under five ways of running the last months.</p>
+      <p class="sub">What happens to an old laptop model's finished units when its successor reaches the market: the price-protection bill, units left with the brand or with dealers, material left over (MWD) and sales lost, under six ways of running the last months.</p>
     </div>
     <div class="asof">Model run __TODAY__ · 200 Monte Carlo runs per cell</div>
   </div>
@@ -66,7 +66,7 @@
     <p><b>How it is computed.</b> Two old models (P1-14, P1-16) sell through five MGI regions. Builds follow the sales forecast through an order-up-to rule and need material kits ordered 16 weeks ahead (the liability window); the MGI refills dealers to a forward cover. The successor reaches the market in week <span id="n-launch"></span>; the old model's last build is week <span id="n-eol"></span> (EOL, R29). Units held by dealers at launch get price protection (R27). At the end, MGI stock and dealer leftovers go down the disposition paths; unused kits of platform-only parts are counted as MWD.</p>
     <p><b>Avoidable cost</b> = price protection and post-launch markdown above the unavoidable floor (units that only sell after launch) + loss on excess finished goods (landed cost minus recovery, re-inspection, carrying, return handling) + EOL MWD + half the margin on lost sales (the other half is assumed to buy the successor).</p>
     <p><b>Dealer leftovers (R30).</b> What dealers still hold at the end comes back through stock rotation up to 10% of their last-quarter purchases, against a new order; the rest the dealer clears itself. Once sold in, most of the risk has left the brand, so the brand view and the brand + dealer view can pick different strategies. Lost goodwill and smaller future orders from dealers left with stock are not modelled.</p>
-    <p><b>Sales lock (R28, R31).</b> About 22 weeks before EOL (virtualized; ±2 weeks by region) the brand's sales team, after talking with dealers, locks the remaining volume; forecasts can only fall after that. The lock is the brand's commitment, not the dealers'. Sales must sell it; what is left the BU either absorbs or resells through other GEOs, shown here as the first two disposition paths. Each GEO and salesperson locks high or low in their own way (Q24), modelled as a ±10% spread between GEOs.</p>
+    <p><b>Sales lock (R28, R31).</b> About 22 weeks before EOL (virtualized; ±2 weeks by region) the brand's sales team, after talking with dealers, locks the remaining volume. The lock is the brand's commitment, not the dealers'. Sales must sell it; what is left the BU either absorbs or resells through other GEOs, shown here as the first two disposition paths. Each GEO and salesperson locks high or low in their own way (Q24), modelled as a ±10% spread between GEOs. Locked is locked (Q25): at the lock the remaining builds are frozen and their material is ordered; material already committed beyond the locked need becomes MWD. The two no-lock strategies are benchmarks that keep adjusting to the end. With the IBP hedge (R32), supply follows the locked volume times one plus a hedge that IBP sets from each GEO's sales history; it corrects about 60% of a GEO's habit (placeholder) and can be negative.</p>
     <p><b>Status.</b> Lock timing and the rules are practitioner input, virtualized. All other numbers are placeholders; see <a href="rules.html">Rules register</a> and <code>data/fg_params.csv</code>. Drawback rules: <a href="https://gingercontrol.com/resources/duty-drawback">GingerControl drawback matrix</a>.</p>
   </footer>
 </main>
@@ -74,8 +74,8 @@
 <script>
 const D = /*__DATA__*/null;
 const ST = Object.keys(D.strategies);
-const SHORT = { push: 'Push sell-in', plan: 'Sales plan', lock: 'Sales lock', lock_drain: 'Lock + drain', lock_push: 'Lock + push' };
-const SCOL = { push: 1, plan: 6, lock: 0, lock_drain: 2, lock_push: 3 };
+const SHORT = { push: 'Push, no lock', plan: 'Plan, no lock', lock: 'Sales lock', lock_drain: 'Lock + drain', lock_push: 'Lock + push', lock_ibp: 'Lock + IBP hedge' };
+const SCOL = { push: 1, plan: 6, lock: 0, lock_drain: 2, lock_push: 3, lock_ibp: 5 };
 const CUST = { base: 'Current duties', us25_post: 'US 25% · post-customs MGI', us25_ftz: 'US 25% · FTZ MGI' };
 const saved = R.load();
 const S = {
@@ -153,7 +153,7 @@ const cTrade = R.chart('c-trade', (t) => {
   const o = R.base(t);
   const pts = ST.map((s, i) => {
     const x = cell(s).s;
-    return { name: SHORT[s], value: [x.lost_units[0], x.excess_units[0] + x.mwd_kits[0]], s, label: { position: { push: 'right', plan: 'top', lock: 'left', lock_drain: 'top', lock_push: 'bottom' }[s] || 'top' },
+    return { name: SHORT[s], value: [x.lost_units[0], x.excess_units[0] + x.mwd_kits[0]], s, label: { position: { push: 'right', plan: 'top', lock: 'left', lock_drain: 'top', lock_push: 'bottom', lock_ibp: 'right' }[s] || 'top' },
       itemStyle: { color: t.c[SCOL[s] ?? 0], opacity: s === S.s ? 1 : .55, borderColor: s === S.s ? t.ink : 'transparent', borderWidth: 2 } };
   });
   return {
@@ -169,7 +169,7 @@ const cTrade = R.chart('c-trade', (t) => {
 cTrade.inst && cTrade.inst.on('click', (p) => { S.s = p.data.s; segS.set(S.s); draw(); });
 
 const cWeek = R.chart('c-week', (t) => {
-  const o = R.base(t), x = cell().t, n = M.horizon;
+  const o = R.base(t), x = D.traj[`${S.s}|${S.b.toFixed(2)}|${S.l}`], n = M.horizon;
   const weeks = Array.from({ length: n }, (_, i) => 'W' + i);
   const lockLo = M.lock_week - 2, lockHi = M.lock_week + 2;
   const marks = [
@@ -226,7 +226,7 @@ const cCurve = R.chart('c-curve', (t) => {
     xAxis: R.axis(t, { type: 'category', data: xs.map((x) => (x > 0 ? '+' : '') + Math.round(x * 100) + '%'), boundaryGap: false, splitLine: { show: false },
       name: 'Locked volume vs true run rate (every GEO the same)', nameLocation: 'middle', nameGap: 26 }),
     yAxis: R.axis(t, { type: 'value', scale: true, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
-    series: [line('lock', SCOL.lock), line('lock_drain', SCOL.lock_drain), line('lock_push', SCOL.lock_push), flat('plan', SCOL.plan), flat('push', SCOL.push)],
+    series: [line('lock', SCOL.lock), line('lock_ibp', SCOL.lock_ibp), line('lock_drain', SCOL.lock_drain), line('lock_push', SCOL.lock_push), flat('plan', SCOL.plan), flat('push', SCOL.push)],
   };
 });
 
@@ -263,14 +263,17 @@ function archTable() {
 }
 
 function insight() {
-  const p = cell('plan').s, push = cell('push').s, lk = cell('lock').s, dr = cell('lock_drain').s, bd = cell('lock_push').s;
-  const bestBy = (k) => ST.reduce((a, x) => (cell(x).s[k][0] < cell(a).s[k][0] ? x : a), ST[0]);
+  const p = cell('plan').s, push = cell('push').s, lk = cell('lock').s, dr = cell('lock_drain').s, lp = cell('lock_push').s, ib = cell('lock_ibp').s;
+  const locks = ['lock', 'lock_drain', 'lock_push', 'lock_ibp'];
+  const bestBy = (k) => locks.reduce((a, x) => (cell(x).s[k][0] < cell(a).s[k][0] ? x : a), locks[0]);
   const bB = bestBy('avoidable_cost_usd'), bS = bestBy('system_cost_usd');
+  const cv = D.curve.lock, lo = cv['-0.10'].avoidable_cost_usd, mid = cv['0.00'].avoidable_cost_usd, hi = cv['0.10'].avoidable_cost_usd;
   R.$('#insight').innerHTML = `
-    <p><b>Cheapest for the brand: ${SHORT[bB]}. Cheapest for brand and dealers together: ${SHORT[bS]}.</b> ${bB !== bS ? 'Once units are sold in, dealers carry most of the leftover risk (R30), so pushing stock into the channel looks better from the brand side than it is for the chain.' : ''}</p>
-    <p>Pushing sell-in adds ${R.usd(push.price_protection_usd[0] - p.price_protection_usd[0])} of price protection and leaves ${R.num(push.dealer_kept_units[0])} units with dealers (their loss ${R.usd(push.dealer_loss_usd[0])}), against ${R.num(p.dealer_kept_units[0])} under the plan. Stock rotation brings back only ${R.num(push.returned_units[0])}; the cap is 10% of their last-quarter purchases.</p>
-    <p>The sales lock cuts the BU's excess finished goods from ${R.num(p.excess_units[0])} to ${R.num(lk.excess_units[0])} units, but most material for the cut builds is already ordered, so EOL MWD rises (${R.usd(p.mwd_usd[0])} → ${R.usd(lk.mwd_usd[0])}) and lost sales rise (${R.num(p.lost_units[0])} → ${R.num(lk.lost_units[0])}). Locking and then pushing the rest into the channel leaves the BU ${R.num(bd.excess_units[0])} units and dealers ${R.num(bd.dealer_kept_units[0])}. Draining the channel mainly moves the protection bill (${R.usd(lk.price_protection_usd[0])} → ${R.usd(dr.price_protection_usd[0])}).</p>
-    <p>Each GEO's sales team locks in its own way (Q24), modelled as a ±10% spread between GEOs around the average chosen above. The lock can only cut, so a GEO that locks low strands material already bought and loses sales, while one that locks high changes nothing. Here the lock never beats the plain plan: once the kit is bought, building the laptop and reselling it through another GEO loses less than leaving the kit as MWD. Whether the lock still sets the last material buy is the next question (Q25).</p>`;
+    <p><b>Among the lock strategies, cheapest for the brand: ${SHORT[bB]}; for brand and dealers together: ${SHORT[bS]}.</b> Locked is locked (Q25): once sales locks, the remaining builds and their material are fixed, so the plan can no longer follow demand.</p>
+    <p>That rigidity is the main cost. Against the no-lock benchmark, which keeps adjusting to the end, the lock costs ${R.usd(lk.avoidable_cost_usd[0] - p.avoidable_cost_usd[0])} more: some GEOs lock too high and keep ${R.num(lk.excess_units[0])} excess units, others too low and lose ${R.num(lk.lost_units[0])} units of sales, and nothing is moved between GEOs until the end. The benchmark is not a real option, because suppliers end-of-life their parts and force a final buy; read the gap as what better lock accuracy or a hedge could recover.</p>
+    <p><b>Lean high, not low.</b> If every GEO locked 10% low the brand would pay about ${R.usd(lo)}; 10% high, ${R.usd(hi)}; about right, ${R.usd(mid)}. A low lock strands material already ordered (a cut at the lock becomes MWD) and loses sales; a high lock leaves finished units that other GEOs can still buy (R31).</p>
+    <p><b>The IBP hedge (R32)</b> sizes supply off each GEO's sales history, so it can be negative where sales habitually lock high. It brings the lock from ${R.usd(lk.avoidable_cost_usd[0])} to ${R.usd(ib.avoidable_cost_usd[0])} here, mostly by trimming the GEOs that lock high; on the accuracy chart it flattens the right-hand side.</p>
+    <p>Pushing into the channel moves units to dealers: ${R.num(lp.dealer_kept_units[0])} stay with them under lock + push. Draining moves the protection bill from the channel to MGI (${R.usd(lk.price_protection_usd[0])} → ${R.usd(dr.price_protection_usd[0])}).</p>`;
 }
 
 function draw() {

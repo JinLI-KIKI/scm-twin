@@ -186,12 +186,15 @@ def _fg_cell(args):
     cell = {
         "s": {k: [rnd(v["mean"]), rnd(v["p10"]), rnd(v["p90"])] for k, v in res["summary"].items()
               if k in FG_SUMMARY},
-        "t": {k: [rnd(x) for x in res["traj"][k]] for k in FG_TRAJ},
         "r": {r: {k: rnd(v.get(k, 0)) for k in FG_REGION} for r, v in res["by_region"].items()},
     }
     meta = {k: res[k] for k in ("launch_week", "eol_week", "lock_week", "horizon",
                                 "liability_weeks", "landed_cost", "kit_mwd_value")}
-    return f"{s}|{d:.2f}|{b:.2f}|{ck}|{ls}", cell, meta
+    # flows do not depend on the price drop or customs status: keep one trajectory per
+    # strategy, sales optimism and lock style
+    traj = ({k: [rnd(x) for x in res["traj"][k]] for k in FG_TRAJ}
+            if abs(d - 0.15) < 1e-9 and ck == "base" else None)
+    return f"{s}|{d:.2f}|{b:.2f}|{ck}|{ls}", cell, meta, (f"{s}|{b:.2f}|{ls}", traj)
 
 
 def _fg_curve(args):
@@ -205,10 +208,12 @@ def _fg_curve(args):
 def data_fg(pool):
     args = [(s, d, b, ck, ls) for s in FG.STRATEGIES for d in FG_DROPS for b in FG_BIAS
             for ck in FG_CUSTOMS for ls in FG_LOCKSTYLE]
-    cells, meta = {}, None
-    for key, cell, m in pool.map(_fg_cell, args):
+    cells, meta, trajs = {}, None, {}
+    for key, cell, m, (tkey, traj) in pool.map(_fg_cell, args):
         cells[key] = cell
         meta = m
+        if traj is not None:
+            trajs[tkey] = traj
     curve = {}
     for s, lb, v in pool.map(_fg_curve, [(s, lb) for s in FG.STRATEGIES for lb in
                                           (FG_CURVE if FG.STRATEGIES[s]["lock"] else [0.0])]):
@@ -217,7 +222,7 @@ def data_fg(pool):
     return {"strategies": {k: v["label"] for k, v in FG.STRATEGIES.items()},
             "drops": FG_DROPS, "biases": FG_BIAS, "customs": list(FG_CUSTOMS),
             "lockstyles": FG_LOCKSTYLE, "curve": curve, "curve_x": FG_CURVE,
-            "lock_bias_sd": P["lock_bias_sd"], "cells": cells, "meta": meta,
+            "lock_bias_sd": P["lock_bias_sd"], "cells": cells, "traj": trajs, "meta": meta,
             "archetypes": [{**r, "nets": {k: rnd(v) for k, v in r["nets"].items()}}
                            for r in FG.archetype_table()],
             "models": [{"model": m, **{k: v for k, v in r.items() if k != "model"}}

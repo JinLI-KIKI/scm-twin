@@ -8,10 +8,11 @@ Flow:  factory -> MGI (regional DC after customs) -> dealer channel -> end custo
   lock (R28)  About 22 weeks before EOL (virtualized) the brand's sales team, after talking
               with dealers, locks the old model's remaining volume. The number reads recent
               sell-through, so it carries the true demand level, plus each GEO's own bias:
-              some sales teams lock high, some low (Q24; drawn per region and run). After
-              the lock, forecasts can only go down: builds still to be started are cut to the
-              locked volume, never raised. The lock is the brand's commitment, not the
-              dealers': sales must sell it (R31).
+              some sales teams lock high, some low (Q24; drawn per region and run). Locked is
+              locked (Q25): the builds still needed are frozen, their material is ordered at
+              once (final buy), and nothing moves afterwards, up or down. Kits already
+              committed beyond the locked need become MWD. The lock is the brand's
+              commitment, not the dealers': sales must sell it (R31).
   channel     The MGI replenishes dealers to a forward cover (weeks of forecast). Two
               variants before launch: drain (low cover) and push (high cover, to hit a
               sell-in target).
@@ -29,8 +30,11 @@ Flow:  factory -> MGI (regional DC after customs) -> dealer channel -> end custo
               only drawback_share of it. FTZ: duty is paid only on units that enter domestic
               commerce (R25).
 
-Strategies:  push · plan (no lock) · sales lock · lock + drain · lock + push (sales locks,
-then pushes what is left into the channel before launch). Common random numbers: every
+Strategies:  sales lock · lock + drain · lock + push (sales locks, then pushes stock into the
+channel before launch) · lock + IBP hedge (supply follows the locked volume times 1 + hedge,
+where IBP sets the hedge from each GEO's sales history, often negative; R32). Two no-lock benchmarks (push, plan) keep adjusting material and builds
+to the end; in practice component end-of-life forces a final buy, so they show what full
+flexibility would be worth rather than a real option. Common random numbers: every
 strategy sees the same demand draws, so differences come from the decision, not the dice.
 
 Run:  python3 src/finished_goods.py
@@ -48,11 +52,12 @@ DATA = os.path.join(ROOT, "data")
 MGI_OF = {"US": "US", "UK": "UK", "FR": "EU", "DE": "EU", "JP": "JP", "BR": "BR"}
 DUTY_COUNTRY = {"US": "USA", "EU": "EU", "UK": "GBR", "JP": "JPN", "BR": "BRA"}
 STRATEGIES = {
-    "push": dict(lock=False, cover="push", label="Push sell-in before launch"),
-    "plan": dict(lock=False, cover="normal", label="Sales plan, no lock"),
+    "push": dict(lock=False, cover="push", label="Push sell-in, no lock (benchmark)"),
+    "plan": dict(lock=False, cover="normal", label="Sales plan, no lock (benchmark)"),
     "lock": dict(lock=True, cover="normal", label="Sales volume lock (R28)"),
     "lock_drain": dict(lock=True, cover="drain", label="Sales lock + drain channel"),
     "lock_push": dict(lock=True, cover="push", label="Sales lock + push into channel"),
+    "lock_ibp": dict(lock=True, cover="normal", ibp=True, label="Sales lock + IBP hedge (R32)"),
 }
 PATHS = ["divert", "rework", "teardown", "liquidate", "scrap"]
 
@@ -137,7 +142,8 @@ def market_shape(m, launch, tail_weeks, horizon):
     return out
 
 
-def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs, lock_bias=0.0):
+def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs, lock_bias=0.0,
+                ibp_hedge=0.0):
     """Weekly loop for one model in one MGI region.
     S planned sell-through, A actual sell-through. Builds stop at EOL (last build week)."""
     n = len(S)
@@ -163,8 +169,11 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs, lock_b
     for b in range(min(L, eol)):
         kit[b] = f(b + T + C)                   # ordered before the start (inside liability)
     bank = 0.0
+    plan = None                                 # frozen build plan after the lock
+    backlog = 0.0
     c = dict(lost=0.0, sold_pre=0.0, sold_post=0.0, sell_in_pre=0.0, sell_in_post=0.0,
-             chan_launch=0.0, builds=0.0, kits=sum(kit[:L]), fc_peak=bias)
+             chan_launch=0.0, builds=0.0, kits=sum(kit[:L]), fc_peak=bias, final_buy=0.0,
+             cut_at_lock=0.0, hedge_units=0.0)
     sell_in = [0.0] * n
     for w in range(n):
         seen = range(max(0, w - 4), w)
@@ -175,7 +184,29 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs, lock_b
             r_d = sum(A[i] for i in hist) / max(1e-9, sum(S[i] for i in hist)) if w > 0 else 1.0
             mult = r_d * (1 + lock_bias)              # each GEO's sales style (Q24)
             for i in range(w, n):
-                fc[i] = min(fc[i], S[i] * mult)
+                fc[i] = S[i] * mult
+            # Q25: locked is locked. Builds still needed to deliver the locked volume are
+            # frozen, and all their material is ordered now (final buy). Kits already
+            # committed beyond that need stay unused: a cut at the lock becomes MWD.
+            in_flight = sum(pipe[w:w + T + 1])
+            need = max(0.0, sum(fc[w:]) - mgi - chan - in_flight)
+            if cfg.get("ibp"):                  # R32: IBP sizes supply off sales history
+                need *= max(0.0, 1 + ibp_hedge)
+                c["hedge_units"] = need * ibp_hedge / max(1e-9, 1 + ibp_hedge)
+            weeks = list(range(w, eol))
+            if weeks:
+                wt = [f(b + T + C) for b in weeks[:-1]]
+                wt.append(sum(fc[min(n, weeks[-1] + T + C):]))   # last build covers the rest
+                tot_w = sum(wt) or 1.0
+                plan = {b: need * x / tot_w for b, x in zip(weeks, wt)}
+            committed = bank + sum(kit[b] for b in range(w, min(eol, w + L)))
+            buy = max(0.0, need - committed)
+            later = [b for b in weeks if b >= w + L] or weeks[-1:]
+            for b in later:
+                kit[b] += buy / len(later)
+            c["final_buy"] = buy
+            c["cut_at_lock"] = max(0.0, committed - need)
+            c["kits"] += buy
         elif not locked:                        # sales chases upside, never cuts below plan
             mult = bias * (1 + P["sales_chase"] * max(0.0, r - 1))
             c["fc_peak"] = max(c["fc_peak"], mult)
@@ -183,7 +214,7 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs, lock_b
                 fc[i] = S[i] * mult
         # 1) material: order kits for build week w+L, netting projected surplus (MRP)
         b = w + L
-        if b < eol:
+        if b < eol and not locked:
             proj = bank + sum(kit[j] - f(j + T + C) for j in range(w, b))
             kit[b] = max(0.0, f(b + T + C) - max(0.0, proj))
             c["kits"] += kit[b]
@@ -192,7 +223,12 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs, lock_b
         if w < eol:
             bank += kit[w]
             position = mgi + chan + sum(pipe[w:w + T + 1])
-            build = min(bank, max(0.0, fwd(w, T + C) - position))
+            if plan is not None:                # after the lock builds follow the frozen plan;
+                backlog += plan.get(w, 0.0)     # anything short of kits is built later
+                build = min(bank, backlog)
+                backlog -= build
+            else:
+                build = min(bank, max(0.0, fwd(w, T + C) - position))
             bank -= build
             pipe[w + T] += build
             c["builds"] += build
@@ -268,6 +304,8 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
         tot = defaultdict(float)
         # Q24: every GEO's sales team locks high or low in its own way
         style = {g: rng.gauss(P["lock_bias"], P["lock_bias_sd"]) for g in regions}
+        # R32: IBP learns part of each GEO's habit from past models and hedges against it
+        hedge = {g: -P["ibp_learn"] * (style[g] - 0.0) + rng.gauss(0, P["ibp_noise_sd"]) for g in regions}
         for m, im in info_m.items():
             price, cost = im["price"], im["cost"]
             drop = price * P["launch_drop_pct"]
@@ -282,7 +320,8 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
                 A = [S[w] * level * noise[w] for w in range(horizon)]
                 t_lock = int(im["eol"] - P["lock_lead_weeks"] + spread)
                 mgi_left, chan_left, kits_left, c = _region_run(
-                    S, A, P, cfg, launch, im["eol"], liability, t_lock, traj, runs, style[region])
+                    S, A, P, cfg, launch, im["eol"], liability, t_lock, traj, runs, style[region],
+                    hedge[region])
                 # R30: dealer leftovers come back through stock rotation (capped by the
                 # dealer's recent purchases); the rest the dealer clears on its own
                 returned = min(chan_left, P["stock_rotation_cap"] * c["rotation_base"])
