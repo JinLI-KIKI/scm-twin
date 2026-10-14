@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Lanes and Lead Time</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
+<style>/* Layout: a BI-style report. Sticky page tabs on top; under them a header, a slicer bar,
+   a row of KPI cards, then a 12-column canvas of visual containers. One column on phones.
+   Tokens match the network atlas so every page reads as one product. */
+:root {
+  --paper: #f6f7f5; --panel: #fbfcfb; --ink: #14181c; --ink-2: #4a525a; --muted: #6f777e;
+  --rule: #d9dde0; --chip: #eceeec; --hl: #fff3c4;
+  --sea: #2a78d6; --air: #eb6834; --inland: #1baf7a;
+  --d0: #9d90e6; --d5: #7464d9; --d16: #4a3aa7;
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #7464d9; --c5: #c9940f; --c6: #c2417a; --c7: #8a939a;
+  --good: #16794c; --warn: #9a6408; --bad: #b8322a;
+  --good-bg: #e3f2ea; --warn-bg: #f7eedb; --bad-bg: #f8e4e1;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+    --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+    --sea: #3987e5; --air: #d95926; --inland: #199e70;
+    --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+    --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+    --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+    --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+  --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+  --sea: #3987e5; --air: #d95926; --inland: #199e70;
+  --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+  --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+  --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+  --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font: 14px/1.5 var(--f-body); margin: 0; }
+a { color: inherit; }
+
+.report { max-width: 1440px; margin: 0 auto; display: grid; gap: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 40px; }
+.report-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 6px 24px; }
+.report-head > div { min-width: 0; }
+.eyebrow { font: 500 12px var(--f-mono); color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin: 0 0 4px; }
+h1 { font: 600 34px/1.02 var(--f-display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--ink-2); margin: 6px 0 0; max-width: 78ch; }
+.asof { font: 12px var(--f-mono); color: var(--muted); text-align: right; }
+
+/* slicers */
+.slicers { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end;
+  padding: 10px 14px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+.slicer { display: grid; gap: 4px; min-width: 0; }
+.slicer > .s-label { font-size: 12px; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-body); color: var(--ink-2); background: transparent; border: 0;
+  padding: 5px 11px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button:hover { background: var(--chip); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.range { display: flex; align-items: center; gap: 10px; }
+.range input[type="range"] { width: min(260px, 60vw); accent-color: var(--sea); }
+.range output { font: 600 18px var(--f-display); min-width: 3.4em; font-variant-numeric: tabular-nums; }
+input[type="search"] { font: 13px var(--f-body); color: var(--ink); background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 5px 10px; width: min(280px, 70vw); }
+button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+
+/* KPI cards */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .k-value { font-size: 24px; } .kpi { padding: 8px 10px 10px; } }
+.kpi { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px 12px;
+  display: grid; gap: 2px; align-content: start; min-width: 0; }
+.k-label { font-size: 12px; color: var(--muted); }
+.k-value { font: 600 30px/1.08 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.k-sub { font: 12px/1.4 var(--f-mono); color: var(--ink-2); overflow-wrap: anywhere; }
+.k-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+/* canvas of visuals */
+.canvas { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+.viz { grid-column: span 6; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.viz.w3 { grid-column: span 3; } .viz.w4 { grid-column: span 4; } .viz.w5 { grid-column: span 5; }
+.viz.w7 { grid-column: span 7; } .viz.w8 { grid-column: span 8; } .viz.w12 { grid-column: span 12; }
+.viz-h { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.viz-h h2 { font: 600 15px/1.2 var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.hint { font-size: 12px; color: var(--muted); }
+.chart { width: 100%; height: 300px; min-width: 0; }
+.chart.short { height: 230px; } .chart.tall { height: 380px; } .chart.xtall { height: 460px; }
+.chart .nolib { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 13px; text-align: center; padding: 12px; }
+@media (max-width: 1180px) { .viz.w3, .viz.w4, .viz.w5 { grid-column: span 6; } .viz.w7, .viz.w8 { grid-column: span 12; } }
+@media (max-width: 860px) { .viz, .viz.w3, .viz.w4, .viz.w5, .viz.w7, .viz.w8 { grid-column: span 12; } h1 { font-size: 28px; } .asof { text-align: left; } }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; min-width: 0; }
+table.tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.tbl th { font: 500 11px var(--f-body); color: var(--muted); text-align: right; padding: 0 8px 6px; border-bottom: 1px solid var(--rule);
+  letter-spacing: .03em; white-space: nowrap; }
+.tbl td { padding: 7px 8px; border-bottom: 1px solid var(--rule); text-align: right; font: 13px var(--f-mono); vertical-align: top; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; padding-left: 0; }
+.tbl td.txt, .tbl th.txt { text-align: left; font-family: var(--f-body); }
+.tbl tr.sel td { background: var(--hl); }
+.tbl tr.click { cursor: pointer; }
+.tbl tr.click:hover td { background: var(--chip); }
+.tbl td small { display: block; font: 12px var(--f-body); color: var(--muted); }
+.bar-cell { position: relative; }
+.bar-cell i { position: absolute; left: 0; top: 4px; bottom: 4px; background: var(--chip); border-radius: 2px; z-index: 0; }
+.bar-cell span { position: relative; z-index: 1; }
+
+/* chips and notes */
+.chip { display: inline-block; font: 500 11px/1.6 var(--f-body); padding: 0 7px; border-radius: 10px; white-space: nowrap;
+  border: 1px solid var(--rule); color: var(--ink-2); background: var(--paper); }
+.chip.good { color: var(--good); background: var(--good-bg); border-color: transparent; }
+.chip.warn { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.bad { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.prac { color: var(--c1); border-color: var(--c1); }
+.chip.web { color: var(--c3); border-color: var(--c3); }
+.chip.ph { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.open { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.ill, .chip.design { color: var(--muted); }
+.insight { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--ink-2);
+  background: var(--panel); display: grid; gap: 4px; }
+.insight b { color: var(--ink); font-weight: 600; }
+.insight p { margin: 0; }
+.notes { font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.notes p { margin: 0; max-width: 100ch; }
+.notes a, .tbl a, .insight a { color: var(--ink-2); overflow-wrap: anywhere; }
+code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border-radius: 3px; }
+.legend-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.sw { width: 12px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+
+/* Top navigation shared by every page, including the atlas. Uses the page's own tokens. */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1200; display: flex; align-items: stretch; gap: 14px;
+  height: 46px; background: var(--panel); border-bottom: 1px solid var(--rule); box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topbar .brand { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; flex: none;
+  font: 500 13px var(--f-mono); }
+.topbar .brand-mark { width: 12px; height: 12px; background: var(--ink); border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--ink); box-sizing: border-box; }
+.topbar .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
+.topbar .tabs::-webkit-scrollbar { display: none; }
+.topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
+  font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
+.topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
+.topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }
+.topbar .repo:hover { color: var(--ink); }
+@media (max-width: 560px) { .topbar .repo { display: none; } .topbar .brand-name { display: none; } }
+</style>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
+  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html">Overview</a><a class="tab" href="atlas.html">Network atlas</a><a class="tab" href="lanes.html" aria-current="page">Lanes & lead time</a><a class="tab" href="mwd.html">MWD</a><a class="tab" href="transfer.html">Transfer timing</a><a class="tab" href="business-case.html">Business case</a><a class="tab" href="finished-goods.html">Finished goods</a><a class="tab" href="rules.html">Rules register</a></nav>
+  <a class="repo" href="https://github.com/jinli-kiki/scm-twin">GitHub</a>
+</header>
+<script>(function(){var a=document.querySelector(".topbar .tab[aria-current]");if(a){var n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.clientWidth)/2;}})();</script>
+
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Network · door to MGI</p>
+      <h1>Lanes and Lead Time</h1>
+      <p class="sub">Days from the factory door to each regional distribution centre (MGI), step by step, with the import duty each market charges. Lane geometry and distances come from the <a href="atlas.html">Network atlas</a>.</p>
+    </div>
+    <div class="asof">Built 2026-10-14 · every handling time is a placeholder</div>
+  </div>
+
+  <section class="slicers" aria-label="Filters">
+    <div class="slicer"><span class="s-label" id="l-o">Ship from</span><div class="seg" role="group" aria-labelledby="l-o" id="f-o"></div></div>
+    <div class="slicer"><span class="s-label" id="l-m">Mode</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
+    <div class="slicer"><span class="s-label" id="l-v">Asia–Europe ocean routing</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-live="polite"></section>
+
+  <section class="canvas">
+    <div class="viz w7">
+      <div class="viz-h"><h2>Door to MGI, step by step</h2><span class="hint" id="h-steps"></span></div>
+      <div id="c-steps" class="chart"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>China vs Indonesia, days</h2><span class="hint" id="h-cmp"></span></div>
+      <div id="c-cmp" class="chart"></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Lane ledger</h2><span class="hint">Both origins · demand share from the locale mix</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-lanes"></table></div>
+    </div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Lead time against import duty</h2><span class="hint">Ocean · bubble size = demand share</span></div>
+      <div id="c-scatter" class="chart"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Parts feed into Indonesia</h2><span class="hint">China supply base to the new site · same step colours</span></div>
+      <div id="c-feed" class="chart short"></div>
+      <p class="hint" style="margin:0">Most parts still come from China after a transfer. This leg is why the new site's lead time grows by about four weeks (R17).</p>
+    </div>
+  </section>
+
+  <section class="insight" id="insight"></section>
+
+  <footer class="notes">
+    <p><b>How it is computed.</b> Ocean distance from the open-source <code>searoute</code> network at 15 knots plus 4 days for intermediate calls; the Cape option closes Suez and Bab-el-Mandeb, which most Asia–Europe services still avoid in 2026. Air legs are great circles; Brazil air goes via Frankfurt. Truck legs follow the Natural Earth road network. Handling days per step are in <code>data/leadtime_params.csv</code> (all placeholders).</p>
+    <p><b>Duty.</b> Import duty on laptops by market from <code>data/tariffs.csv</code>: EU, UK and Japan zero under the WTO Information Technology Agreement (to verify); Brazil 16% plus IPI. US laptops are exempt from the 2026 Section 301 action; a Section 232 semiconductor phase 2 could still reach them.</p>
+  </footer>
+</main>
+<script>/* Shared helpers for the report pages: theme-aware ECharts, number formats, slicers. */
+const R = (() => {
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const theme = () => ({
+    ink: css('--ink'), ink2: css('--ink-2'), muted: css('--muted'), rule: css('--rule'),
+    panel: css('--panel'), paper: css('--paper'), chip: css('--chip'), hl: css('--hl'),
+    c: [1, 2, 3, 4, 5, 6, 7].map((i) => css('--c' + i)),
+    sea: css('--sea'), air: css('--air'), inland: css('--inland'),
+    d0: css('--d0'), d5: css('--d5'), d16: css('--d16'),
+    good: css('--good'), warn: css('--warn'), bad: css('--bad'),
+    fBody: css('--f-body'), fMono: css('--f-mono'), fDisp: css('--f-display'),
+  });
+
+  // ---------- numbers
+  const usd = (v, d) => {
+    if (v == null || isNaN(v)) return '–';
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e9) return s + '$' + (a / 1e9).toFixed(d ?? 2) + 'B';
+    if (a >= 1e6) return s + '$' + (a / 1e6).toFixed(d ?? 2) + 'M';
+    if (a >= 1e3) return s + '$' + (a / 1e3).toFixed(d ?? 0) + 'k';
+    return s + '$' + a.toFixed(0);
+  };
+  const num = (v, d = 0) => (v == null || isNaN(v)) ? '–' :
+    (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+  const kunits = (v) => Math.abs(v) >= 1e3 ? num(v / 1e3, 1) + 'k' : num(v);
+  const pct = (v, d = 0) => (v == null || isNaN(v)) ? '–' : (v * 100).toFixed(d) + '%';
+  const axUsd = (v) => usd(v, Math.abs(v) >= 1e6 ? 1 : 0);
+
+  // ---------- charts
+  const charts = [];
+  const hasLib = () => typeof window.echarts !== 'undefined';
+  function base(t) {
+    return {
+      animationDuration: 280, animationDurationUpdate: 280,
+      textStyle: { fontFamily: t.fBody, color: t.ink2, fontSize: 12 },
+      tooltip: { trigger: 'axis', confine: true, backgroundColor: t.panel, borderColor: t.rule,
+        textStyle: { color: t.ink, fontFamily: t.fBody, fontSize: 12 }, axisPointer: { lineStyle: { color: t.muted }, shadowStyle: { color: t.chip, opacity: .6 } } },
+      legend: { top: 0, left: 0, type: 'scroll', icon: 'roundRect', itemWidth: 12, itemHeight: 8, itemGap: 14,
+        textStyle: { color: t.ink2, fontSize: 12 }, pageTextStyle: { color: t.ink2 }, pageIconColor: t.ink2, pageIconInactiveColor: t.rule },
+      grid: { left: 6, right: 18, top: 34, bottom: 6, containLabel: true },
+    };
+  }
+  function axis(t, o = {}) {
+    return Object.assign({
+      axisLine: { lineStyle: { color: t.rule } }, axisTick: { show: false },
+      axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true },
+      splitLine: { lineStyle: { color: t.rule, type: [3, 3] } },
+      nameTextStyle: { color: t.muted, fontSize: 11, fontFamily: t.fBody },
+    }, o);
+  }
+  function chart(id, build) {
+    const el = document.getElementById(id);
+    const c = { el, build, inst: null };
+    if (!el) return c;
+    if (!hasLib()) {
+      el.innerHTML = '<div class="nolib">The chart library did not load. The numbers in the cards and tables are still current.</div>';
+      return c;
+    }
+    c.inst = echarts.init(el, null, { renderer: 'svg' });
+    c.inst.setOption(build(theme()), true);
+    charts.push(c);
+    return c;
+  }
+  function update(c) { if (c && c.inst) c.inst.setOption(c.build(theme()), true); }
+  function refreshAll() { charts.forEach(update); }
+  let rt;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => charts.forEach((c) => c.inst && c.inst.resize()), 120); });
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshAll); } catch (e) { /* old browsers */ }
+  new MutationObserver(refreshAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ---------- per-viewer memory for slicers (optional; page works without it)
+  const KEY = 'scm-twin:' + location.pathname.split('/').pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } };
+  const save = (state) => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage blocked */ } };
+
+  // ---------- segmented slicer
+  function seg(el, options, value, onChange) {
+    el.innerHTML = '';
+    options.forEach(([v, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = label; b.dataset.v = String(v);
+      b.setAttribute('aria-pressed', String(String(v) === String(value)));
+      b.addEventListener('click', () => {
+        el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        onChange(v);
+      });
+      el.appendChild(b);
+    });
+    return { set(v) { el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === String(v)))); } };
+  }
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const tip = (t, rows, title) => `<div style="font-weight:600;margin-bottom:4px">${esc(title)}</div>` +
+    rows.map(([color, name, val]) => `<div style="display:flex;justify-content:space-between;gap:18px"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${color};margin-right:6px"></span>${esc(name)}</span><span style="font-family:${t.fMono}">${val}</span></div>`).join('');
+  return { theme, usd, num, kunits, pct, axUsd, base, axis, chart, update, refreshAll, load, save, seg, $, esc, tip, hasLib };
+})();
+</script>
+<script>
+const D = {"mgis":{"M_US":{"code":"MGI-US","name":"Inland Empire, California","tkey":"USA","country":"United States","duty_cn":0.0,"duty_id":0.0,"barrier":"Section 232 semiconductor Phase 2 may extend to laptops (rate not announced)","note":"Laptops (HTS 8471) exempt from the 60-economy Section 301 action of 24 Jul 2026; Section 122 surcharge expired 24 Jul 2026","share":0.4,"port":"Los Angeles / Long Beach","airport":"LAX"},"M_EU":{"code":"MGI-EU","name":"Venlo, Netherlands","tkey":"EU","country":"European Union (27)","duty_cn":0.0,"duty_id":0.0,"barrier":"","note":"Zero duty on laptops (CN 8471 30) under the WTO Information Technology Agreement","share":0.19,"port":"Rotterdam","airport":"AMS"},"M_UK":{"code":"MGI-UK","name":"Daventry, England","tkey":"GBR","country":"United Kingdom","duty_cn":0.0,"duty_id":0.0,"barrier":"","note":"Zero duty on laptops under the WTO Information Technology Agreement","share":0.08,"port":"Felixstowe","airport":"LHR"},"M_JP":{"code":"MGI-JP","name":"Atsugi, Kanagawa","tkey":"JPN","country":"Japan","duty_cn":0.0,"duty_id":0.0,"barrier":"","note":"Zero duty on laptops under the WTO Information Technology Agreement","share":0.15,"port":"Yokohama","airport":"NRT"},"M_BR":{"code":"MGI-BR","name":"Campinas, Sao Paulo","tkey":"BRA","country":"Brazil","duty_cn":16.0,"duty_id":16.0,"barrier":"IPI 15% on top","note":"Import duty (II) 16% on NCM 8471.30.12, no FTA with China or Indonesia","share":0.18,"port":"Santos","airport":"VCP"}},"routes":[{"origin":"CN","mgi":"M_US","mode":"sea","variant":"any","km":10650,"nm":5750,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",20.0],["Import clearance & discharge",4.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":31.0},{"origin":"CN","mgi":"M_US","mode":"air","variant":"any","km":10415,"nm":5624,"steps":[["Factory to airport (truck)",1.0],["Export build-up & clearance",2.0],["Flight",1.0],["Import clearance",2.0],["Airport to MGI (truck)",1.0],["MGI receiving",1.0]],"days":8.0},{"origin":"CN","mgi":"M_EU","mode":"sea","variant":"cape","km":25620,"nm":13834,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",42.4],["Import clearance & discharge",4.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":53.4},{"origin":"CN","mgi":"M_EU","mode":"sea","variant":"suez","km":19472,"nm":10514,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",33.2],["Import clearance & discharge",4.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":44.2},{"origin":"CN","mgi":"M_EU","mode":"air","variant":"any","km":8910,"nm":4811,"steps":[["Factory to airport (truck)",1.0],["Export build-up & clearance",2.0],["Flight",0.5],["Import clearance",2.0],["Airport to MGI (truck)",1.0],["MGI receiving",1.0]],"days":7.5},{"origin":"CN","mgi":"M_UK","mode":"sea","variant":"cape","km":25517,"nm":13778,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",42.3],["Import clearance & discharge",4.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":53.3},{"origin":"CN","mgi":"M_UK","mode":"sea","variant":"suez","km":19369,"nm":10458,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",33.1],["Import clearance & discharge",4.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":44.1},{"origin":"CN","mgi":"M_UK","mode":"air","variant":"any","km":9241,"nm":4990,"steps":[["Factory to airport (truck)",1.0],["Export build-up & clearance",2.0],["Flight",0.5],["Import clearance",2.0],["Airport to MGI (truck)",1.0],["MGI receiving",1.0]],"days":7.5},{"origin":"CN","mgi":"M_JP","mode":"sea","variant":"any","km":1884,"nm":1017,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",6.8],["Import clearance & discharge",3.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":16.8},{"origin":"CN","mgi":"M_JP","mode":"air","variant":"any","km":1796,"nm":970,"steps":[["Factory to airport (truck)",1.0],["Export build-up & clearance",2.0],["Flight",0.5],["Import clearance",2.0],["Airport to MGI (truck)",1.0],["MGI receiving",1.0]],"days":7.5},{"origin":"CN","mgi":"M_BR","mode":"sea","variant":"any","km":20449,"nm":11041,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",34.7],["Import clearance & discharge",8.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":49.7},{"origin":"CN","mgi":"M_BR","mode":"air","variant":"any","km":18651,"nm":10071,"steps":[["Factory to airport (truck)",1.0],["Export build-up & clearance",2.0],["Flight via FRA",2.0],["Import clearance",4.0],["Airport to MGI (truck)",1.0],["MGI receiving",1.0]],"days":11.0},{"origin":"ID","mgi":"M_US","mode":"sea","variant":"any","km":14870,"nm":8029,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",26.3],["Import clearance & discharge",4.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":37.3},{"origin":"ID","mgi":"M_US","mode":"air","variant":"any","km":14450,"nm":7802,"steps":[["Factory to airport (truck)",1.0],["Export build-up & clearance",2.0],["Flight",1.0],["Import clearance",2.0],["Airport to MGI (truck)",1.0],["MGI receiving",1.0]],"days":8.0},{"origin":"ID","mgi":"M_EU","mode":"sea","variant":"cape","km":21099,"nm":11392,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",35.6],["Import clearance & discharge",4.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":46.6},{"origin":"ID","mgi":"M_EU","mode":"sea","variant":"suez","km":16004,"nm":8642,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",28.0],["Import clearance & discharge",4.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":39.0},{"origin":"ID","mgi":"M_EU","mode":"air","variant":"any","km":11353,"nm":6130,"steps":[["Factory to airport (truck)",1.0],["Export build-up & clearance",2.0],["Flight",1.0],["Import clearance",2.0],["Airport to MGI (truck)",1.0],["MGI receiving",1.0]],"days":8.0},{"origin":"ID","mgi":"M_UK","mode":"sea","variant":"cape","km":20996,"nm":11337,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",35.5],["Import clearance & discharge",4.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":46.5},{"origin":"ID","mgi":"M_UK","mode":"sea","variant":"suez","km":15901,"nm":8586,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",27.8],["Import clearance & discharge",4.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":38.8},{"origin":"ID","mgi":"M_UK","mode":"air","variant":"any","km":11721,"nm":6329,"steps":[["Factory to airport (truck)",1.0],["Export build-up & clearance",2.0],["Flight",1.0],["Import clearance",2.0],["Airport to MGI (truck)",1.0],["MGI receiving",1.0]],"days":8.0},{"origin":"ID","mgi":"M_JP","mode":"sea","variant":"any","km":6024,"nm":3253,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",13.0],["Import clearance & discharge",3.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":23.0},{"origin":"ID","mgi":"M_JP","mode":"air","variant":"any","km":5840,"nm":3153,"steps":[["Factory to airport (truck)",1.0],["Export build-up & clearance",2.0],["Flight",0.5],["Import clearance",2.0],["Airport to MGI (truck)",1.0],["MGI receiving",1.0]],"days":7.5},{"origin":"ID","mgi":"M_BR","mode":"sea","variant":"any","km":15927,"nm":8600,"steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",27.9],["Import clearance & discharge",8.0],["Port to MGI (truck)",1.0],["MGI receiving",1.0]],"days":42.9},{"origin":"ID","mgi":"M_BR","mode":"air","variant":"any","km":20900,"nm":11285,"steps":[["Factory to airport (truck)",1.0],["Export build-up & clearance",2.0],["Flight via FRA",2.5],["Import clearance",4.0],["Airport to MGI (truck)",1.0],["MGI receiving",1.0]],"days":11.5}],"feed":[{"name":"Sea via Shanghai → Jakarta","steps":[["Factory to port (truck)",1.0],["Export handling & vessel wait",4.0],["Ocean voyage",10.9],["Import clearance",5.0],["Port to factory (truck)",1.0]],"days":21.9},{"name":"Air expedite via Pudong → Soekarno-Hatta","steps":[["Factory to airport (truck)",1.0],["Export build-up & clearance",2.0],["Flight",1.0],["Import clearance",2.0],["Airport to factory (truck)",1.0]],"days":7.0}],"origins":{"CN":"China · Kunshan","ID":"Indonesia · Cikarang"},"params":[{"key":"sea_speed_knots","value":"15","unit":"kn","status":"PLACEHOLDER","note":"Slow-steaming container service speed"},{"key":"sea_port_call_days","value":"4","unit":"days","status":"PLACEHOLDER","note":"Intermediate calls and transshipment on the voyage"},{"key":"truck_km_per_day","value":"500","unit":"km/day","status":"PLACEHOLDER","note":"Domestic trucking incl. loading"},{"key":"origin_sea_handling_days","value":"4","unit":"days","status":"PLACEHOLDER","note":"Booking, CY cut-off, export clearance, waiting for the vessel"},{"key":"origin_air_handling_days","value":"2","unit":"days","status":"PLACEHOLDER","note":"Build-up and export clearance at the airport"},{"key":"dest_handling_days_USA","value":"4","unit":"days","status":"PLACEHOLDER","note":"Discharge, import clearance"},{"key":"dest_handling_days_NLD","value":"4","unit":"days","status":"PLACEHOLDER","note":""},{"key":"dest_handling_days_GBR","value":"4","unit":"days","status":"PLACEHOLDER","note":""},{"key":"dest_handling_days_JPN","value":"3","unit":"days","status":"PLACEHOLDER","note":""},{"key":"dest_handling_days_BRA","value":"8","unit":"days","status":"PLACEHOLDER","note":"Santos clearance is typically slower"},{"key":"air_dest_handling_days","value":"2","unit":"days","status":"PLACEHOLDER","note":""},{"key":"air_dest_handling_days_BRA","value":"4","unit":"days","status":"PLACEHOLDER","note":""},{"key":"air_hub_transit_days","value":"1","unit":"days","status":"PLACEHOLDER","note":"Added when the air lane goes via a hub"},{"key":"mgi_receiving_days","value":"1","unit":"days","status":"PLACEHOLDER","note":"Receiving and put-away at the MGI"},{"key":"dest_handling_days_IDN","value":"5","unit":"days","status":"PLACEHOLDER","note":"Import clearance of parts at Tanjung Priok"}]};
+const MG = Object.keys(D.mgis);
+const saved = R.load();
+const S = { o: ['CN', 'ID'].includes(saved.o) ? saved.o : 'CN', m: ['sea', 'air'].includes(saved.m) ? saved.m : 'sea', v: ['cape', 'suez'].includes(saved.v) ? saved.v : 'cape' };
+R.seg(R.$('#f-o'), [['CN', D.origins.CN], ['ID', D.origins.ID]], S.o, (v) => { S.o = v; draw(); });
+R.seg(R.$('#f-m'), [['sea', 'Ocean'], ['air', 'Air']], S.m, (v) => { S.m = v; draw(); });
+R.seg(R.$('#f-v'), [['cape', 'Cape of Good Hope'], ['suez', 'Suez Canal']], S.v, (v) => { S.v = v; draw(); });
+const route = (o, m, mode, v = S.v) => D.routes.find((r) => r.origin === o && r.mgi === m && r.mode === mode && (r.variant === 'any' || r.variant === v));
+const GROUPS = [
+  ['Factory to gateway', /^factory to/i],
+  ['Export handling', /export/i],
+  ['Main leg', /voyage|flight/i],
+  ['Import clearance', /import/i],
+  ['Gateway to MGI', /to mgi|to factory/i],
+  ['MGI receiving', /receiving/i],
+];
+const group = (steps) => GROUPS.map(([g, re]) => steps.filter((s) => re.test(s[0])).reduce((a, s) => a + s[1], 0));
+const mgiLabel = (m) => D.mgis[m].code;
+
+function kpis() {
+  const rs = MG.map((m) => [m, route(S.o, m, S.m)]);
+  const w = rs.reduce((a, [m, r]) => a + r.days * D.mgis[m].share, 0) / rs.reduce((a, [m]) => a + D.mgis[m].share, 0);
+  const fast = rs.reduce((a, b) => (b[1].days < a[1].days ? b : a)), slow = rs.reduce((a, b) => (b[1].days > a[1].days ? b : a));
+  const dutyKey = S.o === 'CN' ? 'duty_cn' : 'duty_id';
+  const duty = MG.reduce((a, m) => a + D.mgis[m][dutyKey] * D.mgis[m].share, 0) / MG.reduce((a, m) => a + D.mgis[m].share, 0);
+  const other = S.o === 'CN' ? 'ID' : 'CN';
+  const w2 = MG.reduce((a, m) => a + route(other, m, S.m).days * D.mgis[m].share, 0) / MG.reduce((a, m) => a + D.mgis[m].share, 0);
+  const card = (label, value, sub) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span></div>`;
+  R.$('#kpis').innerHTML = [
+    card('Demand-weighted door to MGI', R.num(w, 1) + ' days', `${S.m === 'sea' ? 'ocean' : 'air'} · ${(w - w2 >= 0 ? '+' : '−') + R.num(Math.abs(w - w2), 1)} days vs ${D.origins[other]}`),
+    card('Fastest MGI', mgiLabel(fast[0]) + ' · ' + R.num(fast[1].days, 1) + ' d', D.mgis[fast[0]].name),
+    card('Slowest MGI', mgiLabel(slow[0]) + ' · ' + R.num(slow[1].days, 1) + ' d', D.mgis[slow[0]].name),
+    card('Demand-weighted import duty', R.num(duty, 1) + '%', 'on laptops from ' + D.origins[S.o].split(' · ')[0]),
+    card('Parts feed to Indonesia', R.num(D.feed[0].days, 1) + ' d sea', `${R.num(D.feed[1].days, 1)} d by air expedite`),
+  ].join('');
+}
+
+const cSteps = R.chart('c-steps', (t) => {
+  const o = R.base(t), rows = MG.map((m) => group(route(S.o, m, S.m).steps));
+  const cols = [t.c[6], t.c[4], S.m === 'sea' ? t.sea : t.air, t.c[3], t.inland, t.c[5]];
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.num(v, 1) + ' d' },
+    grid: { ...o.grid, top: 40, bottom: 20 },
+    xAxis: R.axis(t, { type: 'value', name: 'days', nameLocation: 'middle', nameGap: 24 }),
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: MG.map(mgiLabel), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 12 } }),
+    series: GROUPS.map(([g], i) => ({ type: 'bar', stack: 'd', name: g, barWidth: '58%', itemStyle: { color: cols[i] }, data: rows.map((r) => r[i]) }))
+      .concat([{ type: 'bar', stack: 'd', name: 'total', data: MG.map(() => 0.001), itemStyle: { color: 'transparent' }, tooltip: { show: false }, legendHoverLink: false,
+        label: { show: true, position: 'right', color: t.ink, fontFamily: t.fMono, fontSize: 12, formatter: (p) => R.num(route(S.o, MG[p.dataIndex], S.m).days, 1) + ' d' } }]),
+    legend: { ...o.legend, data: GROUPS.map((g) => g[0]) },
+  };
+});
+
+const cCmp = R.chart('c-cmp', (t) => {
+  const o = R.base(t);
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.num(v, 1) + ' d' },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'category', data: MG.map(mgiLabel), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 11, interval: 0 } }),
+    yAxis: R.axis(t, { type: 'value' }),
+    series: ['CN', 'ID'].map((og, i) => ({ type: 'bar', name: D.origins[og], barGap: '12%', itemStyle: { color: [t.c[0], t.c[2]][i], opacity: og === S.o ? 1 : .6 },
+      data: MG.map((m) => route(og, m, S.m).days) })),
+  };
+});
+
+const cScatter = R.chart('c-scatter', (t) => {
+  const o = R.base(t);
+  const pts = (og, i) => MG.map((m) => ({ name: mgiLabel(m), value: [route(og, m, 'sea').days, D.mgis[m][og === 'CN' ? 'duty_cn' : 'duty_id'], D.mgis[m].share] }));
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, trigger: 'item', formatter: (p) => R.tip(t, [[p.color, 'Door to MGI', R.num(p.value[0], 1) + ' d'], [p.color, 'Import duty', R.num(p.value[1], 1) + '%'], [p.color, 'Demand share', R.pct(p.value[2])]], p.name + ' · ' + p.seriesName) },
+    grid: { ...o.grid, top: 40, bottom: 18, right: 40 },
+    xAxis: R.axis(t, { type: 'value', name: 'days door to MGI (ocean)', nameLocation: 'middle', nameGap: 26, scale: true }),
+    yAxis: R.axis(t, { type: 'value', min: 0, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => v + '%' } }),
+    series: ['CN', 'ID'].map((og, i) => ({ type: 'scatter', name: D.origins[og], data: pts(og, i), symbolSize: (v) => 10 + 60 * v[2],
+      itemStyle: { color: [t.c[0], t.c[2]][i], opacity: .75, borderColor: t.panel, borderWidth: 1 },
+      label: { show: og === S.o, formatter: '{b}', position: 'top', color: t.ink2, fontFamily: t.fMono, fontSize: 11 }, labelLayout: { hideOverlap: true } })),
+  };
+});
+
+const cFeed = R.chart('c-feed', (t) => {
+  const o = R.base(t), rows = D.feed.map((f) => group(f.steps));
+  const cols = [t.c[6], t.c[4], t.sea, t.c[3], t.inland, t.c[5]];
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.num(v, 1) + ' d' },
+    grid: { ...o.grid, top: 8, bottom: 20 },
+    legend: { show: false },
+    xAxis: R.axis(t, { type: 'value', name: 'days', nameLocation: 'middle', nameGap: 24 }),
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: D.feed.map((f) => f.name.startsWith('Air') ? 'Air expedite' : 'Ocean'), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12 } }),
+    series: GROUPS.map(([g], i) => ({ type: 'bar', stack: 'f', name: g, barWidth: '50%', itemStyle: { color: cols[i] }, data: rows.map((r) => r[i]) })),
+  };
+});
+
+function table() {
+  const air = (o, m) => route(o, m, 'air').days;
+  R.$('#t-lanes').innerHTML = '<thead><tr><th class="txt">MGI</th><th>Demand</th><th class="txt">Gateways</th><th>Ocean CN</th><th>Ocean ID</th><th>Air CN</th><th>Air ID</th><th>Ocean nm (CN)</th><th>Duty CN / ID</th><th class="txt">Other barriers</th></tr></thead><tbody>' +
+    MG.map((m) => { const g = D.mgis[m], rc = route('CN', m, 'sea'), ri = route('ID', m, 'sea');
+      return `<tr><td class="txt"><b>${g.code}</b><small>${R.esc(g.name)}</small></td><td>${R.pct(g.share)}</td><td class="txt">${R.esc(g.port)}<small>${g.airport} air</small></td><td>${R.num(rc.days, 1)} d</td><td>${R.num(ri.days, 1)} d</td><td>${R.num(air('CN', m), 1)} d</td><td>${R.num(air('ID', m), 1)} d</td><td>${R.num(rc.nm || 0)}</td><td>${g.duty_cn}% / ${g.duty_id}%</td><td class="txt" style="max-width:300px;font-size:12px">${R.esc(g.barrier || '–')}</td></tr>`; }).join('') + '</tbody>';
+}
+
+function insight() {
+  const eu = (o, v) => route(o, 'M_EU', 'sea', v).days, us = (o) => route(o, 'M_US', 'sea').days;
+  R.$('#insight').innerHTML = `
+    <p><b>Moving production south trades Pacific days for Europe days.</b> Indonesia adds ${R.num(us('ID') - us('CN'), 1)} days to the US by sea but saves ${R.num(eu('CN', 'cape') - eu('ID', 'cape'), 1)} days to Europe around the Cape.</p>
+    <p>The Red Sea choice matters more for Europe than the origin does: Suez would save ${R.num(eu('CN', 'cape') - eu('CN', 'suez'), 1)} days from China. With laptop duty at zero in the US, EU, UK and Japan today, only Brazil's duty separates the markets; that changes at once if a US tariff on China-origin laptops returns.</p>`;
+}
+
+function draw() {
+  R.save(S);
+  R.$('#h-steps').textContent = `${D.origins[S.o]} · ${S.m === 'sea' ? 'ocean, ' + (S.v === 'cape' ? 'Cape' : 'Suez') + ' to Europe' : 'air'}`;
+  R.$('#h-cmp').textContent = `${S.m === 'sea' ? 'Ocean' : 'Air'} days door to MGI`;
+  kpis(); table(); insight();
+  [cSteps, cCmp, cScatter, cFeed].forEach(R.update);
+}
+draw();
+</script>
+
+</body>
+</html>

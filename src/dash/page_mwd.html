@@ -1,0 +1,154 @@
+<title>MWD Explorer</title>
+<!--__HEAD__-->
+<style>/*__CSS__*/</style>
+<!--__NAV__-->
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Module 1 · material without demand</p>
+      <h1>Where Cancelled Plans Leave Material</h1>
+      <p class="sub">When plans inside the <span id="n-w"></span>-week liability window are cancelled, their material is still owed. Some is netted by other plans that use the same part number, some is converted at a cost, and the rest becomes MWD.</p>
+    </div>
+    <div class="asof">Model run __TODAY__ · tracked for <span id="n-tr"></span> weeks</div>
+  </div>
+
+  <section class="slicers" aria-label="Filters">
+    <div class="slicer"><span class="s-label" id="l-s">Scenario</span><div class="seg" role="group" aria-labelledby="l-s" id="f-s"></div></div>
+    <div class="slicer"><span class="s-label" id="l-c">Routing class (R7)</span><div class="seg" role="group" aria-labelledby="l-c" id="f-c"></div></div>
+    <div class="slicer"><span class="s-label" id="l-p">Part type (R10)</span><div class="seg" role="group" aria-labelledby="l-p" id="f-p"></div></div>
+  </section>
+
+  <p class="sub" id="desc" style="margin:0"></p>
+  <section class="kpis" id="kpis" aria-live="polite"></section>
+
+  <section class="canvas">
+    <div class="viz w5">
+      <div class="viz-h"><h2>Cost by scenario</h2><span class="hint">Click a bar to select it</span></div>
+      <div id="c-sc" class="chart tall"></div>
+    </div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>What happened to each part</h2><span class="hint">Value of freed material, $</span></div>
+      <div id="c-mat" class="chart tall"></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>How long freed stock takes to burn down</h2><span class="hint">Netting from first eligible week to the week the last unit was absorbed</span></div>
+      <div id="c-gantt" class="chart"></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Material ledger</h2><span class="hint" id="h-led"></span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-led"></table></div>
+    </div>
+  </section>
+
+  <section class="insight" id="insight"></section>
+
+  <footer class="notes">
+    <p><b>Routing classes.</b> 1 = same part number used elsewhere, netted by MRP (CPU, memory, SSD, panel, battery, adapter, housing). 2 = convertible for another region at a cost, after cross-BU agreement (power cord, packaging). 3 = locked to the cancelled configuration (keyboard, WWAN) (R6, R7).</p>
+    <p><b>Netting.</b> Freed stock offsets other plans from the end of its non-cancellable window: 2 weeks for industry-standard parts shared across brands at the ODM, the full lead time for custom parts (R3, R10). Scenario C0 uses the older assumption, netting only beyond the purchase lead time. Holding cost accrues at 20% a year while stock waits; batteries need recharging and chips past their date code need re-testing.</p>
+    <p><b>Status.</b> Rules from practitioner input; unit costs, lead times and lifecycles are placeholders. See the <a href="rules.html">Rules register</a>.</p>
+  </footer>
+</main>
+<script>/*__JS__*/</script>
+<script>
+const D = /*__DATA__*/null;
+R.$('#n-w').textContent = D.window; R.$('#n-tr').textContent = D.tracking;
+const codes = D.scenarios.map((s) => s.code);
+const saved = R.load();
+const S = { s: codes.includes(saved.s) ? saved.s : 'C', c: ['all', 1, 2, 3].includes(saved.c) ? saved.c : 'all', p: ['all', 'std', 'custom'].includes(saved.p) ? saved.p : 'all' };
+const sc = (code = S.s) => D.scenarios.find((x) => x.code === code);
+const segS = R.seg(R.$('#f-s'), D.scenarios.map((x) => [x.code, x.code]), S.s, (v) => { S.s = v; draw(); });
+R.seg(R.$('#f-c'), [['all', 'All'], [1, '1 · netted'], [2, '2 · convertible'], [3, '3 · locked']], S.c, (v) => { S.c = v === 'all' ? 'all' : +v; draw(); });
+R.seg(R.$('#f-p'), [['all', 'All'], ['std', 'Industry standard'], ['custom', 'Custom']], S.p, (v) => { S.p = v; draw(); });
+const CLS_COLOR = (t, c) => [t.c[0], t.c[4], t.c[5]][c - 1];
+const filt = (rows) => rows.filter((r) => r.freed_qty > 0 && (S.c === 'all' || r.cls === S.c) && (S.p === 'all' || (S.p === 'std' ? r.std === 1 : r.std !== 1)));
+const unit = (r) => r.freed_qty ? r.freed_usd / r.freed_qty : 0;
+
+function kpis() {
+  const rows = filt(sc().rows);
+  const sum = (k) => rows.reduce((a, r) => a + r[k], 0);
+  const freed = sum('freed_usd'), mwd = sum('mwd_usd');
+  const absorbed = rows.reduce((a, r) => a + r.absorbed_qty * unit(r), 0);
+  const card = (label, value, sub) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span></div>`;
+  R.$('#kpis').innerHTML = [
+    card('Material freed', R.usd(freed), `${rows.length} part numbers`),
+    card('Netted by other plans', R.usd(absorbed), freed ? R.pct(absorbed / freed) + ' of freed value' : '–'),
+    card('MWD (claimed)', R.usd(mwd), freed ? R.pct(mwd / freed) + ' of freed value' : '–'),
+    card('Holding and ageing', R.usd(sum('holding_usd') + sum('ageing_usd')), `ageing ${R.usd(sum('ageing_usd'))}`),
+    card('Conversion (rework)', R.usd(sum('rework_usd')), 'class 2 parts reworked for other regions'),
+    card('Total cost', R.usd(sum('holding_usd') + sum('ageing_usd') + sum('rework_usd') + mwd), 'holding + ageing + rework + MWD'),
+  ].join('');
+  R.$('#desc').innerHTML = `<b>${R.esc(sc().code)} · ${R.esc(sc().label)}.</b> ${R.esc(sc().desc)}`;
+}
+
+const cSc = R.chart('c-sc', (t) => {
+  const o = R.base(t);
+  const parts = [['holding_usd', 'Holding', t.c[4]], ['ageing_usd', 'Ageing', t.c[6]], ['rework_usd', 'Rework', t.c[3]], ['mwd_claimed_usd', 'MWD', t.c[5]]];
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.usd(v) },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'category', data: codes, splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 12 } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    series: parts.map(([k, name, color]) => ({ type: 'bar', stack: 's', name, barWidth: '55%', itemStyle: { color },
+      data: D.scenarios.map((x) => ({ value: x.summary[k], itemStyle: { opacity: x.code === S.s ? 1 : .4 } })) })),
+  };
+});
+cSc.inst && cSc.inst.on('click', (p) => { S.s = codes[p.dataIndex]; segS.set(S.s); draw(); });
+
+const cMat = R.chart('c-mat', (t) => {
+  const o = R.base(t);
+  const rows = filt(sc().rows).slice().sort((a, b) => b.freed_usd - a.freed_usd).slice(0, 14).reverse();
+  const val = (r, k) => r[k] * unit(r);
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.usd(v) },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    yAxis: R.axis(t, { type: 'category', data: rows.map((r) => r.material), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 11 } }),
+    series: [
+      { type: 'bar', stack: 'm', name: 'Netted', data: rows.map((r) => val(r, 'absorbed_qty')), itemStyle: { color: t.c[2] }, barWidth: '60%' },
+      { type: 'bar', stack: 'm', name: 'Converted', data: rows.map((r) => val(r, 'reworked_qty')), itemStyle: { color: t.c[3] } },
+      { type: 'bar', stack: 'm', name: 'MWD', data: rows.map((r) => r.mwd_usd), itemStyle: { color: t.c[5] } },
+    ],
+  };
+});
+
+const cGantt = R.chart('c-gantt', (t) => {
+  const o = R.base(t);
+  const rows = filt(sc().rows).filter((r) => r.absorbed_qty > 0 && r.done != null).sort((a, b) => b.done - a.done).reverse();
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const r = rows[ps[0].dataIndex]; return R.tip(t, [[CLS_COLOR(t, r.cls), 'Netting from week', r.start], [CLS_COLOR(t, r.cls), 'Last unit absorbed', 'week ' + r.done], [t.c[5], 'Left as MWD', R.num(r.mwd_qty) + ' units']], r.material + ' · ' + r.name); } },
+    legend: { show: false },
+    grid: { ...o.grid, top: 12, bottom: 18 },
+    xAxis: R.axis(t, { type: 'value', min: 0, name: 'week after the event', nameLocation: 'middle', nameGap: 26 }),
+    yAxis: R.axis(t, { type: 'category', data: rows.map((r) => r.material), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 11 } }),
+    series: [
+      { type: 'bar', stack: 'g', data: rows.map((r) => r.start), itemStyle: { color: 'transparent' }, tooltip: { show: false }, silent: true },
+      { type: 'bar', stack: 'g', name: 'Burn-down', barWidth: '55%', data: rows.map((r) => ({ value: Math.max(1, r.done - r.start + 1), itemStyle: { color: CLS_COLOR(t, r.cls) } })) },
+    ],
+  };
+});
+
+function ledger() {
+  const rows = filt(sc().rows).slice().sort((a, b) => b.mwd_usd - a.mwd_usd || b.freed_usd - a.freed_usd);
+  R.$('#h-led').textContent = `${rows.length} part numbers · sorted by MWD`;
+  const max = Math.max(1, ...rows.map((r) => r.freed_usd));
+  R.$('#t-led').innerHTML = '<thead><tr><th class="txt">Part</th><th class="txt">Class</th><th>Netting from</th><th>Freed</th><th>Netted</th><th>Done by</th><th>Converted</th><th>MWD units</th><th>MWD $</th><th>Freed $</th></tr></thead><tbody>' +
+    rows.map((r) => `<tr><td class="txt"><code>${R.esc(r.material)}</code><small>${R.esc(r.name)}</small></td><td class="txt"><span class="chip">${r.cls}</span> ${r.std === 1 ? '<span class="chip">standard</span>' : ''}</td><td>wk ${r.start}</td><td>${R.num(r.freed_qty)}</td><td>${R.num(r.absorbed_qty)}</td><td>${r.done == null ? '–' : 'wk ' + r.done}</td><td>${R.num(r.reworked_qty)}</td><td>${R.num(r.mwd_qty)}</td><td>${r.mwd_usd ? '<span class="chip bad">' + R.usd(r.mwd_usd) + '</span>' : '–'}</td><td class="bar-cell"><i style="width:${(100 * r.freed_usd / max).toFixed(1)}%"></i><span>${R.usd(r.freed_usd)}</span></td></tr>`).join('') + '</tbody>';
+}
+
+function insight() {
+  const c0 = sc('C0').summary, c = sc('C').summary, b = sc('B').summary, d = sc('D').summary;
+  R.$('#insight').innerHTML = `
+    <p><b>Timing against EOL drives MWD more than volume.</b> The same US transfer costs ${R.usd(b.total_cost_usd)} with 30 weeks of P1 life left (B), ${R.usd(c.total_cost_usd)} with 20 weeks (C) and ${R.usd(d.total_cost_usd)} with 8 weeks (D): fewer future plans are left to absorb the freed stock.</p>
+    <p>Netting from the non-cancellable window instead of the full lead time (C vs C0) cuts the cost from ${R.usd(c0.total_cost_usd)} to ${R.usd(c.total_cost_usd)}. Factories push out other plans' open orders, so freed standard parts burn down within weeks (R3, R10).</p>`;
+}
+
+function draw() {
+  R.save(S);
+  kpis(); ledger(); insight();
+  [cSc, cMat, cGantt].forEach(R.update);
+}
+draw();
+</script>

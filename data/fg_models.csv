@@ -1,0 +1,3 @@
+model,product_line,channel_net_price_usd,successor,rework_cost_pct,teardown_recovery_pct,liquidation_recovery_pct,status
+P1-14,consumer,650,P2-14,0.35,0.18,0.40,PLACEHOLDER
+P1-16,consumer,760,P2-14,0.35,0.18,0.40,PLACEHOLDER

@@ -1,0 +1,107 @@
+<title>Rules Register</title>
+<!--__HEAD__-->
+<style>/*__CSS__*/
+.tbl td.rule { font: 13px/1.5 var(--f-body); text-align: left; min-width: 280px; max-width: 760px; }
+.tbl td.st { text-align: left; font: 12px/1.4 var(--f-body); color: var(--ink-2); min-width: 160px; max-width: 320px; }
+.tbl td.id { font: 500 13px var(--f-mono); white-space: nowrap; }
+</style>
+<!--__NAV__-->
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Assumptions register</p>
+      <h1>Rules Register</h1>
+      <p class="sub">Every business rule and number in the model, with where it came from. Practitioner input is generalized and virtualized; placeholders are invented and wait for calibration; open questions are asked one at a time.</p>
+    </div>
+    <div class="asof">From docs/ASSUMPTIONS.md · __TODAY__</div>
+  </div>
+
+  <section class="slicers" aria-label="Filters">
+    <div class="slicer"><span class="s-label" id="l-k">Source</span><div class="seg" role="group" aria-labelledby="l-k" id="f-k"></div></div>
+    <div class="slicer"><label class="s-label" for="f-q">Search</label><input type="search" id="f-q" placeholder="e.g. tariff, MWD, lock"></div>
+  </section>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="canvas">
+    <div class="viz w5">
+      <div class="viz-h"><h2>Where the inputs come from</h2><span class="hint">Rules and numbers · click to filter</span></div>
+      <div id="c-src" class="chart"></div>
+    </div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Open questions</h2><span class="hint">Asked one at a time</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-open"></table></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Business rules</h2><span class="hint" id="h-rules"></span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-rules"></table></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Numbers</h2><span class="hint" id="h-nums"></span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-nums"></table></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Question log</h2><span class="hint" id="h-q"></span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-q"></table></div>
+    </div>
+  </section>
+</main>
+<script>/*__JS__*/</script>
+<script>
+const D = /*__DATA__*/null;
+const KINDS = [['all', 'All'], ['prac', 'Practitioner'], ['web', 'Web'], ['ph', 'Placeholder'], ['open', 'Open'], ['design', 'Design / illustrative']];
+const KLABEL = Object.fromEntries(KINDS);
+const kindOf = (k) => (k === 'ill' ? 'design' : k);
+const saved = R.load();
+const S = { k: KINDS.some((x) => x[0] === saved.k) ? saved.k : 'all', q: '' };
+const segK = R.seg(R.$('#f-k'), KINDS, S.k, (v) => { S.k = v; draw(); });
+R.$('#f-q').addEventListener('input', (e) => { S.q = e.target.value.trim().toLowerCase(); draw(); });
+const plain = (h) => h.replace(/<[^>]+>/g, '');
+const match = (r, fields) => (S.k === 'all' || kindOf(r.kind) === S.k) && (!S.q || fields.some((f) => plain(r[f] || '').toLowerCase().includes(S.q)));
+const chip = (k) => `<span class="chip ${k}">${KLABEL[kindOf(k)] || k}</span>`;
+
+const all = D.rules.concat(D.numbers);
+const counts = {}; all.forEach((r) => { const k = kindOf(r.kind); counts[k] = (counts[k] || 0) + 1; });
+const openQ = D.questions.filter((q) => q.kind === 'open');
+const card = (label, value, sub) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span></div>`;
+R.$('#kpis').innerHTML = [
+  card('Business rules', D.rules.length, `${D.rules.filter((r) => kindOf(r.kind) === 'prac').length} from practitioner input`),
+  card('Numbers tracked', D.numbers.length, `${D.numbers.filter((r) => kindOf(r.kind) === 'ph').length} still placeholders`),
+  card('Web-sourced', counts.web || 0, 'rules and numbers with a public source'),
+  card('Questions answered', D.questions.length - openQ.length, `${openQ.length} open or queued`),
+].join('');
+
+const order = ['prac', 'web', 'ph', 'open', 'design'];
+const cSrc = R.chart('c-src', (t) => {
+  const o = R.base(t), col = { prac: t.c[0], web: t.c[2], ph: t.warn, open: t.bad, design: t.c[6] };
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, trigger: 'item', formatter: (p) => R.tip(t, [[p.color, p.name, p.value + ' items']], 'Source') },
+    legend: { ...o.legend, type: 'plain', orient: 'vertical', top: 'middle', left: 'auto', right: 0 },
+    series: [{ type: 'pie', radius: ['46%', '72%'], center: ['36%', '50%'], avoidLabelOverlap: true,
+      itemStyle: { borderColor: t.panel, borderWidth: 2 },
+      label: { color: t.ink2, fontSize: 12, formatter: '{c}' }, labelLine: { show: false }, labelLayout: { hideOverlap: true },
+      data: order.filter((k) => counts[k]).map((k) => ({ name: KLABEL[k], value: counts[k], k, itemStyle: { color: col[k], opacity: S.k === 'all' || S.k === k ? 1 : .35 } })) }],
+  };
+});
+cSrc.inst && cSrc.inst.on('click', (p) => { S.k = S.k === p.data.k ? 'all' : p.data.k; segK.set(S.k); draw(); });
+
+function draw() {
+  R.save({ k: S.k });
+  const rules = D.rules.filter((r) => match(r, ['id', 'text', 'status']));
+  const nums = D.numbers.filter((r) => match(r, ['item', 'value', 'status']));
+  const qs = D.questions.filter((q) => (S.k === 'all' || (S.k === 'open' ? q.kind === 'open' : true)) && (!S.q || plain(q.q + ' ' + q.a).toLowerCase().includes(S.q)));
+  R.$('#h-rules').textContent = `${rules.length} of ${D.rules.length}`;
+  R.$('#h-nums').textContent = `${nums.length} of ${D.numbers.length}`;
+  R.$('#h-q').textContent = `${qs.length} of ${D.questions.length}`;
+  R.$('#t-rules').innerHTML = '<thead><tr><th class="txt">ID</th><th class="txt">Rule</th><th class="txt">Source</th></tr></thead><tbody>' +
+    rules.map((r) => `<tr><td class="id">${r.id}</td><td class="rule">${r.text}</td><td class="st">${chip(r.kind)}<br>${r.status}</td></tr>`).join('') + '</tbody>';
+  R.$('#t-nums').innerHTML = '<thead><tr><th class="txt">Item</th><th class="txt">Value</th><th class="txt">Source</th></tr></thead><tbody>' +
+    nums.map((r) => `<tr><td class="rule" style="min-width:200px;max-width:340px">${r.item}<small>${R.esc(r.section)}</small></td><td class="rule">${r.value}</td><td class="st">${chip(r.kind)}<br>${r.status}</td></tr>`).join('') + '</tbody>';
+  R.$('#t-q').innerHTML = '<thead><tr><th class="txt">#</th><th class="txt">Question</th><th class="txt">Answer</th></tr></thead><tbody>' +
+    qs.map((q) => `<tr><td class="id">${q.id}</td><td class="rule" style="min-width:220px">${q.q}</td><td class="rule">${q.kind === 'open' ? '<span class="chip open">' + plain(q.a) + '</span>' : q.a}</td></tr>`).join('') + '</tbody>';
+  R.$('#t-open').innerHTML = '<tbody>' + (openQ.length ? openQ.map((q) => `<tr><td class="id">${q.id}</td><td class="rule">${q.q}</td><td class="st"><span class="chip open">${plain(q.a)}</span></td></tr>`).join('') : '<tr><td>No open questions.</td></tr>') + '</tbody>';
+  R.update(cSrc);
+}
+draw();
+</script>

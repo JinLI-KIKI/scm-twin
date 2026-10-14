@@ -1,0 +1,168 @@
+<title>Transfer Business Case</title>
+<!--__HEAD__-->
+<style>/*__CSS__*/</style>
+<!--__NAV__-->
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Module 3 · business case under uncertainty</p>
+      <h1>Move US Production to Indonesia?</h1>
+      <p class="sub">One year of moving US-bound production from the China factory to the new Indonesian site. The tariff saved has to pay for a longer chain, worse forecasts at end of life, a dearer new line and a slow ramp.</p>
+    </div>
+    <div class="asof">Model run __TODAY__ · 2,000 Monte Carlo runs per cell</div>
+  </div>
+
+  <section class="slicers" aria-label="Filters">
+    <div class="slicer"><span class="s-label" id="l-t">China-origin US tariff (Indonesia 0%)</span>
+      <div class="range"><input type="range" id="f-t" min="0" max="30" step="1" aria-labelledby="l-t"><output id="o-t" for="f-t"></output></div></div>
+    <div class="slicer"><span class="s-label" id="l-g">Global supply management (GSM) strength</span><div class="seg" role="group" aria-labelledby="l-g" id="f-g"></div></div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-live="polite"></section>
+
+  <section class="canvas">
+    <div class="viz w7">
+      <div class="viz-h"><h2>From tariff saved to net</h2><span class="hint">Median per year, US region</span></div>
+      <div id="c-wf" class="chart tall"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Spread of the transfer-year net</h2><span class="hint">Number of runs out of 2,000</span></div>
+      <div id="c-hist" class="chart tall"></div>
+    </div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Break-even curve</h2><span class="hint">Transfer-year net vs China tariff · median and P10–P90</span></div>
+      <div id="c-be" class="chart tall"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>What moves the answer</h2><span class="hint">Change in transfer-year net, one input at a time</span></div>
+      <div id="c-tor" class="chart tall"></div>
+    </div>
+  </section>
+
+  <section class="insight" id="insight"></section>
+
+  <footer class="notes">
+    <p><b>Benefit.</b> Tariff saved = US weekly units × customs value × (China rate − Indonesia rate) × 52.</p>
+    <p><b>Recurring costs.</b> Extra end-of-life MWD because plans are committed 20 instead of 16 weeks ahead with forecast accuracy about 8 points worse (R17, R18); carrying cost of 4 more weeks of material in the chain; new-site conversion cost +5–10% (R20). <b>One-time costs.</b> Tariff still paid on volume the new site cannot cover while it ramps (R16); expediting parts while the longer lead time is not yet covered (R21). Ramp length depends on GSM strength.</p>
+    <p><b>Status.</b> Lead-time adder, forecast-accuracy gap and conversion uplift are practitioner input (virtualized); ramp weeks, expediting cost and error correlation are placeholders. Details in the <a href="rules.html">Rules register</a>; code in <code>src/business_case.py</code>.</p>
+  </footer>
+</main>
+<script>/*__JS__*/</script>
+<script>
+const D = /*__DATA__*/null;
+const saved = R.load();
+const S = { t: Number.isInteger(saved.t) && saved.t >= 0 && saved.t <= 30 ? saved.t : 10, g: ['strong', 'weak'].includes(saved.g) ? saved.g : 'strong' };
+const C = (t = S.t, g = S.g) => D.cells[(t / 100).toFixed(2) + '|' + g];
+const slider = R.$('#f-t'); slider.value = S.t;
+const out = R.$('#o-t');
+slider.addEventListener('input', () => { S.t = +slider.value; draw(); });
+R.seg(R.$('#f-g'), [['strong', 'Strong'], ['weak', 'Weak']], S.g, (v) => { S.g = v; draw(); });
+
+function kpis() {
+  const c = C(), be = D.breakeven, other = S.g === 'strong' ? 'weak' : 'strong';
+  const card = (label, value, sub, chip) => `<div class="kpi"><span class="k-label">${label}</span><div class="k-row"><span class="k-value">${value}</span>${chip || ''}</div><span class="k-sub">${sub}</span></div>`;
+  const pos = c.net_year1[1] > 0;
+  R.$('#kpis').innerHTML = [
+    card('Transfer-year net', R.usd(c.net_year1[1]), `P10–P90 ${R.usd(c.net_year1[0])} to ${R.usd(c.net_year1[2])}`, `<span class="chip ${pos ? 'good' : 'bad'}">${pos ? 'Pays back in year 1' : 'Loses money in year 1'}</span>`),
+    card('Steady-state net per year', R.usd(c.net_steady[1]), `after the ramp · P10–P90 ${R.usd(c.net_steady[0])} to ${R.usd(c.net_steady[2])}`),
+    card('Chance the move pays in year 1', R.pct(c.p_pos), 'share of runs with net above zero'),
+    card('Break-even China tariff', R.pct(be[S.g], 1), `GSM ${S.g} · ${R.pct(be[other], 1)} if GSM is ${other}`),
+    card('Tariff saved per year', R.usd(c.tariff_saved[1]), `${R.num(D.profile.weekly_units)} units/week × $${R.num(D.profile.weekly_customs / D.profile.weekly_units)} customs value`),
+  ].join('');
+}
+
+const cWf = R.chart('c-wf', (t) => {
+  const o = R.base(t), c = C();
+  const steps = [
+    ['Tariff saved', c.tariff_saved[1], 'up'], ['EOL MWD', -c.eol_mwd[1], 'down'], ['Chain carry', -c.pipeline[1], 'down'],
+    ['Conversion', -c.conv[1], 'down'], ['Steady state', c.net_steady[1], 'total'], ['Ramp tariff', -c.ramp_leak[1], 'down'],
+    ['Expediting', -c.expedite[1], 'down'], ['Transfer year', c.net_year1[1], 'total']];
+  let run = 0; const base = [], val = [], colors = [];
+  steps.forEach(([_, v, kind]) => {
+    if (kind === 'total') { base.push(Math.min(0, v)); val.push(Math.abs(v)); colors.push(v >= 0 ? t.good : t.bad); run = v; }
+    else { const a = run, b = run + v; base.push(Math.min(a, b)); val.push(Math.abs(v)); colors.push(kind === 'up' ? t.c[2] : t.c[1]); run = b; }
+  });
+  return {
+    ...o,
+    legend: { show: false },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const i = ps[ps.length - 1].dataIndex; return R.tip(t, [[colors[i], steps[i][0], R.usd(steps[i][1])]], steps[i][0]); } },
+    grid: { ...o.grid, top: 24 },
+    xAxis: R.axis(t, { type: 'category', data: steps.map((s) => s[0]), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fBody, fontSize: 11, interval: 0, rotate: 0, width: 70, overflow: 'break' } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    series: [
+      { type: 'bar', stack: 'w', data: base, itemStyle: { color: 'transparent' }, emphasis: { disabled: true }, tooltip: { show: false } },
+      { type: 'bar', stack: 'w', name: 'Amount', barWidth: '56%', data: val.map((v, i) => ({ value: v, itemStyle: { color: colors[i] } })),
+        label: { show: true, position: 'top', color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => R.usd(steps[p.dataIndex][1], 1) },
+        markLine: { symbol: 'none', silent: true, lineStyle: { color: t.muted }, label: { show: false }, data: [{ yAxis: 0 }] } },
+    ],
+  };
+});
+
+const cHist = R.chart('c-hist', (t) => {
+  const o = R.base(t), h = C().hist;
+  const centers = h.n.map((_, i) => h.lo + h.w * (i + .5));
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const i = ps[0].dataIndex; return R.tip(t, [[ps[0].color, 'Runs', R.num(h.n[i])]], `${R.usd(h.lo + h.w * i)} to ${R.usd(h.lo + h.w * (i + 1))}`); } },
+    grid: { ...o.grid, top: 16, bottom: 18 },
+    xAxis: R.axis(t, { type: 'category', data: centers, splitLine: { show: false }, name: 'Transfer-year net', nameLocation: 'middle', nameGap: 26,
+      axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => R.usd(+v, 1), interval: 5 } }),
+    yAxis: R.axis(t, { type: 'value' }),
+    series: [{ type: 'bar', barCategoryGap: '8%', data: h.n.map((v, i) => ({ value: v, itemStyle: { color: centers[i] >= 0 ? t.good : t.bad, opacity: .8 } })) }],
+  };
+});
+
+const cBe = R.chart('c-be', (t) => {
+  const o = R.base(t), other = S.g === 'strong' ? 'weak' : 'strong';
+  const xs = D.grid.map((g) => Math.round(g * 100));
+  const get = (g, i) => xs.map((x) => C(x, g).net_year1[i]);
+  const lo = get(S.g, 0), mid = get(S.g, 1), hi = get(S.g, 2);
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, formatter: (ps) => { const i = ps[0].dataIndex; return R.tip(t, [[t.c[0], `Median · GSM ${S.g}`, R.usd(mid[i])], [t.c[0], 'P10 to P90', `${R.usd(lo[i])} to ${R.usd(hi[i])}`], [t.c[6], `Median · GSM ${other}`, R.usd(get(other, 1)[i])]], `China tariff ${xs[i]}%`); } },
+    grid: { ...o.grid, top: 40, bottom: 18 },
+    xAxis: R.axis(t, { type: 'category', data: xs, boundaryGap: false, splitLine: { show: false }, name: 'China-origin tariff, %', nameLocation: 'middle', nameGap: 26 }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    series: [
+      { type: 'line', stack: 'band', data: lo, lineStyle: { opacity: 0 }, showSymbol: false, tooltip: { show: false }, silent: true },
+      { type: 'line', stack: 'band', name: 'P10–P90', data: hi.map((v, i) => v - lo[i]), lineStyle: { opacity: 0 }, showSymbol: false, areaStyle: { color: t.c[0], opacity: .14 }, itemStyle: { color: t.c[0] } },
+      { type: 'line', name: `Median · GSM ${S.g}`, data: mid, showSymbol: false, lineStyle: { width: 2.5, color: t.c[0] }, itemStyle: { color: t.c[0] },
+        markLine: { symbol: 'none', silent: true, label: { color: t.ink2, fontSize: 11, formatter: (p) => p.name }, lineStyle: { color: t.muted, type: [4, 4] },
+          data: [{ yAxis: 0, name: '' }, { xAxis: String(S.t), name: `${S.t}%`, lineStyle: { color: t.ink2, type: 'solid' } }] } },
+      { type: 'line', name: `Median · GSM ${other}`, data: get(other, 1), showSymbol: false, lineStyle: { width: 1.5, type: [6, 4], color: t.c[6] }, itemStyle: { color: t.c[6] } },
+    ],
+  };
+});
+
+const cTor = R.chart('c-tor', (t) => {
+  const o = R.base(t), tor = C().tornado, rows = tor.rows.slice().reverse();
+  const dl = rows.map((r) => r.lo - tor.base), dh = rows.map((r) => r.hi - tor.base);
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const r = rows[ps[0].dataIndex]; return R.tip(t, [[t.c[0], 'Input at low end', R.usd(r.lo)], [t.c[1], 'Input at high end', R.usd(r.hi)], [t.muted, 'All inputs at midpoint', R.usd(tor.base)]], r.d); } },
+    grid: { ...o.grid, top: 34 },
+    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => (v > 0 ? '+' : '') + R.axUsd(v) } }),
+    yAxis: R.axis(t, { type: 'category', data: rows.map((r) => r.d), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fBody, fontSize: 11, width: 150, overflow: 'break' } }),
+    series: [
+      { type: 'bar', name: 'Input at low end', data: dl, barGap: '-100%', barWidth: '55%', itemStyle: { color: t.c[0], opacity: .9 } },
+      { type: 'bar', name: 'Input at high end', data: dh, barWidth: '55%', itemStyle: { color: t.c[1], opacity: .9 } },
+    ],
+  };
+});
+
+function insight() {
+  const c = C(), be = D.breakeven, top = C().tornado.rows[0];
+  const ramp = c.ramp_leak[1] + c.expedite[1];
+  R.$('#insight').innerHTML = `
+    <p><b>At a ${S.t}% China tariff with ${S.g} GSM, the median transfer year ${c.net_year1[1] >= 0 ? 'nets' : 'loses'} ${R.usd(Math.abs(c.net_year1[1]))}.</b> The move breaks even at about ${R.pct(be.strong, 1)} with strong GSM and ${R.pct(be.weak, 1)} with weak GSM.</p>
+    <p>The ramp costs ${R.usd(ramp)} once (tariff still paid while the new site ramps, plus expediting). The biggest single swing comes from <b>${top.d.toLowerCase()}</b>: ${R.usd(Math.min(top.lo, top.hi))} to ${R.usd(Math.max(top.lo, top.hi))}.</p>
+    <p>Company view only. The business unit sees MWD in its KPI but tariffs only through the shipment target (R22), so it can reject a move that pays for the company. Module 5 will score both views.</p>`;
+}
+
+function draw() {
+  R.save(S); out.textContent = S.t + '%';
+  kpis(); insight();
+  [cWf, cHist, cBe, cTor].forEach(R.update);
+}
+draw();
+</script>

@@ -111,6 +111,60 @@ def simulate(tariff_old, tariff_new=0.0, gsm="strong", n=5000, region="US", seed
     return out
 
 
+def deterministic(tariff_old, tariff_new=0.0, gsm="strong", region="US", **ov):
+    """Transfer-year net with every uncertain input at its midpoint, unless overridden.
+    Used for the tornado chart: swing one input at a time between its low and high value.
+    Overridable: rho, uplift, ramp, fa_new, window_new, conv_cost, expedite, carry, customs_scale."""
+    p = dict(region_profile(region))
+    c = CASE
+    mid = lambda r: (r[0] + r[1]) / 2
+    rho = ov.get("rho", mid(c["rho"]))
+    uplift = ov.get("uplift", mid(c["conv_uplift"]))
+    ramp = ov.get("ramp", mid(c["ramp_weeks"][gsm]))
+    fa_new = ov.get("fa_new", c["fa_new"])
+    window_new = ov.get("window_new", c["window_new"])
+    conv_cost = ov.get("conv_cost", c["conv_cost_per_unit"])
+    expedite_u = ov.get("expedite", c["expedite_cost_per_unit"][gsm])
+    carry = ov.get("carry", p["carry"])
+    customs = p["weekly_customs"] * ov.get("customs_scale", 1.0)
+    s_old, s_new = _sigma(c["fa_base"]), _sigma(fa_new)
+    tariff_saved = customs * 52 * (tariff_old - tariff_new)
+    eol_mwd = (_overcommit_weeks(s_new, window_new, rho) -
+               _overcommit_weeks(s_old, c["window_old"], rho)) * p["weekly_locked"] * c["eol_events_per_year"]
+    pipeline = p["weekly_bom"] * p["lt_adder"] * carry
+    conv = p["weekly_units"] * 52 * conv_cost * uplift
+    ramp_leak = 0.5 * ramp * customs * (tariff_old - tariff_new)
+    expedite = p["weekly_units"] * p["lt_adder"] * expedite_u
+    return tariff_saved - eol_mwd - pipeline - conv - ramp_leak - expedite
+
+
+def tornado(tariff_old, gsm="strong"):
+    """Swing of the transfer-year net when one input moves from its low to its high value."""
+    c = CASE
+    lo_r, hi_r = c["ramp_weeks"][gsm]
+    exp = c["expedite_cost_per_unit"][gsm]
+    drivers = [
+        ("Customs value per unit ±10%", "customs_scale", 0.9, 1.1),
+        ("New-site ramp weeks", "ramp", lo_r, hi_r),
+        ("Conversion cost uplift 5–10%", "uplift", c["conv_uplift"][0], c["conv_uplift"][1]),
+        ("Forecast-error correlation 0.3–0.9", "rho", c["rho"][0], c["rho"][1]),
+        ("Forecast accuracy after transfer 55–65%", "fa_new", 0.55, 0.65),
+        ("Commitment window after transfer 18–22 wks", "window_new", 18, 22),
+        ("China conversion cost $20–30", "conv_cost", 20.0, 30.0),
+        ("Expediting cost ±50%", "expedite", exp * 0.5, exp * 1.5),
+        ("Carrying rate 15–25%", "carry", 0.15, 0.25),
+    ]
+    base = deterministic(tariff_old, gsm=gsm)
+    rows = []
+    for label, key, lo, hi in drivers:
+        a = deterministic(tariff_old, gsm=gsm, **{key: lo})
+        b = deterministic(tariff_old, gsm=gsm, **{key: hi})
+        rows.append({"driver": label, "low_input": lo, "high_input": hi,
+                     "net_at_low": a, "net_at_high": b, "swing": abs(b - a)})
+    rows.sort(key=lambda r: -r["swing"])
+    return base, rows
+
+
 def pct(vals, q):
     v = sorted(vals)
     return v[int(q * (len(v) - 1))]

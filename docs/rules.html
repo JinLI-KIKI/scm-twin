@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Rules Register</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
+<style>/* Layout: a BI-style report. Sticky page tabs on top; under them a header, a slicer bar,
+   a row of KPI cards, then a 12-column canvas of visual containers. One column on phones.
+   Tokens match the network atlas so every page reads as one product. */
+:root {
+  --paper: #f6f7f5; --panel: #fbfcfb; --ink: #14181c; --ink-2: #4a525a; --muted: #6f777e;
+  --rule: #d9dde0; --chip: #eceeec; --hl: #fff3c4;
+  --sea: #2a78d6; --air: #eb6834; --inland: #1baf7a;
+  --d0: #9d90e6; --d5: #7464d9; --d16: #4a3aa7;
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #7464d9; --c5: #c9940f; --c6: #c2417a; --c7: #8a939a;
+  --good: #16794c; --warn: #9a6408; --bad: #b8322a;
+  --good-bg: #e3f2ea; --warn-bg: #f7eedb; --bad-bg: #f8e4e1;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+    --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+    --sea: #3987e5; --air: #d95926; --inland: #199e70;
+    --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+    --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+    --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+    --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+  --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+  --sea: #3987e5; --air: #d95926; --inland: #199e70;
+  --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+  --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+  --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+  --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font: 14px/1.5 var(--f-body); margin: 0; }
+a { color: inherit; }
+
+.report { max-width: 1440px; margin: 0 auto; display: grid; gap: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 40px; }
+.report-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 6px 24px; }
+.report-head > div { min-width: 0; }
+.eyebrow { font: 500 12px var(--f-mono); color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin: 0 0 4px; }
+h1 { font: 600 34px/1.02 var(--f-display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--ink-2); margin: 6px 0 0; max-width: 78ch; }
+.asof { font: 12px var(--f-mono); color: var(--muted); text-align: right; }
+
+/* slicers */
+.slicers { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end;
+  padding: 10px 14px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+.slicer { display: grid; gap: 4px; min-width: 0; }
+.slicer > .s-label { font-size: 12px; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-body); color: var(--ink-2); background: transparent; border: 0;
+  padding: 5px 11px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button:hover { background: var(--chip); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.range { display: flex; align-items: center; gap: 10px; }
+.range input[type="range"] { width: min(260px, 60vw); accent-color: var(--sea); }
+.range output { font: 600 18px var(--f-display); min-width: 3.4em; font-variant-numeric: tabular-nums; }
+input[type="search"] { font: 13px var(--f-body); color: var(--ink); background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 5px 10px; width: min(280px, 70vw); }
+button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+
+/* KPI cards */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .k-value { font-size: 24px; } .kpi { padding: 8px 10px 10px; } }
+.kpi { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px 12px;
+  display: grid; gap: 2px; align-content: start; min-width: 0; }
+.k-label { font-size: 12px; color: var(--muted); }
+.k-value { font: 600 30px/1.08 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.k-sub { font: 12px/1.4 var(--f-mono); color: var(--ink-2); overflow-wrap: anywhere; }
+.k-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+/* canvas of visuals */
+.canvas { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+.viz { grid-column: span 6; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.viz.w3 { grid-column: span 3; } .viz.w4 { grid-column: span 4; } .viz.w5 { grid-column: span 5; }
+.viz.w7 { grid-column: span 7; } .viz.w8 { grid-column: span 8; } .viz.w12 { grid-column: span 12; }
+.viz-h { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.viz-h h2 { font: 600 15px/1.2 var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.hint { font-size: 12px; color: var(--muted); }
+.chart { width: 100%; height: 300px; min-width: 0; }
+.chart.short { height: 230px; } .chart.tall { height: 380px; } .chart.xtall { height: 460px; }
+.chart .nolib { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 13px; text-align: center; padding: 12px; }
+@media (max-width: 1180px) { .viz.w3, .viz.w4, .viz.w5 { grid-column: span 6; } .viz.w7, .viz.w8 { grid-column: span 12; } }
+@media (max-width: 860px) { .viz, .viz.w3, .viz.w4, .viz.w5, .viz.w7, .viz.w8 { grid-column: span 12; } h1 { font-size: 28px; } .asof { text-align: left; } }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; min-width: 0; }
+table.tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.tbl th { font: 500 11px var(--f-body); color: var(--muted); text-align: right; padding: 0 8px 6px; border-bottom: 1px solid var(--rule);
+  letter-spacing: .03em; white-space: nowrap; }
+.tbl td { padding: 7px 8px; border-bottom: 1px solid var(--rule); text-align: right; font: 13px var(--f-mono); vertical-align: top; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; padding-left: 0; }
+.tbl td.txt, .tbl th.txt { text-align: left; font-family: var(--f-body); }
+.tbl tr.sel td { background: var(--hl); }
+.tbl tr.click { cursor: pointer; }
+.tbl tr.click:hover td { background: var(--chip); }
+.tbl td small { display: block; font: 12px var(--f-body); color: var(--muted); }
+.bar-cell { position: relative; }
+.bar-cell i { position: absolute; left: 0; top: 4px; bottom: 4px; background: var(--chip); border-radius: 2px; z-index: 0; }
+.bar-cell span { position: relative; z-index: 1; }
+
+/* chips and notes */
+.chip { display: inline-block; font: 500 11px/1.6 var(--f-body); padding: 0 7px; border-radius: 10px; white-space: nowrap;
+  border: 1px solid var(--rule); color: var(--ink-2); background: var(--paper); }
+.chip.good { color: var(--good); background: var(--good-bg); border-color: transparent; }
+.chip.warn { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.bad { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.prac { color: var(--c1); border-color: var(--c1); }
+.chip.web { color: var(--c3); border-color: var(--c3); }
+.chip.ph { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.open { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.ill, .chip.design { color: var(--muted); }
+.insight { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--ink-2);
+  background: var(--panel); display: grid; gap: 4px; }
+.insight b { color: var(--ink); font-weight: 600; }
+.insight p { margin: 0; }
+.notes { font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.notes p { margin: 0; max-width: 100ch; }
+.notes a, .tbl a, .insight a { color: var(--ink-2); overflow-wrap: anywhere; }
+code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border-radius: 3px; }
+.legend-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.sw { width: 12px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+
+/* Top navigation shared by every page, including the atlas. Uses the page's own tokens. */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1200; display: flex; align-items: stretch; gap: 14px;
+  height: 46px; background: var(--panel); border-bottom: 1px solid var(--rule); box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topbar .brand { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; flex: none;
+  font: 500 13px var(--f-mono); }
+.topbar .brand-mark { width: 12px; height: 12px; background: var(--ink); border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--ink); box-sizing: border-box; }
+.topbar .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
+.topbar .tabs::-webkit-scrollbar { display: none; }
+.topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
+  font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
+.topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
+.topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }
+.topbar .repo:hover { color: var(--ink); }
+@media (max-width: 560px) { .topbar .repo { display: none; } .topbar .brand-name { display: none; } }
+
+.tbl td.rule { font: 13px/1.5 var(--f-body); text-align: left; min-width: 280px; max-width: 760px; }
+.tbl td.st { text-align: left; font: 12px/1.4 var(--f-body); color: var(--ink-2); min-width: 160px; max-width: 320px; }
+.tbl td.id { font: 500 13px var(--f-mono); white-space: nowrap; }
+</style>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
+  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html">Overview</a><a class="tab" href="atlas.html">Network atlas</a><a class="tab" href="lanes.html">Lanes & lead time</a><a class="tab" href="mwd.html">MWD</a><a class="tab" href="transfer.html">Transfer timing</a><a class="tab" href="business-case.html">Business case</a><a class="tab" href="finished-goods.html">Finished goods</a><a class="tab" href="rules.html" aria-current="page">Rules register</a></nav>
+  <a class="repo" href="https://github.com/jinli-kiki/scm-twin">GitHub</a>
+</header>
+<script>(function(){var a=document.querySelector(".topbar .tab[aria-current]");if(a){var n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.clientWidth)/2;}})();</script>
+
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Assumptions register</p>
+      <h1>Rules Register</h1>
+      <p class="sub">Every business rule and number in the model, with where it came from. Practitioner input is generalized and virtualized; placeholders are invented and wait for calibration; open questions are asked one at a time.</p>
+    </div>
+    <div class="asof">From docs/ASSUMPTIONS.md · 2026-10-14</div>
+  </div>
+
+  <section class="slicers" aria-label="Filters">
+    <div class="slicer"><span class="s-label" id="l-k">Source</span><div class="seg" role="group" aria-labelledby="l-k" id="f-k"></div></div>
+    <div class="slicer"><label class="s-label" for="f-q">Search</label><input type="search" id="f-q" placeholder="e.g. tariff, MWD, lock"></div>
+  </section>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="canvas">
+    <div class="viz w5">
+      <div class="viz-h"><h2>Where the inputs come from</h2><span class="hint">Rules and numbers · click to filter</span></div>
+      <div id="c-src" class="chart"></div>
+    </div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Open questions</h2><span class="hint">Asked one at a time</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-open"></table></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Business rules</h2><span class="hint" id="h-rules"></span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-rules"></table></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Numbers</h2><span class="hint" id="h-nums"></span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-nums"></table></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Question log</h2><span class="hint" id="h-q"></span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-q"></table></div>
+    </div>
+  </section>
+</main>
+<script>/* Shared helpers for the report pages: theme-aware ECharts, number formats, slicers. */
+const R = (() => {
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const theme = () => ({
+    ink: css('--ink'), ink2: css('--ink-2'), muted: css('--muted'), rule: css('--rule'),
+    panel: css('--panel'), paper: css('--paper'), chip: css('--chip'), hl: css('--hl'),
+    c: [1, 2, 3, 4, 5, 6, 7].map((i) => css('--c' + i)),
+    sea: css('--sea'), air: css('--air'), inland: css('--inland'),
+    d0: css('--d0'), d5: css('--d5'), d16: css('--d16'),
+    good: css('--good'), warn: css('--warn'), bad: css('--bad'),
+    fBody: css('--f-body'), fMono: css('--f-mono'), fDisp: css('--f-display'),
+  });
+
+  // ---------- numbers
+  const usd = (v, d) => {
+    if (v == null || isNaN(v)) return '–';
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e9) return s + '$' + (a / 1e9).toFixed(d ?? 2) + 'B';
+    if (a >= 1e6) return s + '$' + (a / 1e6).toFixed(d ?? 2) + 'M';
+    if (a >= 1e3) return s + '$' + (a / 1e3).toFixed(d ?? 0) + 'k';
+    return s + '$' + a.toFixed(0);
+  };
+  const num = (v, d = 0) => (v == null || isNaN(v)) ? '–' :
+    (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+  const kunits = (v) => Math.abs(v) >= 1e3 ? num(v / 1e3, 1) + 'k' : num(v);
+  const pct = (v, d = 0) => (v == null || isNaN(v)) ? '–' : (v * 100).toFixed(d) + '%';
+  const axUsd = (v) => usd(v, Math.abs(v) >= 1e6 ? 1 : 0);
+
+  // ---------- charts
+  const charts = [];
+  const hasLib = () => typeof window.echarts !== 'undefined';
+  function base(t) {
+    return {
+      animationDuration: 280, animationDurationUpdate: 280,
+      textStyle: { fontFamily: t.fBody, color: t.ink2, fontSize: 12 },
+      tooltip: { trigger: 'axis', confine: true, backgroundColor: t.panel, borderColor: t.rule,
+        textStyle: { color: t.ink, fontFamily: t.fBody, fontSize: 12 }, axisPointer: { lineStyle: { color: t.muted }, shadowStyle: { color: t.chip, opacity: .6 } } },
+      legend: { top: 0, left: 0, type: 'scroll', icon: 'roundRect', itemWidth: 12, itemHeight: 8, itemGap: 14,
+        textStyle: { color: t.ink2, fontSize: 12 }, pageTextStyle: { color: t.ink2 }, pageIconColor: t.ink2, pageIconInactiveColor: t.rule },
+      grid: { left: 6, right: 18, top: 34, bottom: 6, containLabel: true },
+    };
+  }
+  function axis(t, o = {}) {
+    return Object.assign({
+      axisLine: { lineStyle: { color: t.rule } }, axisTick: { show: false },
+      axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true },
+      splitLine: { lineStyle: { color: t.rule, type: [3, 3] } },
+      nameTextStyle: { color: t.muted, fontSize: 11, fontFamily: t.fBody },
+    }, o);
+  }
+  function chart(id, build) {
+    const el = document.getElementById(id);
+    const c = { el, build, inst: null };
+    if (!el) return c;
+    if (!hasLib()) {
+      el.innerHTML = '<div class="nolib">The chart library did not load. The numbers in the cards and tables are still current.</div>';
+      return c;
+    }
+    c.inst = echarts.init(el, null, { renderer: 'svg' });
+    c.inst.setOption(build(theme()), true);
+    charts.push(c);
+    return c;
+  }
+  function update(c) { if (c && c.inst) c.inst.setOption(c.build(theme()), true); }
+  function refreshAll() { charts.forEach(update); }
+  let rt;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => charts.forEach((c) => c.inst && c.inst.resize()), 120); });
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshAll); } catch (e) { /* old browsers */ }
+  new MutationObserver(refreshAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ---------- per-viewer memory for slicers (optional; page works without it)
+  const KEY = 'scm-twin:' + location.pathname.split('/').pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } };
+  const save = (state) => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage blocked */ } };
+
+  // ---------- segmented slicer
+  function seg(el, options, value, onChange) {
+    el.innerHTML = '';
+    options.forEach(([v, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = label; b.dataset.v = String(v);
+      b.setAttribute('aria-pressed', String(String(v) === String(value)));
+      b.addEventListener('click', () => {
+        el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        onChange(v);
+      });
+      el.appendChild(b);
+    });
+    return { set(v) { el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === String(v)))); } };
+  }
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const tip = (t, rows, title) => `<div style="font-weight:600;margin-bottom:4px">${esc(title)}</div>` +
+    rows.map(([color, name, val]) => `<div style="display:flex;justify-content:space-between;gap:18px"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${color};margin-right:6px"></span>${esc(name)}</span><span style="font-family:${t.fMono}">${val}</span></div>`).join('');
+  return { theme, usd, num, kunits, pct, axUsd, base, axis, chart, update, refreshAll, load, save, seg, $, esc, tip, hasLib };
+})();
+</script>
+<script>
+const D = {"rules":[{"id":"R1","text":"A plan cancelled inside the <b>16-week<\/b> liability window counts as MWD (liability) for the full BOM, whether or not the ODM actually stocked the material.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R2","text":"Same part number used by other plans → MRP netting absorbs it: the factory buys less, stock burns down naturally. Not MWD.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R3","text":"Freed stock is netted by pushing out / cancelling other plans&#x27; open POs. Push-out only moves timing; MWD is decided by how much of the order book is <b>non-cancellable<\/b>. Netting offsets demand beyond each material&#x27;s non-cancellable window.","status":"PRACTITIONER (direction)","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R4","text":"Consumption is tracked for <b>36 months<\/b> (adjustable).","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R5","text":"Collective EOL and NPI both matter: demand stops at platform EOL; an NPI absorbs old stock only if it reuses the same part number.","status":"PRACTITIONER (mechanics: OPEN)","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R6","text":"Non-common but convertible material needs the planner to negotiate with other GEO BUs and own BU, then pay to convert (改料). Locked material → MWD.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R7","text":"Material routing classes (CPU/memory/SSD/panel/battery/adapter/housing = 1; cord/packaging = 2; keyboard/WWAN = 3).","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R8","text":"Two ledgers: <b>claimed<\/b> MWD (plan basis) vs <b>physical<\/b> MWD (stock-take). Gap comes from ODM hedging; sometimes ODMs do not report. Settled at fiscal-year end.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R9","text":"Factory transfer cuts off a region&#x27;s consumption path for its region-locked MWD → drives transfer timing.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R10","text":"Shared ODMs: industry-standard parts (CPU, memory, SSD, panel) are also bought by other brands, so ODM/supplier can redeploy them → short non-cancellable window. Custom parts (battery pack, housing, keyboard) → window = full lead time.","status":"PRACTITIONER (direction); window lengths PLACEHOLDER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R11","text":"Finished-goods disposition order: 1 sell in original region at discount → 2 divert to same-config markets → 3 rework → 4 tear down for service parts → 5 liquidate → 6 scrap. 3 is skipped for low-value lines (e.g. EDU) and done for high-value lines (e.g. gaming).","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R12","text":"Rework is quoted case by case by the ODM; cost = parts + labour. Keyboard-only ≈ 2–5% of unit cost; often 30–50%; hard designs (convertible 2-in-1 with touch) 70%+.","status":"PRACTITIONER (ranges illustrative)","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R13","text":"<b>Origin lock at the motherboard.<\/b> US customs mostly judges origin by the motherboard; once the board is built (SMT done) its origin is fixed — final assembly elsewhere does not change it. A built board that cannot be used is scrapped. Only pre-SMT components can be moved to a new factory and change origin.","status":"PRACTITIONER · WEB: CBP NY N305378 (Chinese subassemblies assembled in Taiwan → China origin)","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R14","text":"Pre-SMT components left at the old factory are routinely shipped to the new factory, because the new location&#x27;s local supply base is incomplete and China parts flow there anyway. They take the new site&#x27;s origin once SMT/base-unit assembly happens there.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R15","text":"After transfer, parts still come from China, so lead time to the new factory gets longer (supplier lead time + cross-border transit + import handling). Plans must be committed earlier → longer commitment window, more forecast error inside it, more in-transit and safety stock → <b>recurring<\/b> extra MWD and inventory every year, not a one-time cost.","status":"PRACTITIONER (direction); size OPEN — Q11","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R16","text":"New factories ramp slowly — capacity, yield and certification lag — so transfer is a gradual curve, not a switch. The old factory keeps covering the gap (still paying China-origin tariff); yield loss at the new site consumes material without output.","status":"PRACTITIONER (direction); ramp shape OPEN — Q12","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R17","text":"Transfer to a new Southeast Asian site: <b>+4 weeks lead time<\/b> by default. Sales must give a <b>quarterly plan<\/b> to cover the longer horizon. Long-lead parts such as <b>OLED<\/b> panels get an earlier pull-in rhythm.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R18","text":"Longer horizon → forecast vs actual gets worse, but by a limited amount: <b>~8% worse<\/b>. Forecast accuracy was never very good to begin with.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R19","text":"<b>Risk board hedge (风险打板):<\/b> for uncertain models, or models that sold badly in the past, delay/stretch the board-build (SMT) cadence so material stays loose and liquid. Cost: if you keep not loading boards, the ODM cuts the capacity it gives you — needs a strong GSM function to keep capacity stable.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R20","text":"New-site conversion cost (labour + new line) <b>+5–10%<\/b> vs China.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R21","text":"Rushing a transfer → certain material shortage at the new factory (lead time +4 weeks not yet covered). Expediting helps but on-time delivery is not guaranteed; also depends on capacity and worker learning. Duration is hard to predict and depends heavily on GSM strength.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R22","text":"<b>Tariffs are not in the planner/BU KPI; MWD is.<\/b> But tariffs reach the BU through volume: higher tariffs raise consumer prices, which threatens the fiscal-year shipment target. So the BU-level trade-off is MWD (KPI) + shortage risk from rushing (shipment KPI) vs tariff-driven demand loss (shipment KPI).","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R23","text":"Finished goods first go into <b>MGI<\/b>, rarely straight to merchants/channel. Both low-end and premium segments are hit by price rises. So a price-driven demand drop does not cut factory shipments at once — it accumulates as excess finished goods in MGI (then ageing, price erosion, disposition per R11). Sell-in can hit target while sell-through misses; the gap sits in MGI.","status":"PRACTITIONER (flow); MGI definition OPEN — Q18","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R24","text":"<b>MGI = regional distribution warehouse, located after customs clearance.<\/b> Ownership differs by company: brand-owned, or space briefly leased through a logistics provider — never the ODM. Known sites in <code>data/mgi_sites.csv<\/code>.","status":"PRACTITIONER · sites ILLUSTRATIVE","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R25","text":"<b>Customs status of MGI stock is a tariff hedge.<\/b> Post-customs (the common default): duty is paid on arrival, so diverting excess abroad leaves the duty sunk unless drawback is allowed (the Jan 2026 semiconductor 232 proclamation bars drawback). US FTZ: re-exports pay no duty; goods destroyed under CBP supervision pay no duty; no storage time limit. But 2025-26 actions (Section 301, several 232s, the 60-economy 301 from 24 Jul 2026) force privileged-foreign admission: the rate is locked at admission, irrevocably — you cannot wait in the zone for a lower rate. Bonded warehouse: up to 5 years, rate set at withdrawal (exposed both ways). Sources disagree on whether duty is still deferred under forced PF status.","status":"WEB — <a href=\"https://gingercontrol.com/blog/foreign-trade-zones-reduce-tariff-exposure\">GingerControl<\/a>, <a href=\"https://cargolinked.com/guides/foreign-trade-zones-vs-bonded-warehouses\">Cargolinked<\/a>; practitioner: possible, details unknown","kind":"web","section":"Business rules — MWD (Material Without Demand)"},{"id":"R26","text":"<b>Finished-goods value in MGI is flat until the successor model launches<\/b>, then drops in a step. Before that, the main ageing risk is quality: units that sit long can develop yield problems and need re-inspection. Prices in third-tier (liquidation / grey) markets do not feed back into the official price.","status":"PRACTITIONER","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R27","text":"<b>The step drop is paid through the channel, not the list price.<\/b> Usually price protection: the official price stays, and the brand credits dealers the difference on units they still hold. Alternatively a new agreement with the dealer. So at successor launch the brand pays (units in channel × drop) in credits, and MGI stock still unsold is later sold in at the lower net price. Consequence: stock pushed into the channel just before launch to hit a sell-in target comes back as a price-protection bill.","status":"PRACTITIONER · WEB: price protection as a manufacturer rebate on retailer-held units (<a href=\"https://www.gsb.stanford.edu/faculty-research/publications/price-protection-pc-industry\">Lee et al., Management Science 2000<\/a>)","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R28","text":"<b>Dealer volume lock.<\/b> Well before EOL (modelled 22 weeks, virtualized) each region agrees locked volumes with its dealers. After the lock, forecasts can be cut but not increased. Lock dates differ a little by region (modelled ±2 weeks). The lock sits a few weeks before the liability window closes on the last builds, so the final material buy can be sized on committed volume instead of the sales forecast.","status":"PRACTITIONER (virtualized); whether the locked volume binds the dealer is OPEN — Q23","kind":"prac","section":"Business rules — MWD (Material Without Demand)"},{"id":"R29","text":"<b>EOL means the last build week<\/b> of a model. Sell-through continues after it, until the successor reaches the market and the old stock fades out.","status":"Design choice — to confirm","kind":"design","section":"Business rules — MWD (Material Without Demand)"}],"numbers":[{"item":"Company","value":"Anonymous laptop maker; no real brand is modelled","status":"Design choice","kind":"design","section":"Network atlas (map) — added 2026-10-13"},{"item":"Factory sites","value":"Kunshan, Jiangsu (current) and Cikarang, West Java, Indonesia (new) — <code>data/nodes.csv<\/code>","status":"ILLUSTRATIVE","kind":"ill","section":"Network atlas (map) — added 2026-10-13"},{"item":"MGI sites","value":"Inland Empire CA, Venlo NL, Daventry UK, Atsugi JP, Campinas BR — <code>data/mgi_sites.csv<\/code>","status":"ILLUSTRATIVE (typical electronics DC hubs)","kind":"ill","section":"Network atlas (map) — added 2026-10-13"},{"item":"Ports and airports","value":"Real gateways (UN/LOCODE, IATA codes)","status":"WEB-KNOWN","kind":"web","section":"Network atlas (map) — added 2026-10-13"},{"item":"Map frame","value":"One complete Pacific-centred world, cut in the mid-Atlantic at 28°W; no repeated copies when zooming out","status":"Design choice","kind":"design","section":"Network atlas (map) — added 2026-10-13"},{"item":"Country shapes","value":"Natural Earth 1:50m, public domain","status":"WEB / open data","kind":"web","section":"Network atlas (map) — added 2026-10-13"},{"item":"Highways and truck lanes","value":"Natural Earth 1:10m major highways shown when zoomed in; truck lanes routed over the Natural Earth road network (straight line × 1.3 where no road route is found)","status":"WEB / open data","kind":"web","section":"Network atlas (map) — added 2026-10-13"},{"item":"Ocean paths and distances","value":"<code>searoute<\/code> open-source maritime network; Cape option closes Suez, Bab-el-Mandeb and Panama","status":"WEB / open source","kind":"web","section":"Network atlas (map) — added 2026-10-13"},{"item":"Red Sea status","value":"Most Asia–Europe services still go around the Cape in 2026 → Cape is the default","status":"WEB (see sources in Q&amp;A log)","kind":"web","section":"Network atlas (map) — added 2026-10-13"},{"item":"Ocean speed / port-call allowance","value":"15 kn + 4 days","status":"PLACEHOLDER (<code>data/leadtime_params.csv<\/code>)","kind":"ph","section":"Network atlas (map) — added 2026-10-13"},{"item":"Handling days at each step","value":"<code>data/leadtime_params.csv<\/code>","status":"PLACEHOLDER","kind":"ph","section":"Network atlas (map) — added 2026-10-13"},{"item":"Duty by importing country","value":"<code>data/tariffs.csv<\/code> (US, MX, BR, IN, AE web-sourced; EU/UK/JP zero under WTO ITA, to verify)","status":"WEB / TO VERIFY","kind":"web","section":"Network atlas (map) — added 2026-10-13"},{"item":"Battery","value":"Store ~50% charge, recharge every 6 months; capacity loss after 12+ months","status":"WEB — <a href=\"https://support.apple.com/en-ae/100731\">Apple<\/a>","kind":"web","section":"Ageing while waiting"},{"item":"Chips","value":"Industry 2-year date-code convention; distributor-sponsored tests claim most old parts still pass solderability (biased source)","status":"WEB — <a href=\"https://www.wevolver.com/article/long-term-storage-and-dispelling-myths-about-date-codes\">Wevolver<\/a>","kind":"web","section":"Ageing while waiting"},{"item":"Keyboards, housings, panels","value":"No physical decay; die with EOL","status":"Reasoned","kind":"design","section":"Ageing while waiting"},{"item":"Liability window","value":"16 weeks","status":"PRACTITIONER (virtualized)","kind":"prac","section":"Numbers"},{"item":"Tracking window","value":"156 weeks (36 months)","status":"PRACTITIONER (virtualized)","kind":"prac","section":"Numbers"},{"item":"Unit costs (CPU $120, panel $60, keyboard $25, …)","value":"see <code>data/materials.csv<\/code>","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"Purchase lead times (CPU 16w, panel 12w, memory 8w, …)","value":"see <code>data/materials.csv<\/code>","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"Non-cancellable window: standard parts 2w; custom parts = lead time","value":"<code>cancel_window_weeks<\/code> in <code>data/materials.csv<\/code>","status":"PLACEHOLDER — Q7","kind":"ph","section":"Numbers"},{"item":"Carrying rate","value":"20%/yr","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"Battery recharge cost","value":"$0.50/unit/event","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"Re-test cost past date code","value":"$1.00/unit","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"Rework acceptance by other BU","value":"80%","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"ODM hedge ratio","value":"0%","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"Locale mix (US 40 / DE 12 / UK 8 / FR 7 / JP 15 / BR 18)","value":"<code>data/locales.csv<\/code>","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"Forecast accuracy 16w / 20w","value":"~68% / ~60%","status":"PRACTITIONER (virtualized)","kind":"prac","section":"Numbers"},{"item":"Week-to-week forecast-error correlation","value":"0.3–0.9","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"New-factory ramp to full volume","value":"strong GSM 8–16 wks; weak GSM 16–30 wks","status":"PLACEHOLDER (direction PRACTITIONER)","kind":"ph","section":"Numbers"},{"item":"Expediting cost while lead time not covered","value":"$6 (strong GSM) / $12 (weak) per unit","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"China conversion cost per unit","value":"$25","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"Sales optimism bias","value":"+8% on the plan; sales add half of any upside surprise and never cut below plan (Module 4)","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"Finished goods (Module 4): channel cover, drain/push cover, tail, disposition prices and capacities","value":"<code>data/fg_params.csv<\/code> (status per row)","status":"PLACEHOLDER unless marked","kind":"ph","section":"Numbers"},{"item":"Gross margin on channel net price","value":"~25% (P1-14 $650 / P1-16 $760 on $488 / $568 landed)","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"Duty drawback on re-export or destruction (US)","value":"Up to 99% for MFN and Section 301 duty; barred for IEEPA (struck down 20 Feb 2026) and for Section 232 steel/aluminium; the Jan 2026 semiconductor 232 proclamation bars it too (R25). Modelled 0% in the 25% stress case","status":"WEB — <a href=\"https://gingercontrol.com/resources/duty-drawback\">GingerControl drawback matrix<\/a>, <a href=\"https://www.skadden.com/insights/publications/2026/03/tariff-refund-mechanism-takes-shape\">Skadden on the IEEPA ruling<\/a>","kind":"web","section":"Numbers"},{"item":"Price drop at successor launch (net, via price protection)","value":"10–20%","status":"PLACEHOLDER · WEB: retail discounts on previous-generation laptops ~10–25% (<a href=\"https://shopsavvy.com/best-time-to-buy/computers\">ShopSavvy<\/a>)","kind":"ph","section":"Numbers"},{"item":"Tariff pass-through to US importers","value":"~96% (exporters absorbed ~4%), measured on import prices, not retail","status":"WEB — Kiel Institute via <a href=\"https://mahometdaily.com/?p=341079\">Mahomet Daily<\/a>","kind":"web","section":"Numbers"},{"item":"Laptop retail impact of large tariffs","value":"10% global + 60% China → +45% laptop price (≈$357 on $793), assumes near-full pass-through","status":"WEB — CTA via <a href=\"https://www.tomshardware.com/news/trump-tariffs-increase-laptop-electronics-prices\">Tom&#x27;s Hardware<\/a>","kind":"web","section":"Numbers"},{"item":"Retail pass-through of tariff cost","value":"~60–100%+ (Acer +10% list for a 10% China tariff, Feb 2025; Asus +6.7–9% on five models, Mar 2025)","status":"WEB — derived; see <a href=\"https://www.theregister.com/2025/02/18/acer_hikes_us_prices/\">The Register<\/a>, <a href=\"https://tech.yahoo.com/computing/articles/5-asus-laptops-now-more-090000444.html\">Yahoo Tech<\/a>","kind":"web","section":"Numbers"},{"item":"Market-level price elasticity (US PCs)","value":"≈ −0.7 implied: 2026 units −10.7% (Omdia) with sell-in ASP +12% (2Q26); confounded by memory shortage, Win10 refresh ending, pull-forward","status":"WEB — derived; <a href=\"https://www.lightreading.com/smartphones-devices/us-pc-shipments-grew-1-0-in-2q26-while-full-year-market-forecast-to-decline-10-7-omdia\">Light Reading/Omdia<\/a>","kind":"web","section":"Numbers"},{"item":"Segment elasticity","value":"low end far more elastic: 1Q26 sub-$500 units −18.7% vs total −7% with ASP +4%; 2Q26 sub-$699 −6.5%, $1,500+ +36.8%","status":"WEB — <a href=\"https://www.digitalcitizen.life/us-pc-shipments-fall-7-as-higher-memory-costs-push-prices-up/\">Digital Citizen<\/a>, Omdia — to validate with practitioner (Q17)","kind":"web","section":"Numbers"},{"item":"Boards built ahead of assembly","value":"2 weeks","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"New-site lead-time adder (SE Asia)","value":"+4 weeks","status":"PRACTITIONER","kind":"prac","section":"Numbers"},{"item":"Relocation transit / cost","value":"3 weeks / 3% of material value, bonded (no duty)","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"Customs value per unit (P1-14 / P1-16 / P2-14)","value":"$480 / $560 / $520","status":"PLACEHOLDER","kind":"ph","section":"Numbers"},{"item":"China-origin US tariff on laptops","value":"0% current; 25% hypothetical scenario","status":"WEB (current) / PLACEHOLDER (scenario)","kind":"web","section":"Numbers"},{"item":"Lifecycle (P1 EOL wk 30, P2 NPI wk 26)","value":"<code>data/models.csv<\/code>, <code>data/platforms.csv<\/code>","status":"PLACEHOLDER","kind":"ph","section":"Numbers"}],"questions":[{"id":"Q1","q":"When is material officially MWD?","a":"Plan cancelled inside the liability window → MWD regardless of actual stocking; physical amount only known at stock-take; annual reconciliation.","kind":"answered"},{"id":"Q2","q":"Is common material netted out first?","a":"Yes — same PN is absorbed by other plans; non-common needs cross-BU negotiation and paid conversion.","kind":"answered"},{"id":"Q3","q":"Time limit for natural consumption?","a":"Tracked for years (modelled 36 months), adjustable; electronics depend on storage yield.","kind":"answered"},{"id":"Q4","q":"BOM routing table","a":"Confirmed; also consider collective EOL and NPI.","kind":"answered"},{"id":"Q5","q":"Does freed common stock offset only not-yet-purchased demand (beyond lead time)?","a":"No — factories push out / cancel other plans&#x27; POs, because other brands buy the same parts and ODMs are often shared.","kind":"answered"},{"id":"Q6","q":"When a shared ODM redeploys our freed standard parts to another brand, does it still claim MWD from us?","a":"PARKED","kind":"open"},{"id":"Q6b","q":"Finished-goods disposition order?","a":"1→6 as listed; 3 vs 4 depends on unit value (gaming reworked, EDU torn down).","kind":"answered"},{"id":"Q7b","q":"Rework cost?","a":"ODM quotes case by case; 2–5% keyboard-only, 30–50% common, 70%+ for convertibles; plus labour.","kind":"answered"},{"id":"Q8","q":"Is rework cost fixed or proportional?","a":"Percentages were examples; labour must be added. Also: rework to re-enter the US depends on US origin rules — customs check the motherboard; once SMT is done the board&#x27;s origin is locked.","kind":"answered"},{"id":"Q9","q":"At transfer, are pre-SMT components moved to the new factory?","a":"Yes — normal, because the new origin&#x27;s supply base is not complete.","kind":"answered"},{"id":"Q10","q":"Model says: with a 25% tariff, cut over immediately — MWD is small money. That contradicts experience. What is missing?","a":"Shipping time: lead time to the new factory gets longer (R15).","kind":"answered"},{"id":"Q10b","q":"Is slow new-factory ramp (capacity, yield, certification) a real constraint?","a":"Yes, obviously (R16).","kind":"answered"},{"id":"Q11","q":"How many weeks longer is the chain, and does the commitment window stretch with it?","a":"New SE Asia site: +4 weeks by default; sales give quarterly plans; OLED pulled in earlier.","kind":"answered"},{"id":"Q13","q":"How much more of a 20-week-out plan gets cancelled or changed than a 16-week-out plan?","a":"~8% worse; risky models get a stretched board-build cadence (hedge); ODM cuts capacity if you under-load; new-site conversion +5–10%.","kind":"answered"},{"id":"Q14","q":"What is forecast accuracy at the base window, and is &quot;8% worse&quot; percentage points or relative?","a":"Roughly 8 points worse (modelled as 68% → 60%). Rushing causes shortages; can expedite but delivery not guaranteed; GSM-dependent.","kind":"answered"},{"id":"Q15","q":"In a transfer decision, do MWD and tariff land on the same P&amp;L / owner?","a":"No. Tariff is not in the KPI, but it affects whether shipments hit the FY target, because consumers feel the price.","kind":"answered"},{"id":"Q16","q":"When tariffs rose, how much did selling prices rise and how much did shipments fall?","a":"Researched from public news → see pass-through / elasticity rows above.","kind":"answered"},{"id":"Q17","q":"Does the low-end / EDU segment really react much harder to price than premium / gaming?","a":"Both are affected; goods go into MGI first, rarely directly to merchants.","kind":"answered"},{"id":"Q18","q":"What exactly is MGI — full name, who owns the stock, per country or per GEO, where are they?","a":"Regional distribution warehouse after customs; brand-owned or briefly leased via logistics providers; never ODM. Typical hub locations used.","kind":"answered"},{"id":"Q19","q":"Is MGI always post-customs, or is stock ever held bonded / in an FTZ so duty is paid only on release?","a":"Possible; FTZ / bonded rules researched from public sources (R25).","kind":"answered"},{"id":"Q20","q":"How does a finished laptop in MGI lose value?","a":"Little movement before the successor launches, then a step drop; ageing stock may show yield problems; third-tier market prices do not directly move the price.","kind":"answered"},{"id":"Q21","q":"How big is the drop when the successor launches, and is it a list-price cut or price protection paid to the channel?","a":"Usually price protection to the channel (list price unchanged), or a new dealer agreement. Size not given → web retail range for previous-generation laptops ~10–25% used as a placeholder (10–20% modelled).","kind":"answered"},{"id":"Q22","q":"How many weeks of stock do dealers hold before a successor launch, and is sell-in deliberately cut beforehand to drain the channel?","a":"Volumes are locked with dealers well before EOL (modelled 22 weeks); after the lock, forecasts can no longer be increased; regions lock at slightly different times. Channel weeks of stock not given → 5 weeks placeholder (R28).","kind":"answered"},{"id":"Q23","q":"Is the locked volume binding on the dealer? If sell-through falls short of it, who carries the leftover: the dealer, the brand through stock rotation / returns, or the brand through extra support?","a":"OPEN","kind":"open"},{"id":"Q12","q":"From first trial build to full volume, how long does a new factory take; what holds it back most?","a":"OPEN","kind":"open"},{"id":"Q7","q":"How many weeks before delivery does a PO become non-cancellable, standard vs custom parts?","a":"QUEUED","kind":"open"}]};
+const KINDS = [['all', 'All'], ['prac', 'Practitioner'], ['web', 'Web'], ['ph', 'Placeholder'], ['open', 'Open'], ['design', 'Design / illustrative']];
+const KLABEL = Object.fromEntries(KINDS);
+const kindOf = (k) => (k === 'ill' ? 'design' : k);
+const saved = R.load();
+const S = { k: KINDS.some((x) => x[0] === saved.k) ? saved.k : 'all', q: '' };
+const segK = R.seg(R.$('#f-k'), KINDS, S.k, (v) => { S.k = v; draw(); });
+R.$('#f-q').addEventListener('input', (e) => { S.q = e.target.value.trim().toLowerCase(); draw(); });
+const plain = (h) => h.replace(/<[^>]+>/g, '');
+const match = (r, fields) => (S.k === 'all' || kindOf(r.kind) === S.k) && (!S.q || fields.some((f) => plain(r[f] || '').toLowerCase().includes(S.q)));
+const chip = (k) => `<span class="chip ${k}">${KLABEL[kindOf(k)] || k}</span>`;
+
+const all = D.rules.concat(D.numbers);
+const counts = {}; all.forEach((r) => { const k = kindOf(r.kind); counts[k] = (counts[k] || 0) + 1; });
+const openQ = D.questions.filter((q) => q.kind === 'open');
+const card = (label, value, sub) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span></div>`;
+R.$('#kpis').innerHTML = [
+  card('Business rules', D.rules.length, `${D.rules.filter((r) => kindOf(r.kind) === 'prac').length} from practitioner input`),
+  card('Numbers tracked', D.numbers.length, `${D.numbers.filter((r) => kindOf(r.kind) === 'ph').length} still placeholders`),
+  card('Web-sourced', counts.web || 0, 'rules and numbers with a public source'),
+  card('Questions answered', D.questions.length - openQ.length, `${openQ.length} open or queued`),
+].join('');
+
+const order = ['prac', 'web', 'ph', 'open', 'design'];
+const cSrc = R.chart('c-src', (t) => {
+  const o = R.base(t), col = { prac: t.c[0], web: t.c[2], ph: t.warn, open: t.bad, design: t.c[6] };
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, trigger: 'item', formatter: (p) => R.tip(t, [[p.color, p.name, p.value + ' items']], 'Source') },
+    legend: { ...o.legend, type: 'plain', orient: 'vertical', top: 'middle', left: 'auto', right: 0 },
+    series: [{ type: 'pie', radius: ['46%', '72%'], center: ['36%', '50%'], avoidLabelOverlap: true,
+      itemStyle: { borderColor: t.panel, borderWidth: 2 },
+      label: { color: t.ink2, fontSize: 12, formatter: '{c}' }, labelLine: { show: false }, labelLayout: { hideOverlap: true },
+      data: order.filter((k) => counts[k]).map((k) => ({ name: KLABEL[k], value: counts[k], k, itemStyle: { color: col[k], opacity: S.k === 'all' || S.k === k ? 1 : .35 } })) }],
+  };
+});
+cSrc.inst && cSrc.inst.on('click', (p) => { S.k = S.k === p.data.k ? 'all' : p.data.k; segK.set(S.k); draw(); });
+
+function draw() {
+  R.save({ k: S.k });
+  const rules = D.rules.filter((r) => match(r, ['id', 'text', 'status']));
+  const nums = D.numbers.filter((r) => match(r, ['item', 'value', 'status']));
+  const qs = D.questions.filter((q) => (S.k === 'all' || (S.k === 'open' ? q.kind === 'open' : true)) && (!S.q || plain(q.q + ' ' + q.a).toLowerCase().includes(S.q)));
+  R.$('#h-rules').textContent = `${rules.length} of ${D.rules.length}`;
+  R.$('#h-nums').textContent = `${nums.length} of ${D.numbers.length}`;
+  R.$('#h-q').textContent = `${qs.length} of ${D.questions.length}`;
+  R.$('#t-rules').innerHTML = '<thead><tr><th class="txt">ID</th><th class="txt">Rule</th><th class="txt">Source</th></tr></thead><tbody>' +
+    rules.map((r) => `<tr><td class="id">${r.id}</td><td class="rule">${r.text}</td><td class="st">${chip(r.kind)}<br>${r.status}</td></tr>`).join('') + '</tbody>';
+  R.$('#t-nums').innerHTML = '<thead><tr><th class="txt">Item</th><th class="txt">Value</th><th class="txt">Source</th></tr></thead><tbody>' +
+    nums.map((r) => `<tr><td class="rule" style="min-width:200px;max-width:340px">${r.item}<small>${R.esc(r.section)}</small></td><td class="rule">${r.value}</td><td class="st">${chip(r.kind)}<br>${r.status}</td></tr>`).join('') + '</tbody>';
+  R.$('#t-q').innerHTML = '<thead><tr><th class="txt">#</th><th class="txt">Question</th><th class="txt">Answer</th></tr></thead><tbody>' +
+    qs.map((q) => `<tr><td class="id">${q.id}</td><td class="rule" style="min-width:220px">${q.q}</td><td class="rule">${q.kind === 'open' ? '<span class="chip open">' + plain(q.a) + '</span>' : q.a}</td></tr>`).join('') + '</tbody>';
+  R.$('#t-open').innerHTML = '<tbody>' + (openQ.length ? openQ.map((q) => `<tr><td class="id">${q.id}</td><td class="rule">${q.q}</td><td class="st"><span class="chip open">${plain(q.a)}</span></td></tr>`).join('') : '<tr><td>No open questions.</td></tr>') + '</tbody>';
+  R.update(cSrc);
+}
+draw();
+</script>
+
+</body>
+</html>

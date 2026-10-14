@@ -1,0 +1,129 @@
+<title>Laptop Supply Chain Twin</title>
+<!--__HEAD__-->
+<style>/*__CSS__*/
+.flow-wrap { display: grid; gap: 8px; min-width: 0; }
+.flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 12px; counter-reset: none; }
+.mod { display: grid; gap: 6px; align-content: start; text-decoration: none; color: var(--ink); background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px 14px; min-width: 0; }
+a.mod:hover { border-color: var(--ink-2); }
+.mod .m-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.mod .m-id { font: 500 12px var(--f-mono); color: var(--muted); }
+.mod .m-name { font: 600 20px/1.1 var(--f-display); letter-spacing: .01em; }
+.mod .m-q { font-size: 13px; color: var(--ink-2); }
+.mod .m-num { font: 600 24px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.mod .m-num small { font: 12px var(--f-mono); color: var(--muted); margin-left: 4px; }
+.mod.planned { background: transparent; border-style: dashed; color: var(--ink-2); }
+.road { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.road li { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 4px 12px; align-items: baseline; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+.road li:last-child { border-bottom: 0; }
+.road b { font: 600 15px var(--f-display); letter-spacing: .02em; }
+.road span { color: var(--ink-2); font-size: 13px; }
+@media (max-width: 640px) { .road li { grid-template-columns: minmax(0, 1fr) auto; } .road li span { grid-column: 1 / -1; grid-row: 2; } }
+.qlist { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.qlist li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; font-size: 13px; color: var(--ink-2); }
+.qlist code { justify-self: start; align-self: start; }
+</style>
+<!--__NAV__-->
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Supply chain digital twin · laptops built in Asia, sold worldwide</p>
+      <h1>Laptop Supply Chain Twin</h1>
+      <p class="sub">An anonymous laptop maker builds in China and is weighing a move to Indonesia because of tariffs. Five regional distribution centres (MGI) serve the US, Europe, the UK, Japan and Brazil. The model prices what a move really costs: material left without demand (MWD), timing, a longer chain, a slow ramp and old stock when the next model launches.</p>
+    </div>
+    <div class="asof">Built __TODAY__ · rules from practitioner input, virtualized</div>
+  </div>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="flow-wrap" aria-labelledby="h-flow">
+    <div class="viz-h"><h2 id="h-flow">How the model fits together</h2><span class="hint">Each card opens its page</span></div>
+    <div class="flow" id="flow"></div>
+  </section>
+
+  <section class="canvas">
+    <div class="viz w7">
+      <div class="viz-h"><h2>Same transfer, different timing</h2><span class="hint">US moves out of China · Module 1 total cost</span></div>
+      <div id="c-timing" class="chart"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Where the inputs come from</h2><span class="hint"><a href="rules.html">Rules register</a></span></div>
+      <div id="c-src" class="chart"></div>
+    </div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Roadmap</h2><span class="hint">About 40–45 working days in total</span></div>
+      <ul class="road" id="road"></ul>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Next questions for the practitioner</h2><span class="hint">One at a time</span></div>
+      <ul class="qlist" id="qs"></ul>
+    </div>
+  </section>
+
+  <footer class="notes">
+    <p>Independent portfolio project. The company is anonymous, every site is illustrative, and no confidential information of any current or former employer is used. Practitioner input is generalized and its numbers are changed before they enter the model.</p>
+    <p>Open data: Natural Earth (public domain) for countries and roads, the open-source <code>searoute</code> maritime network for ocean lanes, public tariff schedules and news for duties. Code and data: <a href="https://github.com/jinli-kiki/scm-twin">github.com/jinli-kiki/scm-twin</a>.</p>
+  </footer>
+</main>
+<script>/*__JS__*/</script>
+<script>
+const D = /*__DATA__*/null;
+const card = (href, label, value, sub) => `<a class="kpi" href="${href}" style="text-decoration:none;color:inherit"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span></a>`;
+const fg = D.fg;
+R.$('#kpis').innerHTML = [
+  card('business-case.html', 'Break-even China tariff for the move', R.pct(D.breakeven.strong, 1), `strong GSM · ${R.pct(D.breakeven.weak, 1)} with weak GSM`),
+  card('transfer.html', 'Cheapest cutover at a 25% tariff', 'Week ' + D.transfer.best_week, `${R.usd(D.transfer.best_total)} inside the window`),
+  card('mwd.html', 'Late transfer vs early transfer', R.usd(D.mwd.D.total), `8 weeks before EOL · ${R.usd(D.mwd.B.total)} with 30 weeks left`),
+  card('lanes.html', 'Ocean, factory door to US MGI', R.num(D.lead.cn_us, 1) + ' days', `China · ${R.num(D.lead.id_us, 1)} days from Indonesia`),
+  card('finished-goods.html', 'Price-protection bill at launch', R.usd(fg.plan.protection), `sales plan · ${R.usd(fg.lock_drain.protection)} with lock + drain`),
+].join('');
+
+const MODS = [
+  { href: 'atlas.html', id: 'Network', name: 'Atlas and lanes', q: 'Where does each laptop travel, how long does it take, what duty does it pay?', num: R.num(D.lead.cn_eu_cape, 1) + ' d', sub: 'China to Europe via the Cape' },
+  { href: 'mwd.html', id: 'Module 1', name: 'MWD engine', q: 'When plans are cancelled, how much material is left with no demand?', num: R.usd(D.mwd.C.total), sub: 'US transfer, EOL week 20' },
+  { href: 'transfer.html', id: 'Module 2', name: 'Cutover timing', q: 'Which week should the US stop building in China?', num: 'Week ' + D.transfer.best_week, sub: 'at a 25% tariff' },
+  { href: 'business-case.html', id: 'Module 3', name: 'Business case', q: 'Does the tariff saved pay for a longer chain and a slow ramp?', num: R.pct(D.breakeven.strong, 1), sub: 'break-even tariff' },
+  { href: 'finished-goods.html', id: 'Module 4', name: 'Finished goods', q: 'What does old stock cost when the successor launches?', num: R.usd(fg.lock.avoidable), sub: 'avoidable cost, dealer lock' },
+  { href: null, id: 'Module 5', name: 'Demand and KPI view', q: 'Tariff → price → units → fiscal-year shipment gap; BU view vs company view.', num: 'Next', sub: '' },
+  { href: null, id: 'Module 6', name: 'Ramp and risk board', q: 'How fast does the new site ramp, and when should boards be built?', num: 'Planned', sub: '' },
+];
+R.$('#flow').innerHTML = MODS.map((m) => {
+  const inner = `<div class="m-top"><span class="m-id">${m.id}</span>${m.href ? '' : '<span class="chip">planned</span>'}</div><span class="m-name">${m.name}</span><span class="m-q">${m.q}</span><span class="m-num">${m.num}${m.sub ? '<small>' + m.sub + '</small>' : ''}</span>`;
+  return m.href ? `<a class="mod" href="${m.href}">${inner}</a>` : `<div class="mod planned">${inner}</div>`;
+}).join('');
+
+R.chart('c-timing', (t) => {
+  const o = R.base(t);
+  const sc = [['B', '30 weeks before EOL'], ['C', '20 weeks before EOL'], ['D', '8 weeks before EOL']];
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.usd(v) },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'category', data: sc.map((s) => s[1]), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fBody, fontSize: 12 } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    series: [
+      { type: 'bar', name: 'MWD', stack: 'x', barWidth: '46%', data: sc.map((s) => D.mwd[s[0]].mwd), itemStyle: { color: t.c[5] } },
+      { type: 'bar', name: 'Holding, ageing, rework', stack: 'x', data: sc.map((s) => D.mwd[s[0]].total - D.mwd[s[0]].mwd), itemStyle: { color: t.c[4] },
+        label: { show: true, position: 'top', color: t.ink, fontFamily: t.fMono, fontSize: 12, formatter: (p) => R.usd(D.mwd[sc[p.dataIndex][0]].total) } },
+    ],
+  };
+});
+
+const KL = { prac: 'Practitioner', web: 'Web', ph: 'Placeholder', open: 'Open', design: 'Design / illustrative', ill: 'Design / illustrative' };
+R.chart('c-src', (t) => {
+  const o = R.base(t), col = { prac: t.c[0], web: t.c[2], ph: t.warn, open: t.bad, design: t.c[6], ill: t.c[6] };
+  const agg = {}; Object.entries(D.status_counts).forEach(([k, v]) => { const kk = k === 'ill' ? 'design' : k; agg[kk] = (agg[kk] || 0) + v; });
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, trigger: 'item', formatter: (p) => R.tip(t, [[p.color, p.name, p.value + ' items']], 'Source') },
+    legend: { ...o.legend, type: 'plain', orient: 'vertical', top: 'middle', left: 'auto', right: 0 },
+    series: [{ type: 'pie', radius: ['46%', '72%'], center: ['36%', '50%'], itemStyle: { borderColor: t.panel, borderWidth: 2 },
+      label: { color: t.ink2, fontSize: 12, formatter: '{c}' }, labelLine: { show: false }, labelLayout: { hideOverlap: true },
+      data: ['prac', 'web', 'ph', 'open', 'design'].filter((k) => agg[k]).map((k) => ({ name: KL[k], value: agg[k], itemStyle: { color: col[k] } })) }],
+  };
+});
+
+const STATE = { done: ['good', 'Done'], active: ['warn', 'In progress'], next: ['', 'Next'] };
+R.$('#road').innerHTML = D.roadmap.map((p) => `<li><b>${R.esc(p.name)}</b><span>${R.esc(p.scope)}</span><span class="chip ${STATE[p.state][0]}">${STATE[p.state][1]}</span></li>`).join('');
+R.$('#qs').innerHTML = D.open_questions.map((q) => `<li><code>${q.id}</code><span>${q.q}</span></li>`).join('') || '<li>No open questions.</li>';
+</script>

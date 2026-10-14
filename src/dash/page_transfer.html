@@ -1,0 +1,161 @@
+<title>Transfer Cutover Timing</title>
+<!--__HEAD__-->
+<style>/*__CSS__*/</style>
+<!--__NAV__-->
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Module 2 · cutover timing</p>
+      <h1>When to Stop US Builds in China</h1>
+      <p class="sub">The US region moves to the new site in week C. Every week before C still pays the China-origin tariff; every week after C turns committed material into stock that other regions may or may not absorb. Boards already built keep their China origin (R13).</p>
+    </div>
+    <div class="asof">Model run __TODAY__ · deterministic sweep, C = 0 … <span id="n-w"></span></div>
+  </div>
+
+  <section class="slicers" aria-label="Filters">
+    <div class="slicer"><span class="s-label" id="l-t">China-origin US tariff</span><div class="seg" role="group" aria-labelledby="l-t" id="f-t"></div></div>
+    <div class="slicer"><span class="s-label" id="l-r">Move pre-SMT parts to the new site (R14)</span><div class="seg" role="group" aria-labelledby="l-r" id="f-r"></div></div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-live="polite"></section>
+
+  <section class="canvas">
+    <div class="viz w8">
+      <div class="viz-h"><h2>Cost of each cutover week</h2><span class="hint">US region, inside the liability window · click a week</span></div>
+      <div id="c-sweep" class="chart tall"></div>
+    </div>
+    <div class="viz w4">
+      <div class="viz-h"><h2>Cheapest week vs tariff</h2><span class="hint">Higher tariff → cut over sooner</span></div>
+      <div id="c-best" class="chart tall"></div>
+    </div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Cutover ledger</h2><span class="hint" id="h-led"></span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-led"></table></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Longer chain vs tariff saved</h2><span class="hint">Per year after the move, US region</span></div>
+      <div id="c-chain" class="chart tall"></div>
+    </div>
+  </section>
+
+  <section class="insight" id="insight"></section>
+
+  <footer class="notes">
+    <p><b>How it is computed.</b> Plans inside the <span id="n-w2"></span>-week liability window are committed. Cutting the US over at week C cancels US builds from C to the end of the window. Loose material is netted first by other regions' plans (R2, R3), then, if moving parts is on, by the new site's US builds after a <span id="n-rw"></span>-week bonded move costing <span id="n-rc"></span> of value. Boards built <span id="n-ba"></span> weeks ahead are origin-locked and can only serve other regions of the same model. Whatever is left is MWD; convertible parts are reworked first (R6).</p>
+    <p><b>Not in this view.</b> The recurring cost of the longer chain after the move and the slow ramp sit in the <a href="business-case.html">Business case</a>. MWD detail by material is on the <a href="mwd.html">MWD</a> page.</p>
+  </footer>
+</main>
+<script>/*__JS__*/</script>
+<script>
+const D = /*__DATA__*/null;
+['n-w', 'n-w2'].forEach((id) => R.$('#' + id).textContent = D.window);
+R.$('#n-rw').textContent = D.relocation_weeks; R.$('#n-rc').textContent = R.pct(D.relocation_rate);
+R.$('#n-ba').textContent = D.boards_ahead;
+const saved = R.load();
+const S = { t: D.tariffs.includes(saved.t) ? saved.t : 0.25, r: saved.r === 0 ? 0 : 1, sel: null };
+const rows = (t = S.t, r = S.r) => D.sweeps[t.toFixed(2) + '|' + r];
+const bestOf = (rs) => rs.reduce((a, b) => (b.total < a.total ? b : a), rs[0]);
+R.seg(R.$('#f-t'), D.tariffs.map((v) => [v, R.pct(v)]), S.t, (v) => { S.t = v; S.sel = null; draw(); });
+R.seg(R.$('#f-r'), [[1, 'On'], [0, 'Off']], S.r, (v) => { S.r = +v; S.sel = null; draw(); });
+const PARTS = [
+  ['tariff', 'Tariff paid (weeks before C)', (t) => t.d16],
+  ['holding', 'Holding while absorbed', (t) => t.c[4]],
+  ['relocation', 'Moving parts', (t) => t.c[3]],
+  ['rework', 'Rework', (t) => t.c[5]],
+  ['mwd_boards', 'MWD · built boards', (t) => t.c[1]],
+  ['mwd_loose', 'MWD · loose parts', (t) => t.c[0]],
+];
+
+function kpis() {
+  const rs = rows(), b = bestOf(rs), now = rs[0], end = rs[rs.length - 1];
+  const card = (label, value, sub) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span></div>`;
+  R.$('#kpis').innerHTML = [
+    card('Cheapest cutover week', 'Week ' + b.cutover, `total ${R.usd(b.total)} inside the window`),
+    card('Cut over now (week 0)', R.usd(now.total), `${now.total > b.total ? '+' + R.usd(now.total - b.total) + ' vs cheapest' : 'cheapest'} · MWD ${R.usd(now.mwd)}`),
+    card('Wait to window end (week ' + end.cutover + ')', R.usd(end.total), `${end.total > b.total ? '+' + R.usd(end.total - b.total) + ' vs cheapest' : 'cheapest'} · tariff ${R.usd(end.tariff)}`),
+    card('MWD at the cheapest week', R.usd(b.mwd), `boards ${R.usd(b.mwd_boards)} · loose ${R.usd(b.mwd_loose)}`),
+    card('Material moved to the new site', R.usd(b.relocated_usd), S.r ? `of ${R.usd(b.freed_usd)} freed` : 'moving parts is off'),
+  ].join('');
+}
+
+const cSweep = R.chart('c-sweep', (t) => {
+  const o = R.base(t), rs = rows(), b = bestOf(rs);
+  const x = rs.map((r) => 'C' + r.cutover);
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => R.tip(t, ps.filter((p) => p.seriesType === 'bar').map((p) => [p.color, p.seriesName, R.usd(p.value)]).concat([[t.ink, 'Total', R.usd(rs[ps[0].dataIndex].total)]]), 'Cutover week ' + rs[ps[0].dataIndex].cutover) },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'category', data: x, splitLine: { show: false } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    series: PARTS.map(([k, name, col]) => ({ type: 'bar', stack: 'c', name, barWidth: '62%', itemStyle: { color: col(t) },
+      data: rs.map((r) => ({ value: r[k], itemStyle: { opacity: S.sel == null || S.sel === r.cutover ? 1 : .45 } })) }))
+      .concat([{ type: 'line', name: 'Total', data: rs.map((r) => r.total), showSymbol: false, lineStyle: { color: t.ink, width: 1.5 }, itemStyle: { color: t.ink },
+        markPoint: { symbol: 'pin', symbolSize: 34, itemStyle: { color: t.good }, label: { color: '#fff', fontSize: 10, formatter: 'min' },
+          data: [{ coord: ['C' + b.cutover, b.total] }] } }]),
+  };
+});
+cSweep.inst && cSweep.inst.on('click', (p) => { S.sel = rows()[p.dataIndex].cutover; draw(); });
+
+const cBest = R.chart('c-best', (t) => {
+  const o = R.base(t), xs = D.tariffs.map((v) => R.pct(v));
+  const best = (r) => D.tariffs.map((v) => bestOf(rows(v, r)).cutover);
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, valueFormatter: (v) => 'week ' + v },
+    grid: { ...o.grid, top: 40, bottom: 18 },
+    xAxis: R.axis(t, { type: 'category', data: xs, boundaryGap: false, splitLine: { show: false }, name: 'China tariff', nameLocation: 'middle', nameGap: 26 }),
+    yAxis: R.axis(t, { type: 'value', min: 0, max: D.window, interval: 4, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => 'C' + v } }),
+    series: [
+      { type: 'line', step: 'middle', name: 'Moving parts on', data: best(1), lineStyle: { width: 2.5, color: t.c[0] }, itemStyle: { color: t.c[0] }, symbolSize: 6 },
+      { type: 'line', step: 'middle', name: 'Moving parts off', data: best(0), lineStyle: { width: 2, type: [6, 4], color: t.c[1] }, itemStyle: { color: t.c[1] }, symbolSize: 6,
+        markLine: { symbol: 'none', silent: true, lineStyle: { color: t.muted, type: [4, 4] }, label: { color: t.ink2, fontSize: 11, formatter: R.pct(S.t) }, data: [{ xAxis: R.pct(S.t) }] } },
+    ],
+  };
+});
+
+const cChain = R.chart('c-chain', (t) => {
+  const o = R.base(t), xs = D.tariffs.map((v) => R.pct(v));
+  const ch = D.tariffs.map((v) => D.chain[v.toFixed(2)]);
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.usd(v) },
+    grid: { ...o.grid, top: 40, bottom: 18 },
+    xAxis: R.axis(t, { type: 'category', data: xs, splitLine: { show: false }, name: 'China tariff', nameLocation: 'middle', nameGap: 26 }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    series: [
+      { type: 'bar', name: 'Tariff saved per year', data: ch.map((c, i) => ({ value: c.tariff_saved_per_year, itemStyle: { color: t.c[2], opacity: D.tariffs[i] === S.t ? 1 : .55 } })), itemStyle: { color: t.c[2] } },
+      { type: 'line', name: `Carrying +${D.lt_adder} weeks of material`, data: ch.map((c) => c.pipeline_carry_per_year), showSymbol: false, lineStyle: { width: 2, color: t.c[1] }, itemStyle: { color: t.c[1] } },
+    ],
+  };
+});
+
+function ledger() {
+  const rs = rows(), b = bestOf(rs), max = Math.max(...rs.map((r) => r.total));
+  R.$('#h-led').textContent = `China tariff ${R.pct(S.t)} · moving parts ${S.r ? 'on' : 'off'}`;
+  R.$('#t-led').innerHTML = '<thead><tr><th>Week C</th><th>Tariff</th><th>Holding</th><th>Move + rework</th><th>MWD boards</th><th>MWD loose</th><th>Total</th></tr></thead><tbody>' +
+    rs.map((r) => `<tr class="click${r.cutover === (S.sel ?? b.cutover) ? ' sel' : ''}" data-c="${r.cutover}" tabindex="0"><td>C${r.cutover}${r.cutover === b.cutover ? ' <span class="chip good">cheapest</span>' : ''}</td><td>${R.usd(r.tariff)}</td><td>${R.usd(r.holding)}</td><td>${R.usd(r.relocation + r.rework)}</td><td>${R.usd(r.mwd_boards)}</td><td>${R.usd(r.mwd_loose)}</td><td class="bar-cell"><i style="width:${(100 * r.total / max).toFixed(1)}%"></i><span>${R.usd(r.total)}</span></td></tr>`).join('') + '</tbody>';
+  R.$('#t-led').querySelectorAll('tr.click').forEach((tr) => {
+    const pick = () => { S.sel = +tr.dataset.c; draw(); };
+    tr.addEventListener('click', pick);
+    tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+  });
+}
+
+function insight() {
+  const rs = rows(), b = bestOf(rs), now = rs[0];
+  const off = bestOf(rows(S.t, 0)), on = bestOf(rows(S.t, 1));
+  R.$('#insight').innerHTML = `
+    <p><b>At a ${R.pct(S.t)} tariff the cheapest cutover is week ${b.cutover}${b.cutover === 0 ? ', right away' : ''}.</b> ${b.cutover === 0
+      ? `Each week of delay pays about ${R.usd((rs[1].tariff - rs[0].tariff))} of tariff, more than the holding and MWD it avoids.`
+      : `Cutting over now costs ${R.usd(now.total - b.total)} more, as MWD (${R.usd(now.mwd)}) and holding on material nobody else needs yet. Waiting longer pays ${R.usd(rs[Math.min(rs.length - 1, b.cutover + 1)].tariff - b.tariff)} more tariff for each extra week.`}</p>
+    <p>Moving pre-SMT parts to the new site ${on.total < off.total ? `saves ${R.usd(off.total - on.total)} at the best week` : 'makes no difference here'}. Built boards cannot move: their China origin is fixed at SMT.</p>
+    <p>This is the company view inside the window. A planner sees only the MWD part in the KPI (R22), which pushes the cutover later than the company optimum.</p>`;
+}
+
+function draw() {
+  R.save({ t: S.t, r: S.r });
+  kpis(); ledger(); insight();
+  [cSweep, cBest, cChain].forEach(R.update);
+}
+draw();
+</script>

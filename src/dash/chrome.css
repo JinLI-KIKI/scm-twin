@@ -1,0 +1,18 @@
+/* Top navigation shared by every page, including the atlas. Uses the page's own tokens. */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1200; display: flex; align-items: stretch; gap: 14px;
+  height: 46px; background: var(--panel); border-bottom: 1px solid var(--rule); box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topbar .brand { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; flex: none;
+  font: 500 13px var(--f-mono); }
+.topbar .brand-mark { width: 12px; height: 12px; background: var(--ink); border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--ink); box-sizing: border-box; }
+.topbar .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
+.topbar .tabs::-webkit-scrollbar { display: none; }
+.topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
+  font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
+.topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
+.topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }
+.topbar .repo:hover { color: var(--ink); }
+@media (max-width: 560px) { .topbar .repo { display: none; } .topbar .brand-name { display: none; } }

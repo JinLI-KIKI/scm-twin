@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Transfer Cutover Timing</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
+<style>/* Layout: a BI-style report. Sticky page tabs on top; under them a header, a slicer bar,
+   a row of KPI cards, then a 12-column canvas of visual containers. One column on phones.
+   Tokens match the network atlas so every page reads as one product. */
+:root {
+  --paper: #f6f7f5; --panel: #fbfcfb; --ink: #14181c; --ink-2: #4a525a; --muted: #6f777e;
+  --rule: #d9dde0; --chip: #eceeec; --hl: #fff3c4;
+  --sea: #2a78d6; --air: #eb6834; --inland: #1baf7a;
+  --d0: #9d90e6; --d5: #7464d9; --d16: #4a3aa7;
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #7464d9; --c5: #c9940f; --c6: #c2417a; --c7: #8a939a;
+  --good: #16794c; --warn: #9a6408; --bad: #b8322a;
+  --good-bg: #e3f2ea; --warn-bg: #f7eedb; --bad-bg: #f8e4e1;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+    --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+    --sea: #3987e5; --air: #d95926; --inland: #199e70;
+    --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+    --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+    --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+    --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+  --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+  --sea: #3987e5; --air: #d95926; --inland: #199e70;
+  --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+  --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+  --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+  --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font: 14px/1.5 var(--f-body); margin: 0; }
+a { color: inherit; }
+
+.report { max-width: 1440px; margin: 0 auto; display: grid; gap: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 40px; }
+.report-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 6px 24px; }
+.report-head > div { min-width: 0; }
+.eyebrow { font: 500 12px var(--f-mono); color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin: 0 0 4px; }
+h1 { font: 600 34px/1.02 var(--f-display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--ink-2); margin: 6px 0 0; max-width: 78ch; }
+.asof { font: 12px var(--f-mono); color: var(--muted); text-align: right; }
+
+/* slicers */
+.slicers { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end;
+  padding: 10px 14px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+.slicer { display: grid; gap: 4px; min-width: 0; }
+.slicer > .s-label { font-size: 12px; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-body); color: var(--ink-2); background: transparent; border: 0;
+  padding: 5px 11px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button:hover { background: var(--chip); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.range { display: flex; align-items: center; gap: 10px; }
+.range input[type="range"] { width: min(260px, 60vw); accent-color: var(--sea); }
+.range output { font: 600 18px var(--f-display); min-width: 3.4em; font-variant-numeric: tabular-nums; }
+input[type="search"] { font: 13px var(--f-body); color: var(--ink); background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 5px 10px; width: min(280px, 70vw); }
+button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+
+/* KPI cards */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .k-value { font-size: 24px; } .kpi { padding: 8px 10px 10px; } }
+.kpi { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px 12px;
+  display: grid; gap: 2px; align-content: start; min-width: 0; }
+.k-label { font-size: 12px; color: var(--muted); }
+.k-value { font: 600 30px/1.08 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.k-sub { font: 12px/1.4 var(--f-mono); color: var(--ink-2); overflow-wrap: anywhere; }
+.k-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+/* canvas of visuals */
+.canvas { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+.viz { grid-column: span 6; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.viz.w3 { grid-column: span 3; } .viz.w4 { grid-column: span 4; } .viz.w5 { grid-column: span 5; }
+.viz.w7 { grid-column: span 7; } .viz.w8 { grid-column: span 8; } .viz.w12 { grid-column: span 12; }
+.viz-h { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.viz-h h2 { font: 600 15px/1.2 var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.hint { font-size: 12px; color: var(--muted); }
+.chart { width: 100%; height: 300px; min-width: 0; }
+.chart.short { height: 230px; } .chart.tall { height: 380px; } .chart.xtall { height: 460px; }
+.chart .nolib { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 13px; text-align: center; padding: 12px; }
+@media (max-width: 1180px) { .viz.w3, .viz.w4, .viz.w5 { grid-column: span 6; } .viz.w7, .viz.w8 { grid-column: span 12; } }
+@media (max-width: 860px) { .viz, .viz.w3, .viz.w4, .viz.w5, .viz.w7, .viz.w8 { grid-column: span 12; } h1 { font-size: 28px; } .asof { text-align: left; } }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; min-width: 0; }
+table.tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.tbl th { font: 500 11px var(--f-body); color: var(--muted); text-align: right; padding: 0 8px 6px; border-bottom: 1px solid var(--rule);
+  letter-spacing: .03em; white-space: nowrap; }
+.tbl td { padding: 7px 8px; border-bottom: 1px solid var(--rule); text-align: right; font: 13px var(--f-mono); vertical-align: top; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; padding-left: 0; }
+.tbl td.txt, .tbl th.txt { text-align: left; font-family: var(--f-body); }
+.tbl tr.sel td { background: var(--hl); }
+.tbl tr.click { cursor: pointer; }
+.tbl tr.click:hover td { background: var(--chip); }
+.tbl td small { display: block; font: 12px var(--f-body); color: var(--muted); }
+.bar-cell { position: relative; }
+.bar-cell i { position: absolute; left: 0; top: 4px; bottom: 4px; background: var(--chip); border-radius: 2px; z-index: 0; }
+.bar-cell span { position: relative; z-index: 1; }
+
+/* chips and notes */
+.chip { display: inline-block; font: 500 11px/1.6 var(--f-body); padding: 0 7px; border-radius: 10px; white-space: nowrap;
+  border: 1px solid var(--rule); color: var(--ink-2); background: var(--paper); }
+.chip.good { color: var(--good); background: var(--good-bg); border-color: transparent; }
+.chip.warn { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.bad { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.prac { color: var(--c1); border-color: var(--c1); }
+.chip.web { color: var(--c3); border-color: var(--c3); }
+.chip.ph { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.open { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.ill, .chip.design { color: var(--muted); }
+.insight { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--ink-2);
+  background: var(--panel); display: grid; gap: 4px; }
+.insight b { color: var(--ink); font-weight: 600; }
+.insight p { margin: 0; }
+.notes { font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.notes p { margin: 0; max-width: 100ch; }
+.notes a, .tbl a, .insight a { color: var(--ink-2); overflow-wrap: anywhere; }
+code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border-radius: 3px; }
+.legend-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.sw { width: 12px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+
+/* Top navigation shared by every page, including the atlas. Uses the page's own tokens. */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1200; display: flex; align-items: stretch; gap: 14px;
+  height: 46px; background: var(--panel); border-bottom: 1px solid var(--rule); box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topbar .brand { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; flex: none;
+  font: 500 13px var(--f-mono); }
+.topbar .brand-mark { width: 12px; height: 12px; background: var(--ink); border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--ink); box-sizing: border-box; }
+.topbar .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
+.topbar .tabs::-webkit-scrollbar { display: none; }
+.topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
+  font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
+.topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
+.topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }
+.topbar .repo:hover { color: var(--ink); }
+@media (max-width: 560px) { .topbar .repo { display: none; } .topbar .brand-name { display: none; } }
+</style>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
+  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html">Overview</a><a class="tab" href="atlas.html">Network atlas</a><a class="tab" href="lanes.html">Lanes & lead time</a><a class="tab" href="mwd.html">MWD</a><a class="tab" href="transfer.html" aria-current="page">Transfer timing</a><a class="tab" href="business-case.html">Business case</a><a class="tab" href="finished-goods.html">Finished goods</a><a class="tab" href="rules.html">Rules register</a></nav>
+  <a class="repo" href="https://github.com/jinli-kiki/scm-twin">GitHub</a>
+</header>
+<script>(function(){var a=document.querySelector(".topbar .tab[aria-current]");if(a){var n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.clientWidth)/2;}})();</script>
+
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Module 2 · cutover timing</p>
+      <h1>When to Stop US Builds in China</h1>
+      <p class="sub">The US region moves to the new site in week C. Every week before C still pays the China-origin tariff; every week after C turns committed material into stock that other regions may or may not absorb. Boards already built keep their China origin (R13).</p>
+    </div>
+    <div class="asof">Model run 2026-10-14 · deterministic sweep, C = 0 … <span id="n-w"></span></div>
+  </div>
+
+  <section class="slicers" aria-label="Filters">
+    <div class="slicer"><span class="s-label" id="l-t">China-origin US tariff</span><div class="seg" role="group" aria-labelledby="l-t" id="f-t"></div></div>
+    <div class="slicer"><span class="s-label" id="l-r">Move pre-SMT parts to the new site (R14)</span><div class="seg" role="group" aria-labelledby="l-r" id="f-r"></div></div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-live="polite"></section>
+
+  <section class="canvas">
+    <div class="viz w8">
+      <div class="viz-h"><h2>Cost of each cutover week</h2><span class="hint">US region, inside the liability window · click a week</span></div>
+      <div id="c-sweep" class="chart tall"></div>
+    </div>
+    <div class="viz w4">
+      <div class="viz-h"><h2>Cheapest week vs tariff</h2><span class="hint">Higher tariff → cut over sooner</span></div>
+      <div id="c-best" class="chart tall"></div>
+    </div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Cutover ledger</h2><span class="hint" id="h-led"></span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-led"></table></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Longer chain vs tariff saved</h2><span class="hint">Per year after the move, US region</span></div>
+      <div id="c-chain" class="chart tall"></div>
+    </div>
+  </section>
+
+  <section class="insight" id="insight"></section>
+
+  <footer class="notes">
+    <p><b>How it is computed.</b> Plans inside the <span id="n-w2"></span>-week liability window are committed. Cutting the US over at week C cancels US builds from C to the end of the window. Loose material is netted first by other regions' plans (R2, R3), then, if moving parts is on, by the new site's US builds after a <span id="n-rw"></span>-week bonded move costing <span id="n-rc"></span> of value. Boards built <span id="n-ba"></span> weeks ahead are origin-locked and can only serve other regions of the same model. Whatever is left is MWD; convertible parts are reworked first (R6).</p>
+    <p><b>Not in this view.</b> The recurring cost of the longer chain after the move and the slow ramp sit in the <a href="business-case.html">Business case</a>. MWD detail by material is on the <a href="mwd.html">MWD</a> page.</p>
+  </footer>
+</main>
+<script>/* Shared helpers for the report pages: theme-aware ECharts, number formats, slicers. */
+const R = (() => {
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const theme = () => ({
+    ink: css('--ink'), ink2: css('--ink-2'), muted: css('--muted'), rule: css('--rule'),
+    panel: css('--panel'), paper: css('--paper'), chip: css('--chip'), hl: css('--hl'),
+    c: [1, 2, 3, 4, 5, 6, 7].map((i) => css('--c' + i)),
+    sea: css('--sea'), air: css('--air'), inland: css('--inland'),
+    d0: css('--d0'), d5: css('--d5'), d16: css('--d16'),
+    good: css('--good'), warn: css('--warn'), bad: css('--bad'),
+    fBody: css('--f-body'), fMono: css('--f-mono'), fDisp: css('--f-display'),
+  });
+
+  // ---------- numbers
+  const usd = (v, d) => {
+    if (v == null || isNaN(v)) return '–';
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e9) return s + '$' + (a / 1e9).toFixed(d ?? 2) + 'B';
+    if (a >= 1e6) return s + '$' + (a / 1e6).toFixed(d ?? 2) + 'M';
+    if (a >= 1e3) return s + '$' + (a / 1e3).toFixed(d ?? 0) + 'k';
+    return s + '$' + a.toFixed(0);
+  };
+  const num = (v, d = 0) => (v == null || isNaN(v)) ? '–' :
+    (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+  const kunits = (v) => Math.abs(v) >= 1e3 ? num(v / 1e3, 1) + 'k' : num(v);
+  const pct = (v, d = 0) => (v == null || isNaN(v)) ? '–' : (v * 100).toFixed(d) + '%';
+  const axUsd = (v) => usd(v, Math.abs(v) >= 1e6 ? 1 : 0);
+
+  // ---------- charts
+  const charts = [];
+  const hasLib = () => typeof window.echarts !== 'undefined';
+  function base(t) {
+    return {
+      animationDuration: 280, animationDurationUpdate: 280,
+      textStyle: { fontFamily: t.fBody, color: t.ink2, fontSize: 12 },
+      tooltip: { trigger: 'axis', confine: true, backgroundColor: t.panel, borderColor: t.rule,
+        textStyle: { color: t.ink, fontFamily: t.fBody, fontSize: 12 }, axisPointer: { lineStyle: { color: t.muted }, shadowStyle: { color: t.chip, opacity: .6 } } },
+      legend: { top: 0, left: 0, type: 'scroll', icon: 'roundRect', itemWidth: 12, itemHeight: 8, itemGap: 14,
+        textStyle: { color: t.ink2, fontSize: 12 }, pageTextStyle: { color: t.ink2 }, pageIconColor: t.ink2, pageIconInactiveColor: t.rule },
+      grid: { left: 6, right: 18, top: 34, bottom: 6, containLabel: true },
+    };
+  }
+  function axis(t, o = {}) {
+    return Object.assign({
+      axisLine: { lineStyle: { color: t.rule } }, axisTick: { show: false },
+      axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true },
+      splitLine: { lineStyle: { color: t.rule, type: [3, 3] } },
+      nameTextStyle: { color: t.muted, fontSize: 11, fontFamily: t.fBody },
+    }, o);
+  }
+  function chart(id, build) {
+    const el = document.getElementById(id);
+    const c = { el, build, inst: null };
+    if (!el) return c;
+    if (!hasLib()) {
+      el.innerHTML = '<div class="nolib">The chart library did not load. The numbers in the cards and tables are still current.</div>';
+      return c;
+    }
+    c.inst = echarts.init(el, null, { renderer: 'svg' });
+    c.inst.setOption(build(theme()), true);
+    charts.push(c);
+    return c;
+  }
+  function update(c) { if (c && c.inst) c.inst.setOption(c.build(theme()), true); }
+  function refreshAll() { charts.forEach(update); }
+  let rt;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => charts.forEach((c) => c.inst && c.inst.resize()), 120); });
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshAll); } catch (e) { /* old browsers */ }
+  new MutationObserver(refreshAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ---------- per-viewer memory for slicers (optional; page works without it)
+  const KEY = 'scm-twin:' + location.pathname.split('/').pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } };
+  const save = (state) => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage blocked */ } };
+
+  // ---------- segmented slicer
+  function seg(el, options, value, onChange) {
+    el.innerHTML = '';
+    options.forEach(([v, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = label; b.dataset.v = String(v);
+      b.setAttribute('aria-pressed', String(String(v) === String(value)));
+      b.addEventListener('click', () => {
+        el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        onChange(v);
+      });
+      el.appendChild(b);
+    });
+    return { set(v) { el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === String(v)))); } };
+  }
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const tip = (t, rows, title) => `<div style="font-weight:600;margin-bottom:4px">${esc(title)}</div>` +
+    rows.map(([color, name, val]) => `<div style="display:flex;justify-content:space-between;gap:18px"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${color};margin-right:6px"></span>${esc(name)}</span><span style="font-family:${t.fMono}">${val}</span></div>`).join('');
+  return { theme, usd, num, kunits, pct, axUsd, base, axis, chart, update, refreshAll, load, save, seg, $, esc, tip, hasLib };
+})();
+</script>
+<script>
+const D = {"tariffs":[0.0,0.05,0.1,0.15,0.2,0.25,0.35,0.5],"sweeps":{"0.00|1":[{"cutover":0,"tariff":0,"holding":526572,"relocation":40320,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1344000,"freed_usd":16898400,"mwd":0,"total":566892},{"cutover":1,"tariff":0,"holding":489419,"relocation":37800,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1260000,"freed_usd":15754400,"mwd":0,"total":527219},{"cutover":2,"tariff":0,"holding":455612,"relocation":35280,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1176000,"freed_usd":14610400,"mwd":0,"total":490892},{"cutover":3,"tariff":0,"holding":405018,"relocation":32760,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1092000,"freed_usd":13566800,"mwd":0,"total":437778},{"cutover":4,"tariff":0,"holding":360471,"relocation":30240,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1008000,"freed_usd":12523200,"mwd":0,"total":390711},{"cutover":5,"tariff":0,"holding":319291,"relocation":27720,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":924000,"freed_usd":11479600,"mwd":0,"total":347011},{"cutover":6,"tariff":0,"holding":279633,"relocation":25200,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":840000,"freed_usd":10436000,"mwd":0,"total":304833},{"cutover":7,"tariff":0,"holding":241498,"relocation":22680,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":756000,"freed_usd":9392400,"mwd":0,"total":264178},{"cutover":8,"tariff":0,"holding":206730,"relocation":20160,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":672000,"freed_usd":8348800,"mwd":0,"total":226890},{"cutover":9,"tariff":0,"holding":173485,"relocation":17640,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":588000,"freed_usd":7305200,"mwd":0,"total":191125},{"cutover":10,"tariff":0,"holding":141762,"relocation":15120,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":504000,"freed_usd":6261600,"mwd":0,"total":156882},{"cutover":11,"tariff":0,"holding":113406,"relocation":12600,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":420000,"freed_usd":5218000,"mwd":0,"total":126006},{"cutover":12,"tariff":0,"holding":86573,"relocation":10080,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":336000,"freed_usd":4174400,"mwd":0,"total":96653},{"cutover":13,"tariff":0,"holding":61262,"relocation":7560,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":252000,"freed_usd":3130800,"mwd":0,"total":68822},{"cutover":14,"tariff":0,"holding":39319,"relocation":5040,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":168000,"freed_usd":2087200,"mwd":0,"total":44359},{"cutover":15,"tariff":0,"holding":18898,"relocation":2520,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":84000,"freed_usd":1043600,"mwd":0,"total":21418},{"cutover":16,"tariff":0,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":0}],"0.00|0":[{"cutover":0,"tariff":0,"holding":472295,"relocation":0,"rework":125440,"mwd_boards":0,"mwd_loose":1164800,"relocated_usd":0,"freed_usd":16898400,"mwd":1164800,"total":1762535},{"cutover":1,"tariff":0,"holding":440958,"relocation":0,"rework":117600,"mwd_boards":0,"mwd_loose":1092000,"relocated_usd":0,"freed_usd":15754400,"mwd":1092000,"total":1650558},{"cutover":2,"tariff":0,"holding":412642,"relocation":0,"rework":109760,"mwd_boards":0,"mwd_loose":1019200,"relocated_usd":0,"freed_usd":14610400,"mwd":1019200,"total":1541602},{"cutover":3,"tariff":0,"holding":367218,"relocation":0,"rework":101920,"mwd_boards":0,"mwd_loose":946400,"relocated_usd":0,"freed_usd":13566800,"mwd":946400,"total":1415538},{"cutover":4,"tariff":0,"holding":323640,"relocation":0,"rework":94080,"mwd_boards":0,"mwd_loose":873600,"relocated_usd":0,"freed_usd":12523200,"mwd":873600,"total":1291320},{"cutover":5,"tariff":0,"holding":283752,"relocation":0,"rework":86240,"mwd_boards":0,"mwd_loose":800800,"relocated_usd":0,"freed_usd":11479600,"mwd":800800,"total":1170792},{"cutover":6,"tariff":0,"holding":245710,"relocation":0,"rework":78400,"mwd_boards":0,"mwd_loose":728000,"relocated_usd":0,"freed_usd":10436000,"mwd":728000,"total":1052110},{"cutover":7,"tariff":0,"holding":209513,"relocation":0,"rework":70560,"mwd_boards":0,"mwd_loose":655200,"relocated_usd":0,"freed_usd":9392400,"mwd":655200,"total":935273},{"cutover":8,"tariff":0,"holding":177007,"relocation":0,"rework":62720,"mwd_boards":0,"mwd_loose":582400,"relocated_usd":0,"freed_usd":8348800,"mwd":582400,"total":822127},{"cutover":9,"tariff":0,"holding":146346,"relocation":0,"rework":54880,"mwd_boards":0,"mwd_loose":509600,"relocated_usd":0,"freed_usd":7305200,"mwd":509600,"total":710826},{"cutover":10,"tariff":0,"holding":117531,"relocation":0,"rework":47040,"mwd_boards":0,"mwd_loose":436800,"relocated_usd":0,"freed_usd":6261600,"mwd":436800,"total":601371},{"cutover":11,"tariff":0,"holding":92406,"relocation":0,"rework":39200,"mwd_boards":0,"mwd_loose":364000,"relocated_usd":0,"freed_usd":5218000,"mwd":364000,"total":495606},{"cutover":12,"tariff":0,"holding":69127,"relocation":0,"rework":31360,"mwd_boards":0,"mwd_loose":291200,"relocated_usd":0,"freed_usd":4174400,"mwd":291200,"total":391687},{"cutover":13,"tariff":0,"holding":47693,"relocation":0,"rework":23520,"mwd_boards":0,"mwd_loose":218400,"relocated_usd":0,"freed_usd":3130800,"mwd":218400,"total":289613},{"cutover":14,"tariff":0,"holding":29950,"relocation":0,"rework":15680,"mwd_boards":0,"mwd_loose":145600,"relocated_usd":0,"freed_usd":2087200,"mwd":145600,"total":191230},{"cutover":15,"tariff":0,"holding":14052,"relocation":0,"rework":7840,"mwd_boards":0,"mwd_loose":72800,"relocated_usd":0,"freed_usd":1043600,"mwd":72800,"total":94692},{"cutover":16,"tariff":0,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":0}],"0.05|1":[{"cutover":0,"tariff":0,"holding":526572,"relocation":40320,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1344000,"freed_usd":16898400,"mwd":0,"total":566892},{"cutover":1,"tariff":70400,"holding":489419,"relocation":37800,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1260000,"freed_usd":15754400,"mwd":0,"total":597619},{"cutover":2,"tariff":140800,"holding":455612,"relocation":35280,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1176000,"freed_usd":14610400,"mwd":0,"total":631692},{"cutover":3,"tariff":211200,"holding":405018,"relocation":32760,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1092000,"freed_usd":13566800,"mwd":0,"total":648978},{"cutover":4,"tariff":281600,"holding":360471,"relocation":30240,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1008000,"freed_usd":12523200,"mwd":0,"total":672311},{"cutover":5,"tariff":352000,"holding":319291,"relocation":27720,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":924000,"freed_usd":11479600,"mwd":0,"total":699011},{"cutover":6,"tariff":422400,"holding":279633,"relocation":25200,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":840000,"freed_usd":10436000,"mwd":0,"total":727233},{"cutover":7,"tariff":492800,"holding":241498,"relocation":22680,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":756000,"freed_usd":9392400,"mwd":0,"total":756978},{"cutover":8,"tariff":563200,"holding":206730,"relocation":20160,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":672000,"freed_usd":8348800,"mwd":0,"total":790090},{"cutover":9,"tariff":633600,"holding":173485,"relocation":17640,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":588000,"freed_usd":7305200,"mwd":0,"total":824725},{"cutover":10,"tariff":704000,"holding":141762,"relocation":15120,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":504000,"freed_usd":6261600,"mwd":0,"total":860882},{"cutover":11,"tariff":774400,"holding":113406,"relocation":12600,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":420000,"freed_usd":5218000,"mwd":0,"total":900406},{"cutover":12,"tariff":844800,"holding":86573,"relocation":10080,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":336000,"freed_usd":4174400,"mwd":0,"total":941453},{"cutover":13,"tariff":915200,"holding":61262,"relocation":7560,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":252000,"freed_usd":3130800,"mwd":0,"total":984022},{"cutover":14,"tariff":985600,"holding":39319,"relocation":5040,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":168000,"freed_usd":2087200,"mwd":0,"total":1029959},{"cutover":15,"tariff":1056000,"holding":18898,"relocation":2520,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":84000,"freed_usd":1043600,"mwd":0,"total":1077418},{"cutover":16,"tariff":1126400,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":1126400}],"0.05|0":[{"cutover":0,"tariff":0,"holding":472295,"relocation":0,"rework":125440,"mwd_boards":0,"mwd_loose":1164800,"relocated_usd":0,"freed_usd":16898400,"mwd":1164800,"total":1762535},{"cutover":1,"tariff":70400,"holding":440958,"relocation":0,"rework":117600,"mwd_boards":0,"mwd_loose":1092000,"relocated_usd":0,"freed_usd":15754400,"mwd":1092000,"total":1720958},{"cutover":2,"tariff":140800,"holding":412642,"relocation":0,"rework":109760,"mwd_boards":0,"mwd_loose":1019200,"relocated_usd":0,"freed_usd":14610400,"mwd":1019200,"total":1682402},{"cutover":3,"tariff":211200,"holding":367218,"relocation":0,"rework":101920,"mwd_boards":0,"mwd_loose":946400,"relocated_usd":0,"freed_usd":13566800,"mwd":946400,"total":1626738},{"cutover":4,"tariff":281600,"holding":323640,"relocation":0,"rework":94080,"mwd_boards":0,"mwd_loose":873600,"relocated_usd":0,"freed_usd":12523200,"mwd":873600,"total":1572920},{"cutover":5,"tariff":352000,"holding":283752,"relocation":0,"rework":86240,"mwd_boards":0,"mwd_loose":800800,"relocated_usd":0,"freed_usd":11479600,"mwd":800800,"total":1522792},{"cutover":6,"tariff":422400,"holding":245710,"relocation":0,"rework":78400,"mwd_boards":0,"mwd_loose":728000,"relocated_usd":0,"freed_usd":10436000,"mwd":728000,"total":1474510},{"cutover":7,"tariff":492800,"holding":209513,"relocation":0,"rework":70560,"mwd_boards":0,"mwd_loose":655200,"relocated_usd":0,"freed_usd":9392400,"mwd":655200,"total":1428073},{"cutover":8,"tariff":563200,"holding":177007,"relocation":0,"rework":62720,"mwd_boards":0,"mwd_loose":582400,"relocated_usd":0,"freed_usd":8348800,"mwd":582400,"total":1385327},{"cutover":9,"tariff":633600,"holding":146346,"relocation":0,"rework":54880,"mwd_boards":0,"mwd_loose":509600,"relocated_usd":0,"freed_usd":7305200,"mwd":509600,"total":1344426},{"cutover":10,"tariff":704000,"holding":117531,"relocation":0,"rework":47040,"mwd_boards":0,"mwd_loose":436800,"relocated_usd":0,"freed_usd":6261600,"mwd":436800,"total":1305371},{"cutover":11,"tariff":774400,"holding":92406,"relocation":0,"rework":39200,"mwd_boards":0,"mwd_loose":364000,"relocated_usd":0,"freed_usd":5218000,"mwd":364000,"total":1270006},{"cutover":12,"tariff":844800,"holding":69127,"relocation":0,"rework":31360,"mwd_boards":0,"mwd_loose":291200,"relocated_usd":0,"freed_usd":4174400,"mwd":291200,"total":1236487},{"cutover":13,"tariff":915200,"holding":47693,"relocation":0,"rework":23520,"mwd_boards":0,"mwd_loose":218400,"relocated_usd":0,"freed_usd":3130800,"mwd":218400,"total":1204813},{"cutover":14,"tariff":985600,"holding":29950,"relocation":0,"rework":15680,"mwd_boards":0,"mwd_loose":145600,"relocated_usd":0,"freed_usd":2087200,"mwd":145600,"total":1176830},{"cutover":15,"tariff":1056000,"holding":14052,"relocation":0,"rework":7840,"mwd_boards":0,"mwd_loose":72800,"relocated_usd":0,"freed_usd":1043600,"mwd":72800,"total":1150692},{"cutover":16,"tariff":1126400,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":1126400}],"0.10|1":[{"cutover":0,"tariff":0,"holding":526572,"relocation":40320,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1344000,"freed_usd":16898400,"mwd":0,"total":566892},{"cutover":1,"tariff":140800,"holding":489419,"relocation":37800,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1260000,"freed_usd":15754400,"mwd":0,"total":668019},{"cutover":2,"tariff":281600,"holding":455612,"relocation":35280,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1176000,"freed_usd":14610400,"mwd":0,"total":772492},{"cutover":3,"tariff":422400,"holding":405018,"relocation":32760,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1092000,"freed_usd":13566800,"mwd":0,"total":860178},{"cutover":4,"tariff":563200,"holding":360471,"relocation":30240,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1008000,"freed_usd":12523200,"mwd":0,"total":953911},{"cutover":5,"tariff":704000,"holding":319291,"relocation":27720,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":924000,"freed_usd":11479600,"mwd":0,"total":1051011},{"cutover":6,"tariff":844800,"holding":279633,"relocation":25200,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":840000,"freed_usd":10436000,"mwd":0,"total":1149633},{"cutover":7,"tariff":985600,"holding":241498,"relocation":22680,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":756000,"freed_usd":9392400,"mwd":0,"total":1249778},{"cutover":8,"tariff":1126400,"holding":206730,"relocation":20160,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":672000,"freed_usd":8348800,"mwd":0,"total":1353290},{"cutover":9,"tariff":1267200,"holding":173485,"relocation":17640,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":588000,"freed_usd":7305200,"mwd":0,"total":1458325},{"cutover":10,"tariff":1408000,"holding":141762,"relocation":15120,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":504000,"freed_usd":6261600,"mwd":0,"total":1564882},{"cutover":11,"tariff":1548800,"holding":113406,"relocation":12600,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":420000,"freed_usd":5218000,"mwd":0,"total":1674806},{"cutover":12,"tariff":1689600,"holding":86573,"relocation":10080,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":336000,"freed_usd":4174400,"mwd":0,"total":1786253},{"cutover":13,"tariff":1830400,"holding":61262,"relocation":7560,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":252000,"freed_usd":3130800,"mwd":0,"total":1899222},{"cutover":14,"tariff":1971200,"holding":39319,"relocation":5040,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":168000,"freed_usd":2087200,"mwd":0,"total":2015559},{"cutover":15,"tariff":2112000,"holding":18898,"relocation":2520,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":84000,"freed_usd":1043600,"mwd":0,"total":2133418},{"cutover":16,"tariff":2252800,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":2252800}],"0.10|0":[{"cutover":0,"tariff":0,"holding":472295,"relocation":0,"rework":125440,"mwd_boards":0,"mwd_loose":1164800,"relocated_usd":0,"freed_usd":16898400,"mwd":1164800,"total":1762535},{"cutover":1,"tariff":140800,"holding":440958,"relocation":0,"rework":117600,"mwd_boards":0,"mwd_loose":1092000,"relocated_usd":0,"freed_usd":15754400,"mwd":1092000,"total":1791358},{"cutover":2,"tariff":281600,"holding":412642,"relocation":0,"rework":109760,"mwd_boards":0,"mwd_loose":1019200,"relocated_usd":0,"freed_usd":14610400,"mwd":1019200,"total":1823202},{"cutover":3,"tariff":422400,"holding":367218,"relocation":0,"rework":101920,"mwd_boards":0,"mwd_loose":946400,"relocated_usd":0,"freed_usd":13566800,"mwd":946400,"total":1837938},{"cutover":4,"tariff":563200,"holding":323640,"relocation":0,"rework":94080,"mwd_boards":0,"mwd_loose":873600,"relocated_usd":0,"freed_usd":12523200,"mwd":873600,"total":1854520},{"cutover":5,"tariff":704000,"holding":283752,"relocation":0,"rework":86240,"mwd_boards":0,"mwd_loose":800800,"relocated_usd":0,"freed_usd":11479600,"mwd":800800,"total":1874792},{"cutover":6,"tariff":844800,"holding":245710,"relocation":0,"rework":78400,"mwd_boards":0,"mwd_loose":728000,"relocated_usd":0,"freed_usd":10436000,"mwd":728000,"total":1896910},{"cutover":7,"tariff":985600,"holding":209513,"relocation":0,"rework":70560,"mwd_boards":0,"mwd_loose":655200,"relocated_usd":0,"freed_usd":9392400,"mwd":655200,"total":1920873},{"cutover":8,"tariff":1126400,"holding":177007,"relocation":0,"rework":62720,"mwd_boards":0,"mwd_loose":582400,"relocated_usd":0,"freed_usd":8348800,"mwd":582400,"total":1948527},{"cutover":9,"tariff":1267200,"holding":146346,"relocation":0,"rework":54880,"mwd_boards":0,"mwd_loose":509600,"relocated_usd":0,"freed_usd":7305200,"mwd":509600,"total":1978026},{"cutover":10,"tariff":1408000,"holding":117531,"relocation":0,"rework":47040,"mwd_boards":0,"mwd_loose":436800,"relocated_usd":0,"freed_usd":6261600,"mwd":436800,"total":2009371},{"cutover":11,"tariff":1548800,"holding":92406,"relocation":0,"rework":39200,"mwd_boards":0,"mwd_loose":364000,"relocated_usd":0,"freed_usd":5218000,"mwd":364000,"total":2044406},{"cutover":12,"tariff":1689600,"holding":69127,"relocation":0,"rework":31360,"mwd_boards":0,"mwd_loose":291200,"relocated_usd":0,"freed_usd":4174400,"mwd":291200,"total":2081287},{"cutover":13,"tariff":1830400,"holding":47693,"relocation":0,"rework":23520,"mwd_boards":0,"mwd_loose":218400,"relocated_usd":0,"freed_usd":3130800,"mwd":218400,"total":2120013},{"cutover":14,"tariff":1971200,"holding":29950,"relocation":0,"rework":15680,"mwd_boards":0,"mwd_loose":145600,"relocated_usd":0,"freed_usd":2087200,"mwd":145600,"total":2162430},{"cutover":15,"tariff":2112000,"holding":14052,"relocation":0,"rework":7840,"mwd_boards":0,"mwd_loose":72800,"relocated_usd":0,"freed_usd":1043600,"mwd":72800,"total":2206692},{"cutover":16,"tariff":2252800,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":2252800}],"0.15|1":[{"cutover":0,"tariff":0,"holding":526572,"relocation":40320,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1344000,"freed_usd":16898400,"mwd":0,"total":566892},{"cutover":1,"tariff":211200,"holding":489419,"relocation":37800,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1260000,"freed_usd":15754400,"mwd":0,"total":738419},{"cutover":2,"tariff":422400,"holding":455612,"relocation":35280,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1176000,"freed_usd":14610400,"mwd":0,"total":913292},{"cutover":3,"tariff":633600,"holding":405018,"relocation":32760,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1092000,"freed_usd":13566800,"mwd":0,"total":1071378},{"cutover":4,"tariff":844800,"holding":360471,"relocation":30240,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1008000,"freed_usd":12523200,"mwd":0,"total":1235511},{"cutover":5,"tariff":1056000,"holding":319291,"relocation":27720,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":924000,"freed_usd":11479600,"mwd":0,"total":1403011},{"cutover":6,"tariff":1267200,"holding":279633,"relocation":25200,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":840000,"freed_usd":10436000,"mwd":0,"total":1572033},{"cutover":7,"tariff":1478400,"holding":241498,"relocation":22680,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":756000,"freed_usd":9392400,"mwd":0,"total":1742578},{"cutover":8,"tariff":1689600,"holding":206730,"relocation":20160,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":672000,"freed_usd":8348800,"mwd":0,"total":1916490},{"cutover":9,"tariff":1900800,"holding":173485,"relocation":17640,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":588000,"freed_usd":7305200,"mwd":0,"total":2091925},{"cutover":10,"tariff":2112000,"holding":141762,"relocation":15120,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":504000,"freed_usd":6261600,"mwd":0,"total":2268882},{"cutover":11,"tariff":2323200,"holding":113406,"relocation":12600,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":420000,"freed_usd":5218000,"mwd":0,"total":2449206},{"cutover":12,"tariff":2534400,"holding":86573,"relocation":10080,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":336000,"freed_usd":4174400,"mwd":0,"total":2631053},{"cutover":13,"tariff":2745600,"holding":61262,"relocation":7560,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":252000,"freed_usd":3130800,"mwd":0,"total":2814422},{"cutover":14,"tariff":2956800,"holding":39319,"relocation":5040,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":168000,"freed_usd":2087200,"mwd":0,"total":3001159},{"cutover":15,"tariff":3168000,"holding":18898,"relocation":2520,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":84000,"freed_usd":1043600,"mwd":0,"total":3189418},{"cutover":16,"tariff":3379200,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":3379200}],"0.15|0":[{"cutover":0,"tariff":0,"holding":472295,"relocation":0,"rework":125440,"mwd_boards":0,"mwd_loose":1164800,"relocated_usd":0,"freed_usd":16898400,"mwd":1164800,"total":1762535},{"cutover":1,"tariff":211200,"holding":440958,"relocation":0,"rework":117600,"mwd_boards":0,"mwd_loose":1092000,"relocated_usd":0,"freed_usd":15754400,"mwd":1092000,"total":1861758},{"cutover":2,"tariff":422400,"holding":412642,"relocation":0,"rework":109760,"mwd_boards":0,"mwd_loose":1019200,"relocated_usd":0,"freed_usd":14610400,"mwd":1019200,"total":1964002},{"cutover":3,"tariff":633600,"holding":367218,"relocation":0,"rework":101920,"mwd_boards":0,"mwd_loose":946400,"relocated_usd":0,"freed_usd":13566800,"mwd":946400,"total":2049138},{"cutover":4,"tariff":844800,"holding":323640,"relocation":0,"rework":94080,"mwd_boards":0,"mwd_loose":873600,"relocated_usd":0,"freed_usd":12523200,"mwd":873600,"total":2136120},{"cutover":5,"tariff":1056000,"holding":283752,"relocation":0,"rework":86240,"mwd_boards":0,"mwd_loose":800800,"relocated_usd":0,"freed_usd":11479600,"mwd":800800,"total":2226792},{"cutover":6,"tariff":1267200,"holding":245710,"relocation":0,"rework":78400,"mwd_boards":0,"mwd_loose":728000,"relocated_usd":0,"freed_usd":10436000,"mwd":728000,"total":2319310},{"cutover":7,"tariff":1478400,"holding":209513,"relocation":0,"rework":70560,"mwd_boards":0,"mwd_loose":655200,"relocated_usd":0,"freed_usd":9392400,"mwd":655200,"total":2413673},{"cutover":8,"tariff":1689600,"holding":177007,"relocation":0,"rework":62720,"mwd_boards":0,"mwd_loose":582400,"relocated_usd":0,"freed_usd":8348800,"mwd":582400,"total":2511727},{"cutover":9,"tariff":1900800,"holding":146346,"relocation":0,"rework":54880,"mwd_boards":0,"mwd_loose":509600,"relocated_usd":0,"freed_usd":7305200,"mwd":509600,"total":2611626},{"cutover":10,"tariff":2112000,"holding":117531,"relocation":0,"rework":47040,"mwd_boards":0,"mwd_loose":436800,"relocated_usd":0,"freed_usd":6261600,"mwd":436800,"total":2713371},{"cutover":11,"tariff":2323200,"holding":92406,"relocation":0,"rework":39200,"mwd_boards":0,"mwd_loose":364000,"relocated_usd":0,"freed_usd":5218000,"mwd":364000,"total":2818806},{"cutover":12,"tariff":2534400,"holding":69127,"relocation":0,"rework":31360,"mwd_boards":0,"mwd_loose":291200,"relocated_usd":0,"freed_usd":4174400,"mwd":291200,"total":2926087},{"cutover":13,"tariff":2745600,"holding":47693,"relocation":0,"rework":23520,"mwd_boards":0,"mwd_loose":218400,"relocated_usd":0,"freed_usd":3130800,"mwd":218400,"total":3035213},{"cutover":14,"tariff":2956800,"holding":29950,"relocation":0,"rework":15680,"mwd_boards":0,"mwd_loose":145600,"relocated_usd":0,"freed_usd":2087200,"mwd":145600,"total":3148030},{"cutover":15,"tariff":3168000,"holding":14052,"relocation":0,"rework":7840,"mwd_boards":0,"mwd_loose":72800,"relocated_usd":0,"freed_usd":1043600,"mwd":72800,"total":3262692},{"cutover":16,"tariff":3379200,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":3379200}],"0.20|1":[{"cutover":0,"tariff":0,"holding":526572,"relocation":40320,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1344000,"freed_usd":16898400,"mwd":0,"total":566892},{"cutover":1,"tariff":281600,"holding":489419,"relocation":37800,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1260000,"freed_usd":15754400,"mwd":0,"total":808819},{"cutover":2,"tariff":563200,"holding":455612,"relocation":35280,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1176000,"freed_usd":14610400,"mwd":0,"total":1054092},{"cutover":3,"tariff":844800,"holding":405018,"relocation":32760,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1092000,"freed_usd":13566800,"mwd":0,"total":1282578},{"cutover":4,"tariff":1126400,"holding":360471,"relocation":30240,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1008000,"freed_usd":12523200,"mwd":0,"total":1517111},{"cutover":5,"tariff":1408000,"holding":319291,"relocation":27720,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":924000,"freed_usd":11479600,"mwd":0,"total":1755011},{"cutover":6,"tariff":1689600,"holding":279633,"relocation":25200,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":840000,"freed_usd":10436000,"mwd":0,"total":1994433},{"cutover":7,"tariff":1971200,"holding":241498,"relocation":22680,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":756000,"freed_usd":9392400,"mwd":0,"total":2235378},{"cutover":8,"tariff":2252800,"holding":206730,"relocation":20160,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":672000,"freed_usd":8348800,"mwd":0,"total":2479690},{"cutover":9,"tariff":2534400,"holding":173485,"relocation":17640,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":588000,"freed_usd":7305200,"mwd":0,"total":2725525},{"cutover":10,"tariff":2816000,"holding":141762,"relocation":15120,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":504000,"freed_usd":6261600,"mwd":0,"total":2972882},{"cutover":11,"tariff":3097600,"holding":113406,"relocation":12600,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":420000,"freed_usd":5218000,"mwd":0,"total":3223606},{"cutover":12,"tariff":3379200,"holding":86573,"relocation":10080,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":336000,"freed_usd":4174400,"mwd":0,"total":3475853},{"cutover":13,"tariff":3660800,"holding":61262,"relocation":7560,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":252000,"freed_usd":3130800,"mwd":0,"total":3729622},{"cutover":14,"tariff":3942400,"holding":39319,"relocation":5040,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":168000,"freed_usd":2087200,"mwd":0,"total":3986759},{"cutover":15,"tariff":4224000,"holding":18898,"relocation":2520,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":84000,"freed_usd":1043600,"mwd":0,"total":4245418},{"cutover":16,"tariff":4505600,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":4505600}],"0.20|0":[{"cutover":0,"tariff":0,"holding":472295,"relocation":0,"rework":125440,"mwd_boards":0,"mwd_loose":1164800,"relocated_usd":0,"freed_usd":16898400,"mwd":1164800,"total":1762535},{"cutover":1,"tariff":281600,"holding":440958,"relocation":0,"rework":117600,"mwd_boards":0,"mwd_loose":1092000,"relocated_usd":0,"freed_usd":15754400,"mwd":1092000,"total":1932158},{"cutover":2,"tariff":563200,"holding":412642,"relocation":0,"rework":109760,"mwd_boards":0,"mwd_loose":1019200,"relocated_usd":0,"freed_usd":14610400,"mwd":1019200,"total":2104802},{"cutover":3,"tariff":844800,"holding":367218,"relocation":0,"rework":101920,"mwd_boards":0,"mwd_loose":946400,"relocated_usd":0,"freed_usd":13566800,"mwd":946400,"total":2260338},{"cutover":4,"tariff":1126400,"holding":323640,"relocation":0,"rework":94080,"mwd_boards":0,"mwd_loose":873600,"relocated_usd":0,"freed_usd":12523200,"mwd":873600,"total":2417720},{"cutover":5,"tariff":1408000,"holding":283752,"relocation":0,"rework":86240,"mwd_boards":0,"mwd_loose":800800,"relocated_usd":0,"freed_usd":11479600,"mwd":800800,"total":2578792},{"cutover":6,"tariff":1689600,"holding":245710,"relocation":0,"rework":78400,"mwd_boards":0,"mwd_loose":728000,"relocated_usd":0,"freed_usd":10436000,"mwd":728000,"total":2741710},{"cutover":7,"tariff":1971200,"holding":209513,"relocation":0,"rework":70560,"mwd_boards":0,"mwd_loose":655200,"relocated_usd":0,"freed_usd":9392400,"mwd":655200,"total":2906473},{"cutover":8,"tariff":2252800,"holding":177007,"relocation":0,"rework":62720,"mwd_boards":0,"mwd_loose":582400,"relocated_usd":0,"freed_usd":8348800,"mwd":582400,"total":3074927},{"cutover":9,"tariff":2534400,"holding":146346,"relocation":0,"rework":54880,"mwd_boards":0,"mwd_loose":509600,"relocated_usd":0,"freed_usd":7305200,"mwd":509600,"total":3245226},{"cutover":10,"tariff":2816000,"holding":117531,"relocation":0,"rework":47040,"mwd_boards":0,"mwd_loose":436800,"relocated_usd":0,"freed_usd":6261600,"mwd":436800,"total":3417371},{"cutover":11,"tariff":3097600,"holding":92406,"relocation":0,"rework":39200,"mwd_boards":0,"mwd_loose":364000,"relocated_usd":0,"freed_usd":5218000,"mwd":364000,"total":3593206},{"cutover":12,"tariff":3379200,"holding":69127,"relocation":0,"rework":31360,"mwd_boards":0,"mwd_loose":291200,"relocated_usd":0,"freed_usd":4174400,"mwd":291200,"total":3770887},{"cutover":13,"tariff":3660800,"holding":47693,"relocation":0,"rework":23520,"mwd_boards":0,"mwd_loose":218400,"relocated_usd":0,"freed_usd":3130800,"mwd":218400,"total":3950413},{"cutover":14,"tariff":3942400,"holding":29950,"relocation":0,"rework":15680,"mwd_boards":0,"mwd_loose":145600,"relocated_usd":0,"freed_usd":2087200,"mwd":145600,"total":4133630},{"cutover":15,"tariff":4224000,"holding":14052,"relocation":0,"rework":7840,"mwd_boards":0,"mwd_loose":72800,"relocated_usd":0,"freed_usd":1043600,"mwd":72800,"total":4318692},{"cutover":16,"tariff":4505600,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":4505600}],"0.25|1":[{"cutover":0,"tariff":0,"holding":526572,"relocation":40320,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1344000,"freed_usd":16898400,"mwd":0,"total":566892},{"cutover":1,"tariff":352000,"holding":489419,"relocation":37800,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1260000,"freed_usd":15754400,"mwd":0,"total":879219},{"cutover":2,"tariff":704000,"holding":455612,"relocation":35280,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1176000,"freed_usd":14610400,"mwd":0,"total":1194892},{"cutover":3,"tariff":1056000,"holding":405018,"relocation":32760,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1092000,"freed_usd":13566800,"mwd":0,"total":1493778},{"cutover":4,"tariff":1408000,"holding":360471,"relocation":30240,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1008000,"freed_usd":12523200,"mwd":0,"total":1798711},{"cutover":5,"tariff":1760000,"holding":319291,"relocation":27720,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":924000,"freed_usd":11479600,"mwd":0,"total":2107011},{"cutover":6,"tariff":2112000,"holding":279633,"relocation":25200,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":840000,"freed_usd":10436000,"mwd":0,"total":2416833},{"cutover":7,"tariff":2464000,"holding":241498,"relocation":22680,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":756000,"freed_usd":9392400,"mwd":0,"total":2728178},{"cutover":8,"tariff":2816000,"holding":206730,"relocation":20160,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":672000,"freed_usd":8348800,"mwd":0,"total":3042890},{"cutover":9,"tariff":3168000,"holding":173485,"relocation":17640,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":588000,"freed_usd":7305200,"mwd":0,"total":3359125},{"cutover":10,"tariff":3520000,"holding":141762,"relocation":15120,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":504000,"freed_usd":6261600,"mwd":0,"total":3676882},{"cutover":11,"tariff":3872000,"holding":113406,"relocation":12600,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":420000,"freed_usd":5218000,"mwd":0,"total":3998006},{"cutover":12,"tariff":4224000,"holding":86573,"relocation":10080,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":336000,"freed_usd":4174400,"mwd":0,"total":4320653},{"cutover":13,"tariff":4576000,"holding":61262,"relocation":7560,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":252000,"freed_usd":3130800,"mwd":0,"total":4644822},{"cutover":14,"tariff":4928000,"holding":39319,"relocation":5040,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":168000,"freed_usd":2087200,"mwd":0,"total":4972359},{"cutover":15,"tariff":5280000,"holding":18898,"relocation":2520,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":84000,"freed_usd":1043600,"mwd":0,"total":5301418},{"cutover":16,"tariff":5632000,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":5632000}],"0.25|0":[{"cutover":0,"tariff":0,"holding":472295,"relocation":0,"rework":125440,"mwd_boards":0,"mwd_loose":1164800,"relocated_usd":0,"freed_usd":16898400,"mwd":1164800,"total":1762535},{"cutover":1,"tariff":352000,"holding":440958,"relocation":0,"rework":117600,"mwd_boards":0,"mwd_loose":1092000,"relocated_usd":0,"freed_usd":15754400,"mwd":1092000,"total":2002558},{"cutover":2,"tariff":704000,"holding":412642,"relocation":0,"rework":109760,"mwd_boards":0,"mwd_loose":1019200,"relocated_usd":0,"freed_usd":14610400,"mwd":1019200,"total":2245602},{"cutover":3,"tariff":1056000,"holding":367218,"relocation":0,"rework":101920,"mwd_boards":0,"mwd_loose":946400,"relocated_usd":0,"freed_usd":13566800,"mwd":946400,"total":2471538},{"cutover":4,"tariff":1408000,"holding":323640,"relocation":0,"rework":94080,"mwd_boards":0,"mwd_loose":873600,"relocated_usd":0,"freed_usd":12523200,"mwd":873600,"total":2699320},{"cutover":5,"tariff":1760000,"holding":283752,"relocation":0,"rework":86240,"mwd_boards":0,"mwd_loose":800800,"relocated_usd":0,"freed_usd":11479600,"mwd":800800,"total":2930792},{"cutover":6,"tariff":2112000,"holding":245710,"relocation":0,"rework":78400,"mwd_boards":0,"mwd_loose":728000,"relocated_usd":0,"freed_usd":10436000,"mwd":728000,"total":3164110},{"cutover":7,"tariff":2464000,"holding":209513,"relocation":0,"rework":70560,"mwd_boards":0,"mwd_loose":655200,"relocated_usd":0,"freed_usd":9392400,"mwd":655200,"total":3399273},{"cutover":8,"tariff":2816000,"holding":177007,"relocation":0,"rework":62720,"mwd_boards":0,"mwd_loose":582400,"relocated_usd":0,"freed_usd":8348800,"mwd":582400,"total":3638127},{"cutover":9,"tariff":3168000,"holding":146346,"relocation":0,"rework":54880,"mwd_boards":0,"mwd_loose":509600,"relocated_usd":0,"freed_usd":7305200,"mwd":509600,"total":3878826},{"cutover":10,"tariff":3520000,"holding":117531,"relocation":0,"rework":47040,"mwd_boards":0,"mwd_loose":436800,"relocated_usd":0,"freed_usd":6261600,"mwd":436800,"total":4121371},{"cutover":11,"tariff":3872000,"holding":92406,"relocation":0,"rework":39200,"mwd_boards":0,"mwd_loose":364000,"relocated_usd":0,"freed_usd":5218000,"mwd":364000,"total":4367606},{"cutover":12,"tariff":4224000,"holding":69127,"relocation":0,"rework":31360,"mwd_boards":0,"mwd_loose":291200,"relocated_usd":0,"freed_usd":4174400,"mwd":291200,"total":4615687},{"cutover":13,"tariff":4576000,"holding":47693,"relocation":0,"rework":23520,"mwd_boards":0,"mwd_loose":218400,"relocated_usd":0,"freed_usd":3130800,"mwd":218400,"total":4865613},{"cutover":14,"tariff":4928000,"holding":29950,"relocation":0,"rework":15680,"mwd_boards":0,"mwd_loose":145600,"relocated_usd":0,"freed_usd":2087200,"mwd":145600,"total":5119230},{"cutover":15,"tariff":5280000,"holding":14052,"relocation":0,"rework":7840,"mwd_boards":0,"mwd_loose":72800,"relocated_usd":0,"freed_usd":1043600,"mwd":72800,"total":5374692},{"cutover":16,"tariff":5632000,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":5632000}],"0.35|1":[{"cutover":0,"tariff":0,"holding":526572,"relocation":40320,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1344000,"freed_usd":16898400,"mwd":0,"total":566892},{"cutover":1,"tariff":492800,"holding":489419,"relocation":37800,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1260000,"freed_usd":15754400,"mwd":0,"total":1020019},{"cutover":2,"tariff":985600,"holding":455612,"relocation":35280,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1176000,"freed_usd":14610400,"mwd":0,"total":1476492},{"cutover":3,"tariff":1478400,"holding":405018,"relocation":32760,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1092000,"freed_usd":13566800,"mwd":0,"total":1916178},{"cutover":4,"tariff":1971200,"holding":360471,"relocation":30240,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1008000,"freed_usd":12523200,"mwd":0,"total":2361911},{"cutover":5,"tariff":2464000,"holding":319291,"relocation":27720,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":924000,"freed_usd":11479600,"mwd":0,"total":2811011},{"cutover":6,"tariff":2956800,"holding":279633,"relocation":25200,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":840000,"freed_usd":10436000,"mwd":0,"total":3261633},{"cutover":7,"tariff":3449600,"holding":241498,"relocation":22680,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":756000,"freed_usd":9392400,"mwd":0,"total":3713778},{"cutover":8,"tariff":3942400,"holding":206730,"relocation":20160,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":672000,"freed_usd":8348800,"mwd":0,"total":4169290},{"cutover":9,"tariff":4435200,"holding":173485,"relocation":17640,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":588000,"freed_usd":7305200,"mwd":0,"total":4626325},{"cutover":10,"tariff":4928000,"holding":141762,"relocation":15120,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":504000,"freed_usd":6261600,"mwd":0,"total":5084882},{"cutover":11,"tariff":5420800,"holding":113406,"relocation":12600,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":420000,"freed_usd":5218000,"mwd":0,"total":5546806},{"cutover":12,"tariff":5913600,"holding":86573,"relocation":10080,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":336000,"freed_usd":4174400,"mwd":0,"total":6010253},{"cutover":13,"tariff":6406400,"holding":61262,"relocation":7560,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":252000,"freed_usd":3130800,"mwd":0,"total":6475222},{"cutover":14,"tariff":6899200,"holding":39319,"relocation":5040,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":168000,"freed_usd":2087200,"mwd":0,"total":6943559},{"cutover":15,"tariff":7392000,"holding":18898,"relocation":2520,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":84000,"freed_usd":1043600,"mwd":0,"total":7413418},{"cutover":16,"tariff":7884800,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":7884800}],"0.35|0":[{"cutover":0,"tariff":0,"holding":472295,"relocation":0,"rework":125440,"mwd_boards":0,"mwd_loose":1164800,"relocated_usd":0,"freed_usd":16898400,"mwd":1164800,"total":1762535},{"cutover":1,"tariff":492800,"holding":440958,"relocation":0,"rework":117600,"mwd_boards":0,"mwd_loose":1092000,"relocated_usd":0,"freed_usd":15754400,"mwd":1092000,"total":2143358},{"cutover":2,"tariff":985600,"holding":412642,"relocation":0,"rework":109760,"mwd_boards":0,"mwd_loose":1019200,"relocated_usd":0,"freed_usd":14610400,"mwd":1019200,"total":2527202},{"cutover":3,"tariff":1478400,"holding":367218,"relocation":0,"rework":101920,"mwd_boards":0,"mwd_loose":946400,"relocated_usd":0,"freed_usd":13566800,"mwd":946400,"total":2893938},{"cutover":4,"tariff":1971200,"holding":323640,"relocation":0,"rework":94080,"mwd_boards":0,"mwd_loose":873600,"relocated_usd":0,"freed_usd":12523200,"mwd":873600,"total":3262520},{"cutover":5,"tariff":2464000,"holding":283752,"relocation":0,"rework":86240,"mwd_boards":0,"mwd_loose":800800,"relocated_usd":0,"freed_usd":11479600,"mwd":800800,"total":3634792},{"cutover":6,"tariff":2956800,"holding":245710,"relocation":0,"rework":78400,"mwd_boards":0,"mwd_loose":728000,"relocated_usd":0,"freed_usd":10436000,"mwd":728000,"total":4008910},{"cutover":7,"tariff":3449600,"holding":209513,"relocation":0,"rework":70560,"mwd_boards":0,"mwd_loose":655200,"relocated_usd":0,"freed_usd":9392400,"mwd":655200,"total":4384873},{"cutover":8,"tariff":3942400,"holding":177007,"relocation":0,"rework":62720,"mwd_boards":0,"mwd_loose":582400,"relocated_usd":0,"freed_usd":8348800,"mwd":582400,"total":4764527},{"cutover":9,"tariff":4435200,"holding":146346,"relocation":0,"rework":54880,"mwd_boards":0,"mwd_loose":509600,"relocated_usd":0,"freed_usd":7305200,"mwd":509600,"total":5146026},{"cutover":10,"tariff":4928000,"holding":117531,"relocation":0,"rework":47040,"mwd_boards":0,"mwd_loose":436800,"relocated_usd":0,"freed_usd":6261600,"mwd":436800,"total":5529371},{"cutover":11,"tariff":5420800,"holding":92406,"relocation":0,"rework":39200,"mwd_boards":0,"mwd_loose":364000,"relocated_usd":0,"freed_usd":5218000,"mwd":364000,"total":5916406},{"cutover":12,"tariff":5913600,"holding":69127,"relocation":0,"rework":31360,"mwd_boards":0,"mwd_loose":291200,"relocated_usd":0,"freed_usd":4174400,"mwd":291200,"total":6305287},{"cutover":13,"tariff":6406400,"holding":47693,"relocation":0,"rework":23520,"mwd_boards":0,"mwd_loose":218400,"relocated_usd":0,"freed_usd":3130800,"mwd":218400,"total":6696013},{"cutover":14,"tariff":6899200,"holding":29950,"relocation":0,"rework":15680,"mwd_boards":0,"mwd_loose":145600,"relocated_usd":0,"freed_usd":2087200,"mwd":145600,"total":7090430},{"cutover":15,"tariff":7392000,"holding":14052,"relocation":0,"rework":7840,"mwd_boards":0,"mwd_loose":72800,"relocated_usd":0,"freed_usd":1043600,"mwd":72800,"total":7486692},{"cutover":16,"tariff":7884800,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":7884800}],"0.50|1":[{"cutover":0,"tariff":0,"holding":526572,"relocation":40320,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1344000,"freed_usd":16898400,"mwd":0,"total":566892},{"cutover":1,"tariff":704000,"holding":489419,"relocation":37800,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1260000,"freed_usd":15754400,"mwd":0,"total":1231219},{"cutover":2,"tariff":1408000,"holding":455612,"relocation":35280,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1176000,"freed_usd":14610400,"mwd":0,"total":1898892},{"cutover":3,"tariff":2112000,"holding":405018,"relocation":32760,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1092000,"freed_usd":13566800,"mwd":0,"total":2549778},{"cutover":4,"tariff":2816000,"holding":360471,"relocation":30240,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":1008000,"freed_usd":12523200,"mwd":0,"total":3206711},{"cutover":5,"tariff":3520000,"holding":319291,"relocation":27720,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":924000,"freed_usd":11479600,"mwd":0,"total":3867011},{"cutover":6,"tariff":4224000,"holding":279633,"relocation":25200,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":840000,"freed_usd":10436000,"mwd":0,"total":4528833},{"cutover":7,"tariff":4928000,"holding":241498,"relocation":22680,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":756000,"freed_usd":9392400,"mwd":0,"total":5192178},{"cutover":8,"tariff":5632000,"holding":206730,"relocation":20160,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":672000,"freed_usd":8348800,"mwd":0,"total":5858890},{"cutover":9,"tariff":6336000,"holding":173485,"relocation":17640,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":588000,"freed_usd":7305200,"mwd":0,"total":6527125},{"cutover":10,"tariff":7040000,"holding":141762,"relocation":15120,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":504000,"freed_usd":6261600,"mwd":0,"total":7196882},{"cutover":11,"tariff":7744000,"holding":113406,"relocation":12600,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":420000,"freed_usd":5218000,"mwd":0,"total":7870006},{"cutover":12,"tariff":8448000,"holding":86573,"relocation":10080,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":336000,"freed_usd":4174400,"mwd":0,"total":8544653},{"cutover":13,"tariff":9152000,"holding":61262,"relocation":7560,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":252000,"freed_usd":3130800,"mwd":0,"total":9220822},{"cutover":14,"tariff":9856000,"holding":39319,"relocation":5040,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":168000,"freed_usd":2087200,"mwd":0,"total":9900359},{"cutover":15,"tariff":10560000,"holding":18898,"relocation":2520,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":84000,"freed_usd":1043600,"mwd":0,"total":10581418},{"cutover":16,"tariff":11264000,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":11264000}],"0.50|0":[{"cutover":0,"tariff":0,"holding":472295,"relocation":0,"rework":125440,"mwd_boards":0,"mwd_loose":1164800,"relocated_usd":0,"freed_usd":16898400,"mwd":1164800,"total":1762535},{"cutover":1,"tariff":704000,"holding":440958,"relocation":0,"rework":117600,"mwd_boards":0,"mwd_loose":1092000,"relocated_usd":0,"freed_usd":15754400,"mwd":1092000,"total":2354558},{"cutover":2,"tariff":1408000,"holding":412642,"relocation":0,"rework":109760,"mwd_boards":0,"mwd_loose":1019200,"relocated_usd":0,"freed_usd":14610400,"mwd":1019200,"total":2949602},{"cutover":3,"tariff":2112000,"holding":367218,"relocation":0,"rework":101920,"mwd_boards":0,"mwd_loose":946400,"relocated_usd":0,"freed_usd":13566800,"mwd":946400,"total":3527538},{"cutover":4,"tariff":2816000,"holding":323640,"relocation":0,"rework":94080,"mwd_boards":0,"mwd_loose":873600,"relocated_usd":0,"freed_usd":12523200,"mwd":873600,"total":4107320},{"cutover":5,"tariff":3520000,"holding":283752,"relocation":0,"rework":86240,"mwd_boards":0,"mwd_loose":800800,"relocated_usd":0,"freed_usd":11479600,"mwd":800800,"total":4690792},{"cutover":6,"tariff":4224000,"holding":245710,"relocation":0,"rework":78400,"mwd_boards":0,"mwd_loose":728000,"relocated_usd":0,"freed_usd":10436000,"mwd":728000,"total":5276110},{"cutover":7,"tariff":4928000,"holding":209513,"relocation":0,"rework":70560,"mwd_boards":0,"mwd_loose":655200,"relocated_usd":0,"freed_usd":9392400,"mwd":655200,"total":5863273},{"cutover":8,"tariff":5632000,"holding":177007,"relocation":0,"rework":62720,"mwd_boards":0,"mwd_loose":582400,"relocated_usd":0,"freed_usd":8348800,"mwd":582400,"total":6454127},{"cutover":9,"tariff":6336000,"holding":146346,"relocation":0,"rework":54880,"mwd_boards":0,"mwd_loose":509600,"relocated_usd":0,"freed_usd":7305200,"mwd":509600,"total":7046826},{"cutover":10,"tariff":7040000,"holding":117531,"relocation":0,"rework":47040,"mwd_boards":0,"mwd_loose":436800,"relocated_usd":0,"freed_usd":6261600,"mwd":436800,"total":7641371},{"cutover":11,"tariff":7744000,"holding":92406,"relocation":0,"rework":39200,"mwd_boards":0,"mwd_loose":364000,"relocated_usd":0,"freed_usd":5218000,"mwd":364000,"total":8239606},{"cutover":12,"tariff":8448000,"holding":69127,"relocation":0,"rework":31360,"mwd_boards":0,"mwd_loose":291200,"relocated_usd":0,"freed_usd":4174400,"mwd":291200,"total":8839687},{"cutover":13,"tariff":9152000,"holding":47693,"relocation":0,"rework":23520,"mwd_boards":0,"mwd_loose":218400,"relocated_usd":0,"freed_usd":3130800,"mwd":218400,"total":9441613},{"cutover":14,"tariff":9856000,"holding":29950,"relocation":0,"rework":15680,"mwd_boards":0,"mwd_loose":145600,"relocated_usd":0,"freed_usd":2087200,"mwd":145600,"total":10047230},{"cutover":15,"tariff":10560000,"holding":14052,"relocation":0,"rework":7840,"mwd_boards":0,"mwd_loose":72800,"relocated_usd":0,"freed_usd":1043600,"mwd":72800,"total":10654692},{"cutover":16,"tariff":11264000,"holding":0,"relocation":0,"rework":0,"mwd_boards":0,"mwd_loose":0,"relocated_usd":0,"freed_usd":0,"mwd":0,"total":11264000}]},"chain":{"0.00":{"weekly_units":2800,"extra_pipeline_usd":4174400,"pipeline_carry_per_year":834880,"tariff_saved_per_year":0},"0.05":{"weekly_units":2800,"extra_pipeline_usd":4174400,"pipeline_carry_per_year":834880,"tariff_saved_per_year":3660800},"0.10":{"weekly_units":2800,"extra_pipeline_usd":4174400,"pipeline_carry_per_year":834880,"tariff_saved_per_year":7321600},"0.15":{"weekly_units":2800,"extra_pipeline_usd":4174400,"pipeline_carry_per_year":834880,"tariff_saved_per_year":10982400},"0.20":{"weekly_units":2800,"extra_pipeline_usd":4174400,"pipeline_carry_per_year":834880,"tariff_saved_per_year":14643200},"0.25":{"weekly_units":2800,"extra_pipeline_usd":4174400,"pipeline_carry_per_year":834880,"tariff_saved_per_year":18304000},"0.35":{"weekly_units":2800,"extra_pipeline_usd":4174400,"pipeline_carry_per_year":834880,"tariff_saved_per_year":25625600},"0.50":{"weekly_units":2800,"extra_pipeline_usd":4174400,"pipeline_carry_per_year":834880,"tariff_saved_per_year":36608000}},"window":16,"boards_ahead":2,"relocation_weeks":3,"relocation_rate":0.03,"lt_adder":4};
+['n-w', 'n-w2'].forEach((id) => R.$('#' + id).textContent = D.window);
+R.$('#n-rw').textContent = D.relocation_weeks; R.$('#n-rc').textContent = R.pct(D.relocation_rate);
+R.$('#n-ba').textContent = D.boards_ahead;
+const saved = R.load();
+const S = { t: D.tariffs.includes(saved.t) ? saved.t : 0.25, r: saved.r === 0 ? 0 : 1, sel: null };
+const rows = (t = S.t, r = S.r) => D.sweeps[t.toFixed(2) + '|' + r];
+const bestOf = (rs) => rs.reduce((a, b) => (b.total < a.total ? b : a), rs[0]);
+R.seg(R.$('#f-t'), D.tariffs.map((v) => [v, R.pct(v)]), S.t, (v) => { S.t = v; S.sel = null; draw(); });
+R.seg(R.$('#f-r'), [[1, 'On'], [0, 'Off']], S.r, (v) => { S.r = +v; S.sel = null; draw(); });
+const PARTS = [
+  ['tariff', 'Tariff paid (weeks before C)', (t) => t.d16],
+  ['holding', 'Holding while absorbed', (t) => t.c[4]],
+  ['relocation', 'Moving parts', (t) => t.c[3]],
+  ['rework', 'Rework', (t) => t.c[5]],
+  ['mwd_boards', 'MWD · built boards', (t) => t.c[1]],
+  ['mwd_loose', 'MWD · loose parts', (t) => t.c[0]],
+];
+
+function kpis() {
+  const rs = rows(), b = bestOf(rs), now = rs[0], end = rs[rs.length - 1];
+  const card = (label, value, sub) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span></div>`;
+  R.$('#kpis').innerHTML = [
+    card('Cheapest cutover week', 'Week ' + b.cutover, `total ${R.usd(b.total)} inside the window`),
+    card('Cut over now (week 0)', R.usd(now.total), `${now.total > b.total ? '+' + R.usd(now.total - b.total) + ' vs cheapest' : 'cheapest'} · MWD ${R.usd(now.mwd)}`),
+    card('Wait to window end (week ' + end.cutover + ')', R.usd(end.total), `${end.total > b.total ? '+' + R.usd(end.total - b.total) + ' vs cheapest' : 'cheapest'} · tariff ${R.usd(end.tariff)}`),
+    card('MWD at the cheapest week', R.usd(b.mwd), `boards ${R.usd(b.mwd_boards)} · loose ${R.usd(b.mwd_loose)}`),
+    card('Material moved to the new site', R.usd(b.relocated_usd), S.r ? `of ${R.usd(b.freed_usd)} freed` : 'moving parts is off'),
+  ].join('');
+}
+
+const cSweep = R.chart('c-sweep', (t) => {
+  const o = R.base(t), rs = rows(), b = bestOf(rs);
+  const x = rs.map((r) => 'C' + r.cutover);
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => R.tip(t, ps.filter((p) => p.seriesType === 'bar').map((p) => [p.color, p.seriesName, R.usd(p.value)]).concat([[t.ink, 'Total', R.usd(rs[ps[0].dataIndex].total)]]), 'Cutover week ' + rs[ps[0].dataIndex].cutover) },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'category', data: x, splitLine: { show: false } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    series: PARTS.map(([k, name, col]) => ({ type: 'bar', stack: 'c', name, barWidth: '62%', itemStyle: { color: col(t) },
+      data: rs.map((r) => ({ value: r[k], itemStyle: { opacity: S.sel == null || S.sel === r.cutover ? 1 : .45 } })) }))
+      .concat([{ type: 'line', name: 'Total', data: rs.map((r) => r.total), showSymbol: false, lineStyle: { color: t.ink, width: 1.5 }, itemStyle: { color: t.ink },
+        markPoint: { symbol: 'pin', symbolSize: 34, itemStyle: { color: t.good }, label: { color: '#fff', fontSize: 10, formatter: 'min' },
+          data: [{ coord: ['C' + b.cutover, b.total] }] } }]),
+  };
+});
+cSweep.inst && cSweep.inst.on('click', (p) => { S.sel = rows()[p.dataIndex].cutover; draw(); });
+
+const cBest = R.chart('c-best', (t) => {
+  const o = R.base(t), xs = D.tariffs.map((v) => R.pct(v));
+  const best = (r) => D.tariffs.map((v) => bestOf(rows(v, r)).cutover);
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, valueFormatter: (v) => 'week ' + v },
+    grid: { ...o.grid, top: 40, bottom: 18 },
+    xAxis: R.axis(t, { type: 'category', data: xs, boundaryGap: false, splitLine: { show: false }, name: 'China tariff', nameLocation: 'middle', nameGap: 26 }),
+    yAxis: R.axis(t, { type: 'value', min: 0, max: D.window, interval: 4, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => 'C' + v } }),
+    series: [
+      { type: 'line', step: 'middle', name: 'Moving parts on', data: best(1), lineStyle: { width: 2.5, color: t.c[0] }, itemStyle: { color: t.c[0] }, symbolSize: 6 },
+      { type: 'line', step: 'middle', name: 'Moving parts off', data: best(0), lineStyle: { width: 2, type: [6, 4], color: t.c[1] }, itemStyle: { color: t.c[1] }, symbolSize: 6,
+        markLine: { symbol: 'none', silent: true, lineStyle: { color: t.muted, type: [4, 4] }, label: { color: t.ink2, fontSize: 11, formatter: R.pct(S.t) }, data: [{ xAxis: R.pct(S.t) }] } },
+    ],
+  };
+});
+
+const cChain = R.chart('c-chain', (t) => {
+  const o = R.base(t), xs = D.tariffs.map((v) => R.pct(v));
+  const ch = D.tariffs.map((v) => D.chain[v.toFixed(2)]);
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.usd(v) },
+    grid: { ...o.grid, top: 40, bottom: 18 },
+    xAxis: R.axis(t, { type: 'category', data: xs, splitLine: { show: false }, name: 'China tariff', nameLocation: 'middle', nameGap: 26 }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    series: [
+      { type: 'bar', name: 'Tariff saved per year', data: ch.map((c, i) => ({ value: c.tariff_saved_per_year, itemStyle: { color: t.c[2], opacity: D.tariffs[i] === S.t ? 1 : .55 } })), itemStyle: { color: t.c[2] } },
+      { type: 'line', name: `Carrying +${D.lt_adder} weeks of material`, data: ch.map((c) => c.pipeline_carry_per_year), showSymbol: false, lineStyle: { width: 2, color: t.c[1] }, itemStyle: { color: t.c[1] } },
+    ],
+  };
+});
+
+function ledger() {
+  const rs = rows(), b = bestOf(rs), max = Math.max(...rs.map((r) => r.total));
+  R.$('#h-led').textContent = `China tariff ${R.pct(S.t)} · moving parts ${S.r ? 'on' : 'off'}`;
+  R.$('#t-led').innerHTML = '<thead><tr><th>Week C</th><th>Tariff</th><th>Holding</th><th>Move + rework</th><th>MWD boards</th><th>MWD loose</th><th>Total</th></tr></thead><tbody>' +
+    rs.map((r) => `<tr class="click${r.cutover === (S.sel ?? b.cutover) ? ' sel' : ''}" data-c="${r.cutover}" tabindex="0"><td>C${r.cutover}${r.cutover === b.cutover ? ' <span class="chip good">cheapest</span>' : ''}</td><td>${R.usd(r.tariff)}</td><td>${R.usd(r.holding)}</td><td>${R.usd(r.relocation + r.rework)}</td><td>${R.usd(r.mwd_boards)}</td><td>${R.usd(r.mwd_loose)}</td><td class="bar-cell"><i style="width:${(100 * r.total / max).toFixed(1)}%"></i><span>${R.usd(r.total)}</span></td></tr>`).join('') + '</tbody>';
+  R.$('#t-led').querySelectorAll('tr.click').forEach((tr) => {
+    const pick = () => { S.sel = +tr.dataset.c; draw(); };
+    tr.addEventListener('click', pick);
+    tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+  });
+}
+
+function insight() {
+  const rs = rows(), b = bestOf(rs), now = rs[0];
+  const off = bestOf(rows(S.t, 0)), on = bestOf(rows(S.t, 1));
+  R.$('#insight').innerHTML = `
+    <p><b>At a ${R.pct(S.t)} tariff the cheapest cutover is week ${b.cutover}${b.cutover === 0 ? ', right away' : ''}.</b> ${b.cutover === 0
+      ? `Each week of delay pays about ${R.usd((rs[1].tariff - rs[0].tariff))} of tariff, more than the holding and MWD it avoids.`
+      : `Cutting over now costs ${R.usd(now.total - b.total)} more, as MWD (${R.usd(now.mwd)}) and holding on material nobody else needs yet. Waiting longer pays ${R.usd(rs[Math.min(rs.length - 1, b.cutover + 1)].tariff - b.tariff)} more tariff for each extra week.`}</p>
+    <p>Moving pre-SMT parts to the new site ${on.total < off.total ? `saves ${R.usd(off.total - on.total)} at the best week` : 'makes no difference here'}. Built boards cannot move: their China origin is fixed at SMT.</p>
+    <p>This is the company view inside the window. A planner sees only the MWD part in the KPI (R22), which pushes the cutover later than the company optimum.</p>`;
+}
+
+function draw() {
+  R.save({ t: S.t, r: S.r });
+  kpis(); ledger(); insight();
+  [cSweep, cBest, cChain].forEach(R.update);
+}
+draw();
+</script>
+
+</body>
+</html>

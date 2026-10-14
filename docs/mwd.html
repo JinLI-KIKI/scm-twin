@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>MWD Explorer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
+<style>/* Layout: a BI-style report. Sticky page tabs on top; under them a header, a slicer bar,
+   a row of KPI cards, then a 12-column canvas of visual containers. One column on phones.
+   Tokens match the network atlas so every page reads as one product. */
+:root {
+  --paper: #f6f7f5; --panel: #fbfcfb; --ink: #14181c; --ink-2: #4a525a; --muted: #6f777e;
+  --rule: #d9dde0; --chip: #eceeec; --hl: #fff3c4;
+  --sea: #2a78d6; --air: #eb6834; --inland: #1baf7a;
+  --d0: #9d90e6; --d5: #7464d9; --d16: #4a3aa7;
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #7464d9; --c5: #c9940f; --c6: #c2417a; --c7: #8a939a;
+  --good: #16794c; --warn: #9a6408; --bad: #b8322a;
+  --good-bg: #e3f2ea; --warn-bg: #f7eedb; --bad-bg: #f8e4e1;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+    --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+    --sea: #3987e5; --air: #d95926; --inland: #199e70;
+    --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+    --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+    --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+    --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+  --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+  --sea: #3987e5; --air: #d95926; --inland: #199e70;
+  --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+  --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+  --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+  --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font: 14px/1.5 var(--f-body); margin: 0; }
+a { color: inherit; }
+
+.report { max-width: 1440px; margin: 0 auto; display: grid; gap: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 40px; }
+.report-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 6px 24px; }
+.report-head > div { min-width: 0; }
+.eyebrow { font: 500 12px var(--f-mono); color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin: 0 0 4px; }
+h1 { font: 600 34px/1.02 var(--f-display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--ink-2); margin: 6px 0 0; max-width: 78ch; }
+.asof { font: 12px var(--f-mono); color: var(--muted); text-align: right; }
+
+/* slicers */
+.slicers { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end;
+  padding: 10px 14px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+.slicer { display: grid; gap: 4px; min-width: 0; }
+.slicer > .s-label { font-size: 12px; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-body); color: var(--ink-2); background: transparent; border: 0;
+  padding: 5px 11px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button:hover { background: var(--chip); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.range { display: flex; align-items: center; gap: 10px; }
+.range input[type="range"] { width: min(260px, 60vw); accent-color: var(--sea); }
+.range output { font: 600 18px var(--f-display); min-width: 3.4em; font-variant-numeric: tabular-nums; }
+input[type="search"] { font: 13px var(--f-body); color: var(--ink); background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 5px 10px; width: min(280px, 70vw); }
+button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+
+/* KPI cards */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .k-value { font-size: 24px; } .kpi { padding: 8px 10px 10px; } }
+.kpi { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px 12px;
+  display: grid; gap: 2px; align-content: start; min-width: 0; }
+.k-label { font-size: 12px; color: var(--muted); }
+.k-value { font: 600 30px/1.08 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.k-sub { font: 12px/1.4 var(--f-mono); color: var(--ink-2); overflow-wrap: anywhere; }
+.k-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+/* canvas of visuals */
+.canvas { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+.viz { grid-column: span 6; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.viz.w3 { grid-column: span 3; } .viz.w4 { grid-column: span 4; } .viz.w5 { grid-column: span 5; }
+.viz.w7 { grid-column: span 7; } .viz.w8 { grid-column: span 8; } .viz.w12 { grid-column: span 12; }
+.viz-h { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.viz-h h2 { font: 600 15px/1.2 var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.hint { font-size: 12px; color: var(--muted); }
+.chart { width: 100%; height: 300px; min-width: 0; }
+.chart.short { height: 230px; } .chart.tall { height: 380px; } .chart.xtall { height: 460px; }
+.chart .nolib { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 13px; text-align: center; padding: 12px; }
+@media (max-width: 1180px) { .viz.w3, .viz.w4, .viz.w5 { grid-column: span 6; } .viz.w7, .viz.w8 { grid-column: span 12; } }
+@media (max-width: 860px) { .viz, .viz.w3, .viz.w4, .viz.w5, .viz.w7, .viz.w8 { grid-column: span 12; } h1 { font-size: 28px; } .asof { text-align: left; } }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; min-width: 0; }
+table.tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.tbl th { font: 500 11px var(--f-body); color: var(--muted); text-align: right; padding: 0 8px 6px; border-bottom: 1px solid var(--rule);
+  letter-spacing: .03em; white-space: nowrap; }
+.tbl td { padding: 7px 8px; border-bottom: 1px solid var(--rule); text-align: right; font: 13px var(--f-mono); vertical-align: top; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; padding-left: 0; }
+.tbl td.txt, .tbl th.txt { text-align: left; font-family: var(--f-body); }
+.tbl tr.sel td { background: var(--hl); }
+.tbl tr.click { cursor: pointer; }
+.tbl tr.click:hover td { background: var(--chip); }
+.tbl td small { display: block; font: 12px var(--f-body); color: var(--muted); }
+.bar-cell { position: relative; }
+.bar-cell i { position: absolute; left: 0; top: 4px; bottom: 4px; background: var(--chip); border-radius: 2px; z-index: 0; }
+.bar-cell span { position: relative; z-index: 1; }
+
+/* chips and notes */
+.chip { display: inline-block; font: 500 11px/1.6 var(--f-body); padding: 0 7px; border-radius: 10px; white-space: nowrap;
+  border: 1px solid var(--rule); color: var(--ink-2); background: var(--paper); }
+.chip.good { color: var(--good); background: var(--good-bg); border-color: transparent; }
+.chip.warn { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.bad { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.prac { color: var(--c1); border-color: var(--c1); }
+.chip.web { color: var(--c3); border-color: var(--c3); }
+.chip.ph { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.open { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.ill, .chip.design { color: var(--muted); }
+.insight { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--ink-2);
+  background: var(--panel); display: grid; gap: 4px; }
+.insight b { color: var(--ink); font-weight: 600; }
+.insight p { margin: 0; }
+.notes { font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.notes p { margin: 0; max-width: 100ch; }
+.notes a, .tbl a, .insight a { color: var(--ink-2); overflow-wrap: anywhere; }
+code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border-radius: 3px; }
+.legend-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.sw { width: 12px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+
+/* Top navigation shared by every page, including the atlas. Uses the page's own tokens. */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1200; display: flex; align-items: stretch; gap: 14px;
+  height: 46px; background: var(--panel); border-bottom: 1px solid var(--rule); box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topbar .brand { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; flex: none;
+  font: 500 13px var(--f-mono); }
+.topbar .brand-mark { width: 12px; height: 12px; background: var(--ink); border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--ink); box-sizing: border-box; }
+.topbar .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
+.topbar .tabs::-webkit-scrollbar { display: none; }
+.topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
+  font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
+.topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
+.topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }
+.topbar .repo:hover { color: var(--ink); }
+@media (max-width: 560px) { .topbar .repo { display: none; } .topbar .brand-name { display: none; } }
+</style>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
+  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html">Overview</a><a class="tab" href="atlas.html">Network atlas</a><a class="tab" href="lanes.html">Lanes & lead time</a><a class="tab" href="mwd.html" aria-current="page">MWD</a><a class="tab" href="transfer.html">Transfer timing</a><a class="tab" href="business-case.html">Business case</a><a class="tab" href="finished-goods.html">Finished goods</a><a class="tab" href="rules.html">Rules register</a></nav>
+  <a class="repo" href="https://github.com/jinli-kiki/scm-twin">GitHub</a>
+</header>
+<script>(function(){var a=document.querySelector(".topbar .tab[aria-current]");if(a){var n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.clientWidth)/2;}})();</script>
+
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Module 1 · material without demand</p>
+      <h1>Where Cancelled Plans Leave Material</h1>
+      <p class="sub">When plans inside the <span id="n-w"></span>-week liability window are cancelled, their material is still owed. Some is netted by other plans that use the same part number, some is converted at a cost, and the rest becomes MWD.</p>
+    </div>
+    <div class="asof">Model run 2026-10-14 · tracked for <span id="n-tr"></span> weeks</div>
+  </div>
+
+  <section class="slicers" aria-label="Filters">
+    <div class="slicer"><span class="s-label" id="l-s">Scenario</span><div class="seg" role="group" aria-labelledby="l-s" id="f-s"></div></div>
+    <div class="slicer"><span class="s-label" id="l-c">Routing class (R7)</span><div class="seg" role="group" aria-labelledby="l-c" id="f-c"></div></div>
+    <div class="slicer"><span class="s-label" id="l-p">Part type (R10)</span><div class="seg" role="group" aria-labelledby="l-p" id="f-p"></div></div>
+  </section>
+
+  <p class="sub" id="desc" style="margin:0"></p>
+  <section class="kpis" id="kpis" aria-live="polite"></section>
+
+  <section class="canvas">
+    <div class="viz w5">
+      <div class="viz-h"><h2>Cost by scenario</h2><span class="hint">Click a bar to select it</span></div>
+      <div id="c-sc" class="chart tall"></div>
+    </div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>What happened to each part</h2><span class="hint">Value of freed material, $</span></div>
+      <div id="c-mat" class="chart tall"></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>How long freed stock takes to burn down</h2><span class="hint">Netting from first eligible week to the week the last unit was absorbed</span></div>
+      <div id="c-gantt" class="chart"></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Material ledger</h2><span class="hint" id="h-led"></span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-led"></table></div>
+    </div>
+  </section>
+
+  <section class="insight" id="insight"></section>
+
+  <footer class="notes">
+    <p><b>Routing classes.</b> 1 = same part number used elsewhere, netted by MRP (CPU, memory, SSD, panel, battery, adapter, housing). 2 = convertible for another region at a cost, after cross-BU agreement (power cord, packaging). 3 = locked to the cancelled configuration (keyboard, WWAN) (R6, R7).</p>
+    <p><b>Netting.</b> Freed stock offsets other plans from the end of its non-cancellable window: 2 weeks for industry-standard parts shared across brands at the ODM, the full lead time for custom parts (R3, R10). Scenario C0 uses the older assumption, netting only beyond the purchase lead time. Holding cost accrues at 20% a year while stock waits; batteries need recharging and chips past their date code need re-testing.</p>
+    <p><b>Status.</b> Rules from practitioner input; unit costs, lead times and lifecycles are placeholders. See the <a href="rules.html">Rules register</a>.</p>
+  </footer>
+</main>
+<script>/* Shared helpers for the report pages: theme-aware ECharts, number formats, slicers. */
+const R = (() => {
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const theme = () => ({
+    ink: css('--ink'), ink2: css('--ink-2'), muted: css('--muted'), rule: css('--rule'),
+    panel: css('--panel'), paper: css('--paper'), chip: css('--chip'), hl: css('--hl'),
+    c: [1, 2, 3, 4, 5, 6, 7].map((i) => css('--c' + i)),
+    sea: css('--sea'), air: css('--air'), inland: css('--inland'),
+    d0: css('--d0'), d5: css('--d5'), d16: css('--d16'),
+    good: css('--good'), warn: css('--warn'), bad: css('--bad'),
+    fBody: css('--f-body'), fMono: css('--f-mono'), fDisp: css('--f-display'),
+  });
+
+  // ---------- numbers
+  const usd = (v, d) => {
+    if (v == null || isNaN(v)) return '–';
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e9) return s + '$' + (a / 1e9).toFixed(d ?? 2) + 'B';
+    if (a >= 1e6) return s + '$' + (a / 1e6).toFixed(d ?? 2) + 'M';
+    if (a >= 1e3) return s + '$' + (a / 1e3).toFixed(d ?? 0) + 'k';
+    return s + '$' + a.toFixed(0);
+  };
+  const num = (v, d = 0) => (v == null || isNaN(v)) ? '–' :
+    (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+  const kunits = (v) => Math.abs(v) >= 1e3 ? num(v / 1e3, 1) + 'k' : num(v);
+  const pct = (v, d = 0) => (v == null || isNaN(v)) ? '–' : (v * 100).toFixed(d) + '%';
+  const axUsd = (v) => usd(v, Math.abs(v) >= 1e6 ? 1 : 0);
+
+  // ---------- charts
+  const charts = [];
+  const hasLib = () => typeof window.echarts !== 'undefined';
+  function base(t) {
+    return {
+      animationDuration: 280, animationDurationUpdate: 280,
+      textStyle: { fontFamily: t.fBody, color: t.ink2, fontSize: 12 },
+      tooltip: { trigger: 'axis', confine: true, backgroundColor: t.panel, borderColor: t.rule,
+        textStyle: { color: t.ink, fontFamily: t.fBody, fontSize: 12 }, axisPointer: { lineStyle: { color: t.muted }, shadowStyle: { color: t.chip, opacity: .6 } } },
+      legend: { top: 0, left: 0, type: 'scroll', icon: 'roundRect', itemWidth: 12, itemHeight: 8, itemGap: 14,
+        textStyle: { color: t.ink2, fontSize: 12 }, pageTextStyle: { color: t.ink2 }, pageIconColor: t.ink2, pageIconInactiveColor: t.rule },
+      grid: { left: 6, right: 18, top: 34, bottom: 6, containLabel: true },
+    };
+  }
+  function axis(t, o = {}) {
+    return Object.assign({
+      axisLine: { lineStyle: { color: t.rule } }, axisTick: { show: false },
+      axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true },
+      splitLine: { lineStyle: { color: t.rule, type: [3, 3] } },
+      nameTextStyle: { color: t.muted, fontSize: 11, fontFamily: t.fBody },
+    }, o);
+  }
+  function chart(id, build) {
+    const el = document.getElementById(id);
+    const c = { el, build, inst: null };
+    if (!el) return c;
+    if (!hasLib()) {
+      el.innerHTML = '<div class="nolib">The chart library did not load. The numbers in the cards and tables are still current.</div>';
+      return c;
+    }
+    c.inst = echarts.init(el, null, { renderer: 'svg' });
+    c.inst.setOption(build(theme()), true);
+    charts.push(c);
+    return c;
+  }
+  function update(c) { if (c && c.inst) c.inst.setOption(c.build(theme()), true); }
+  function refreshAll() { charts.forEach(update); }
+  let rt;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => charts.forEach((c) => c.inst && c.inst.resize()), 120); });
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshAll); } catch (e) { /* old browsers */ }
+  new MutationObserver(refreshAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ---------- per-viewer memory for slicers (optional; page works without it)
+  const KEY = 'scm-twin:' + location.pathname.split('/').pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } };
+  const save = (state) => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage blocked */ } };
+
+  // ---------- segmented slicer
+  function seg(el, options, value, onChange) {
+    el.innerHTML = '';
+    options.forEach(([v, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = label; b.dataset.v = String(v);
+      b.setAttribute('aria-pressed', String(String(v) === String(value)));
+      b.addEventListener('click', () => {
+        el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        onChange(v);
+      });
+      el.appendChild(b);
+    });
+    return { set(v) { el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === String(v)))); } };
+  }
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const tip = (t, rows, title) => `<div style="font-weight:600;margin-bottom:4px">${esc(title)}</div>` +
+    rows.map(([color, name, val]) => `<div style="display:flex;justify-content:space-between;gap:18px"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${color};margin-right:6px"></span>${esc(name)}</span><span style="font-family:${t.fMono}">${val}</span></div>`).join('');
+  return { theme, usd, num, kunits, pct, axUsd, base, axis, chart, update, refreshAll, load, save, seg, $, esc, tip, hasLib };
+})();
+</script>
+<script>
+const D = {"scenarios":[{"id":"A_temporary_cut_BR","code":"A","label":"Temporary cut · Brazil","desc":"Brazil plans for P1-14 cancelled for the whole 16-week window; Brazil demand returns later.","summary":{"freed_usd":5284800,"holding_usd":115709,"ageing_usd":0,"rework_usd":0,"mwd_claimed_usd":78750,"mwd_physical_usd":78750,"mwd_class1_usd":0,"mwd_class2_usd":0,"mwd_class3_usd":78750,"total_cost_usd":194459},"rows":[{"material":"ADAPTER_65W","name":"65W adapter body (all models)","cls":1,"std":0,"start":6,"done":8,"freed_qty":14400,"absorbed_qty":14400,"reworked_qty":0,"mwd_qty":0,"freed_usd":172800,"holding_usd":4472,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"BATT_P1","name":"Battery pack, platform P1 (custom)","cls":1,"std":0,"start":10,"done":12,"freed_qty":14400,"absorbed_qty":14400,"reworked_qty":0,"mwd_qty":0,"freed_usd":432000,"holding_usd":17827,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"CORD_BR","name":"Power cord BR plug","cls":2,"std":0,"start":4,"done":23,"freed_qty":14400,"absorbed_qty":14400,"reworked_qty":0,"mwd_qty":0,"freed_usd":28800,"holding_usd":1828,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"CPU_P1","name":"CPU + chipset, platform P1","cls":1,"std":1,"start":2,"done":4,"freed_qty":14400,"absorbed_qty":14400,"reworked_qty":0,"mwd_qty":0,"freed_usd":1728000,"holding_usd":18138,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"HOUSING_P1-14","name":"Housing set P1-14","cls":1,"std":0,"start":10,"done":13,"freed_qty":14400,"absorbed_qty":14400,"reworked_qty":0,"mwd_qty":0,"freed_usd":576000,"holding_usd":25015,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"KB_P1-14_BR","name":"Keyboard + C-cover P1-14 BR","cls":3,"std":0,"start":8,"done":29,"freed_qty":14400,"absorbed_qty":11250,"reworked_qty":0,"mwd_qty":3150,"freed_usd":360000,"holding_usd":23582,"ageing_usd":0,"rework_usd":0,"mwd_usd":78750},{"material":"MEM_16G","name":"16GB memory (shared P1 & P2)","cls":1,"std":1,"start":2,"done":4,"freed_qty":14400,"absorbed_qty":14400,"reworked_qty":0,"mwd_qty":0,"freed_usd":576000,"holding_usd":6046,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PANEL_14","name":"14in panel (shared P1-14 & P2-14)","cls":1,"std":1,"start":2,"done":5,"freed_qty":14400,"absorbed_qty":14400,"reworked_qty":0,"mwd_qty":0,"freed_usd":864000,"holding_usd":10938,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PKG_BR","name":"Box, manuals, labels BR","cls":2,"std":0,"start":2,"done":23,"freed_qty":14400,"absorbed_qty":14400,"reworked_qty":0,"mwd_qty":0,"freed_usd":43200,"holding_usd":2571,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"SSD_512","name":"512GB SSD (shared P1 & P2)","cls":1,"std":1,"start":2,"done":4,"freed_qty":14400,"absorbed_qty":14400,"reworked_qty":0,"mwd_qty":0,"freed_usd":504000,"holding_usd":5290,"ageing_usd":0,"rework_usd":0,"mwd_usd":0}]},{"id":"B_transfer_US_eol30","code":"B","label":"US transfer · EOL week 30","desc":"US production leaves the China factory now; platform P1 reaches EOL at week 30.","summary":{"freed_usd":16697600,"holding_usd":510872,"ageing_usd":0,"rework_usd":125440,"mwd_claimed_usd":1164800,"mwd_physical_usd":1164800,"mwd_class1_usd":0,"mwd_class2_usd":44800,"mwd_class3_usd":1120000,"total_cost_usd":1801112},"rows":[{"material":"ADAPTER_65W","name":"65W adapter body (all models)","cls":1,"std":0,"start":6,"done":16,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":537600,"holding_usd":22422,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"BATT_P1","name":"Battery pack, platform P1 (custom)","cls":1,"std":0,"start":10,"done":20,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":1344000,"holding_usd":76731,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"BATT_P2","name":"Battery pack, platform P2 (custom)","cls":1,"std":0,"start":10,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"CORD_US","name":"Power cord US plug","cls":2,"std":0,"start":4,"done":null,"freed_qty":44800,"absorbed_qty":0,"reworked_qty":35840,"mwd_qty":8960,"freed_usd":89600,"holding_usd":0,"ageing_usd":0,"rework_usd":89600,"mwd_usd":17920},{"material":"CPU_P1","name":"CPU + chipset, platform P1","cls":1,"std":1,"start":2,"done":12,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":5376000,"holding_usd":141508,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"CPU_P2","name":"CPU + chipset, platform P2","cls":1,"std":1,"start":2,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"HOUSING_P1-14","name":"Housing set P1-14","cls":1,"std":0,"start":10,"done":20,"freed_qty":32000,"absorbed_qty":32000,"reworked_qty":0,"mwd_qty":0,"freed_usd":1280000,"holding_usd":73077,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"HOUSING_P1-16","name":"Housing set P1-16","cls":1,"std":0,"start":10,"done":20,"freed_qty":12800,"absorbed_qty":12800,"reworked_qty":0,"mwd_qty":0,"freed_usd":576000,"holding_usd":32885,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"HOUSING_P2-14","name":"Housing set P2-14","cls":1,"std":0,"start":10,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"KB_P1-14_US","name":"Keyboard + C-cover P1-14 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":32000,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":32000,"freed_usd":800000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":800000},{"material":"KB_P1-16_US","name":"Keyboard + C-cover P1-16 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":12800,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":12800,"freed_usd":320000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":320000},{"material":"KB_P2-14_US","name":"Keyboard + C-cover P2-14 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"MEM_16G","name":"16GB memory (shared P1 & P2)","cls":1,"std":1,"start":2,"done":12,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":1792000,"holding_usd":47169,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PANEL_14","name":"14in panel (shared P1-14 & P2-14)","cls":1,"std":1,"start":2,"done":12,"freed_qty":32000,"absorbed_qty":32000,"reworked_qty":0,"mwd_qty":0,"freed_usd":1920000,"holding_usd":50538,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PANEL_16","name":"16in panel (P1-16 only)","cls":1,"std":1,"start":2,"done":12,"freed_qty":12800,"absorbed_qty":12800,"reworked_qty":0,"mwd_qty":0,"freed_usd":960000,"holding_usd":25269,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PKG_US","name":"Box, manuals, labels US","cls":2,"std":0,"start":2,"done":null,"freed_qty":44800,"absorbed_qty":0,"reworked_qty":35840,"mwd_qty":8960,"freed_usd":134400,"holding_usd":0,"ageing_usd":0,"rework_usd":35840,"mwd_usd":26880},{"material":"SSD_512","name":"512GB SSD (shared P1 & P2)","cls":1,"std":1,"start":2,"done":12,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":1568000,"holding_usd":41273,"ageing_usd":0,"rework_usd":0,"mwd_usd":0}]},{"id":"C0_eol20_old_rule","code":"C0","label":"EOL week 20 · old netting rule","desc":"Same as C, but freed stock only offsets demand beyond the purchase lead time (the v0 assumption).","summary":{"freed_usd":16697600,"holding_usd":559378,"ageing_usd":0,"rework_usd":125440,"mwd_claimed_usd":6305800,"mwd_physical_usd":6305800,"mwd_class1_usd":5141000,"mwd_class2_usd":44800,"mwd_class3_usd":1120000,"total_cost_usd":6990618},"rows":[{"material":"ADAPTER_65W","name":"65W adapter body (all models)","cls":1,"std":0,"start":6,"done":16,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":537600,"holding_usd":22422,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"BATT_P1","name":"Battery pack, platform P1 (custom)","cls":1,"std":0,"start":10,"done":19,"freed_qty":44800,"absorbed_qty":35700,"reworked_qty":0,"mwd_qty":9100,"freed_usd":1344000,"holding_usd":56942,"ageing_usd":0,"rework_usd":0,"mwd_usd":273000},{"material":"BATT_P2","name":"Battery pack, platform P2 (custom)","cls":1,"std":0,"start":10,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"CORD_US","name":"Power cord US plug","cls":2,"std":0,"start":4,"done":null,"freed_qty":44800,"absorbed_qty":0,"reworked_qty":35840,"mwd_qty":8960,"freed_usd":89600,"holding_usd":0,"ageing_usd":0,"rework_usd":89600,"mwd_usd":17920},{"material":"CPU_P1","name":"CPU + chipset, platform P1","cls":1,"std":1,"start":16,"done":19,"freed_qty":44800,"absorbed_qty":10500,"reworked_qty":0,"mwd_qty":34300,"freed_usd":5376000,"holding_usd":82385,"ageing_usd":0,"rework_usd":0,"mwd_usd":4116000},{"material":"CPU_P2","name":"CPU + chipset, platform P2","cls":1,"std":1,"start":16,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"HOUSING_P1-14","name":"Housing set P1-14","cls":1,"std":0,"start":10,"done":19,"freed_qty":32000,"absorbed_qty":25500,"reworked_qty":0,"mwd_qty":6500,"freed_usd":1280000,"holding_usd":54231,"ageing_usd":0,"rework_usd":0,"mwd_usd":260000},{"material":"HOUSING_P1-16","name":"Housing set P1-16","cls":1,"std":0,"start":10,"done":19,"freed_qty":12800,"absorbed_qty":10200,"reworked_qty":0,"mwd_qty":2600,"freed_usd":576000,"holding_usd":24404,"ageing_usd":0,"rework_usd":0,"mwd_usd":117000},{"material":"HOUSING_P2-14","name":"Housing set P2-14","cls":1,"std":0,"start":10,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"KB_P1-14_US","name":"Keyboard + C-cover P1-14 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":32000,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":32000,"freed_usd":800000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":800000},{"material":"KB_P1-16_US","name":"Keyboard + C-cover P1-16 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":12800,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":12800,"freed_usd":320000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":320000},{"material":"KB_P2-14_US","name":"Keyboard + C-cover P2-14 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"MEM_16G","name":"16GB memory (shared P1 & P2)","cls":1,"std":1,"start":8,"done":18,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":1792000,"holding_usd":88131,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PANEL_14","name":"14in panel (shared P1-14 & P2-14)","cls":1,"std":1,"start":12,"done":20,"freed_qty":32000,"absorbed_qty":32000,"reworked_qty":0,"mwd_qty":0,"freed_usd":1920000,"holding_usd":120346,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PANEL_16","name":"16in panel (P1-16 only)","cls":1,"std":1,"start":12,"done":19,"freed_qty":12800,"absorbed_qty":7800,"reworked_qty":0,"mwd_qty":5000,"freed_usd":960000,"holding_usd":33404,"ageing_usd":0,"rework_usd":0,"mwd_usd":375000},{"material":"PKG_US","name":"Box, manuals, labels US","cls":2,"std":0,"start":2,"done":null,"freed_qty":44800,"absorbed_qty":0,"reworked_qty":35840,"mwd_qty":8960,"freed_usd":134400,"holding_usd":0,"ageing_usd":0,"rework_usd":35840,"mwd_usd":26880},{"material":"SSD_512","name":"512GB SSD (shared P1 & P2)","cls":1,"std":1,"start":8,"done":18,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":1568000,"holding_usd":77114,"ageing_usd":0,"rework_usd":0,"mwd_usd":0}]},{"id":"C_transfer_US_eol20","code":"C","label":"US transfer · EOL week 20","desc":"P1 EOL pulled in to week 20 and P2 NPI at week 16: less future demand to absorb the freed stock.","summary":{"freed_usd":16697600,"holding_usd":463756,"ageing_usd":0,"rework_usd":125440,"mwd_claimed_usd":1814800,"mwd_physical_usd":1814800,"mwd_class1_usd":650000,"mwd_class2_usd":44800,"mwd_class3_usd":1120000,"total_cost_usd":2403996},"rows":[{"material":"ADAPTER_65W","name":"65W adapter body (all models)","cls":1,"std":0,"start":6,"done":16,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":537600,"holding_usd":22422,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"BATT_P1","name":"Battery pack, platform P1 (custom)","cls":1,"std":0,"start":10,"done":19,"freed_qty":44800,"absorbed_qty":35700,"reworked_qty":0,"mwd_qty":9100,"freed_usd":1344000,"holding_usd":56942,"ageing_usd":0,"rework_usd":0,"mwd_usd":273000},{"material":"BATT_P2","name":"Battery pack, platform P2 (custom)","cls":1,"std":0,"start":10,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"CORD_US","name":"Power cord US plug","cls":2,"std":0,"start":4,"done":null,"freed_qty":44800,"absorbed_qty":0,"reworked_qty":35840,"mwd_qty":8960,"freed_usd":89600,"holding_usd":0,"ageing_usd":0,"rework_usd":89600,"mwd_usd":17920},{"material":"CPU_P1","name":"CPU + chipset, platform P1","cls":1,"std":1,"start":2,"done":12,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":5376000,"holding_usd":141508,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"CPU_P2","name":"CPU + chipset, platform P2","cls":1,"std":1,"start":2,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"HOUSING_P1-14","name":"Housing set P1-14","cls":1,"std":0,"start":10,"done":19,"freed_qty":32000,"absorbed_qty":25500,"reworked_qty":0,"mwd_qty":6500,"freed_usd":1280000,"holding_usd":54231,"ageing_usd":0,"rework_usd":0,"mwd_usd":260000},{"material":"HOUSING_P1-16","name":"Housing set P1-16","cls":1,"std":0,"start":10,"done":19,"freed_qty":12800,"absorbed_qty":10200,"reworked_qty":0,"mwd_qty":2600,"freed_usd":576000,"holding_usd":24404,"ageing_usd":0,"rework_usd":0,"mwd_usd":117000},{"material":"HOUSING_P2-14","name":"Housing set P2-14","cls":1,"std":0,"start":10,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"KB_P1-14_US","name":"Keyboard + C-cover P1-14 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":32000,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":32000,"freed_usd":800000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":800000},{"material":"KB_P1-16_US","name":"Keyboard + C-cover P1-16 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":12800,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":12800,"freed_usd":320000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":320000},{"material":"KB_P2-14_US","name":"Keyboard + C-cover P2-14 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":0,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":0,"freed_usd":0,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"MEM_16G","name":"16GB memory (shared P1 & P2)","cls":1,"std":1,"start":2,"done":12,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":1792000,"holding_usd":47169,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PANEL_14","name":"14in panel (shared P1-14 & P2-14)","cls":1,"std":1,"start":2,"done":12,"freed_qty":32000,"absorbed_qty":32000,"reworked_qty":0,"mwd_qty":0,"freed_usd":1920000,"holding_usd":50538,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PANEL_16","name":"16in panel (P1-16 only)","cls":1,"std":1,"start":2,"done":12,"freed_qty":12800,"absorbed_qty":12800,"reworked_qty":0,"mwd_qty":0,"freed_usd":960000,"holding_usd":25269,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PKG_US","name":"Box, manuals, labels US","cls":2,"std":0,"start":2,"done":null,"freed_qty":44800,"absorbed_qty":0,"reworked_qty":35840,"mwd_qty":8960,"freed_usd":134400,"holding_usd":0,"ageing_usd":0,"rework_usd":35840,"mwd_usd":26880},{"material":"SSD_512","name":"512GB SSD (shared P1 & P2)","cls":1,"std":1,"start":2,"done":12,"freed_qty":44800,"absorbed_qty":44800,"reworked_qty":0,"mwd_qty":0,"freed_usd":1568000,"holding_usd":41273,"ageing_usd":0,"rework_usd":0,"mwd_usd":0}]},{"id":"D_transfer_US_eol8","code":"D","label":"US transfer · EOL week 8","desc":"US leaves only 8 weeks before P1 EOL (P2 NPI at week 4): almost nothing left to absorb it.","summary":{"freed_usd":16510600,"holding_usd":402627,"ageing_usd":0,"rework_usd":121520,"mwd_claimed_usd":2428400,"mwd_physical_usd":2428400,"mwd_class1_usd":1300000,"mwd_class2_usd":43400,"mwd_class3_usd":1085000,"total_cost_usd":2952547},"rows":[{"material":"ADAPTER_65W","name":"65W adapter body (all models)","cls":1,"std":0,"start":6,"done":17,"freed_qty":43400,"absorbed_qty":43400,"reworked_qty":0,"mwd_qty":0,"freed_usd":520800,"holding_usd":21992,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"BATT_P1","name":"Battery pack, platform P1 (custom)","cls":1,"std":0,"start":10,"done":null,"freed_qty":18200,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":18200,"freed_usd":546000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":546000},{"material":"BATT_P2","name":"Battery pack, platform P2 (custom)","cls":1,"std":0,"start":10,"done":16,"freed_qty":25200,"absorbed_qty":25200,"reworked_qty":0,"mwd_qty":0,"freed_usd":806400,"holding_usd":40320,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"CORD_US","name":"Power cord US plug","cls":2,"std":0,"start":4,"done":null,"freed_qty":43400,"absorbed_qty":0,"reworked_qty":34720,"mwd_qty":8680,"freed_usd":86800,"holding_usd":0,"ageing_usd":0,"rework_usd":86800,"mwd_usd":17360},{"material":"CPU_P1","name":"CPU + chipset, platform P1","cls":1,"std":1,"start":2,"done":7,"freed_qty":18200,"absorbed_qty":18200,"reworked_qty":0,"mwd_qty":0,"freed_usd":2184000,"holding_usd":31662,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"CPU_P2","name":"CPU + chipset, platform P2","cls":1,"std":1,"start":2,"done":12,"freed_qty":25200,"absorbed_qty":25200,"reworked_qty":0,"mwd_qty":0,"freed_usd":3402000,"holding_usd":110285,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"HOUSING_P1-14","name":"Housing set P1-14","cls":1,"std":0,"start":10,"done":null,"freed_qty":13000,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":13000,"freed_usd":520000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":520000},{"material":"HOUSING_P1-16","name":"Housing set P1-16","cls":1,"std":0,"start":10,"done":null,"freed_qty":5200,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":5200,"freed_usd":234000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":234000},{"material":"HOUSING_P2-14","name":"Housing set P2-14","cls":1,"std":0,"start":10,"done":16,"freed_qty":25200,"absorbed_qty":25200,"reworked_qty":0,"mwd_qty":0,"freed_usd":1058400,"holding_usd":52920,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"KB_P1-14_US","name":"Keyboard + C-cover P1-14 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":13000,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":13000,"freed_usd":325000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":325000},{"material":"KB_P1-16_US","name":"Keyboard + C-cover P1-16 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":5200,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":5200,"freed_usd":130000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":130000},{"material":"KB_P2-14_US","name":"Keyboard + C-cover P2-14 US","cls":3,"std":0,"start":8,"done":null,"freed_qty":25200,"absorbed_qty":0,"reworked_qty":0,"mwd_qty":25200,"freed_usd":630000,"holding_usd":0,"ageing_usd":0,"rework_usd":0,"mwd_usd":630000},{"material":"MEM_16G","name":"16GB memory (shared P1 & P2)","cls":1,"std":1,"start":2,"done":12,"freed_qty":43400,"absorbed_qty":43400,"reworked_qty":0,"mwd_qty":0,"freed_usd":1736000,"holding_usd":42692,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PANEL_14","name":"14in panel (shared P1-14 & P2-14)","cls":1,"std":1,"start":2,"done":12,"freed_qty":38200,"absorbed_qty":38200,"reworked_qty":0,"mwd_qty":0,"freed_usd":2292000,"holding_usd":59746,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PANEL_16","name":"16in panel (P1-16 only)","cls":1,"std":1,"start":2,"done":7,"freed_qty":5200,"absorbed_qty":5200,"reworked_qty":0,"mwd_qty":0,"freed_usd":390000,"holding_usd":5654,"ageing_usd":0,"rework_usd":0,"mwd_usd":0},{"material":"PKG_US","name":"Box, manuals, labels US","cls":2,"std":0,"start":2,"done":null,"freed_qty":43400,"absorbed_qty":0,"reworked_qty":34720,"mwd_qty":8680,"freed_usd":130200,"holding_usd":0,"ageing_usd":0,"rework_usd":34720,"mwd_usd":26040},{"material":"SSD_512","name":"512GB SSD (shared P1 & P2)","cls":1,"std":1,"start":2,"done":12,"freed_qty":43400,"absorbed_qty":43400,"reworked_qty":0,"mwd_qty":0,"freed_usd":1519000,"holding_usd":37356,"ageing_usd":0,"rework_usd":0,"mwd_usd":0}]}],"window":16,"tracking":156};
+R.$('#n-w').textContent = D.window; R.$('#n-tr').textContent = D.tracking;
+const codes = D.scenarios.map((s) => s.code);
+const saved = R.load();
+const S = { s: codes.includes(saved.s) ? saved.s : 'C', c: ['all', 1, 2, 3].includes(saved.c) ? saved.c : 'all', p: ['all', 'std', 'custom'].includes(saved.p) ? saved.p : 'all' };
+const sc = (code = S.s) => D.scenarios.find((x) => x.code === code);
+const segS = R.seg(R.$('#f-s'), D.scenarios.map((x) => [x.code, x.code]), S.s, (v) => { S.s = v; draw(); });
+R.seg(R.$('#f-c'), [['all', 'All'], [1, '1 · netted'], [2, '2 · convertible'], [3, '3 · locked']], S.c, (v) => { S.c = v === 'all' ? 'all' : +v; draw(); });
+R.seg(R.$('#f-p'), [['all', 'All'], ['std', 'Industry standard'], ['custom', 'Custom']], S.p, (v) => { S.p = v; draw(); });
+const CLS_COLOR = (t, c) => [t.c[0], t.c[4], t.c[5]][c - 1];
+const filt = (rows) => rows.filter((r) => r.freed_qty > 0 && (S.c === 'all' || r.cls === S.c) && (S.p === 'all' || (S.p === 'std' ? r.std === 1 : r.std !== 1)));
+const unit = (r) => r.freed_qty ? r.freed_usd / r.freed_qty : 0;
+
+function kpis() {
+  const rows = filt(sc().rows);
+  const sum = (k) => rows.reduce((a, r) => a + r[k], 0);
+  const freed = sum('freed_usd'), mwd = sum('mwd_usd');
+  const absorbed = rows.reduce((a, r) => a + r.absorbed_qty * unit(r), 0);
+  const card = (label, value, sub) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span></div>`;
+  R.$('#kpis').innerHTML = [
+    card('Material freed', R.usd(freed), `${rows.length} part numbers`),
+    card('Netted by other plans', R.usd(absorbed), freed ? R.pct(absorbed / freed) + ' of freed value' : '–'),
+    card('MWD (claimed)', R.usd(mwd), freed ? R.pct(mwd / freed) + ' of freed value' : '–'),
+    card('Holding and ageing', R.usd(sum('holding_usd') + sum('ageing_usd')), `ageing ${R.usd(sum('ageing_usd'))}`),
+    card('Conversion (rework)', R.usd(sum('rework_usd')), 'class 2 parts reworked for other regions'),
+    card('Total cost', R.usd(sum('holding_usd') + sum('ageing_usd') + sum('rework_usd') + mwd), 'holding + ageing + rework + MWD'),
+  ].join('');
+  R.$('#desc').innerHTML = `<b>${R.esc(sc().code)} · ${R.esc(sc().label)}.</b> ${R.esc(sc().desc)}`;
+}
+
+const cSc = R.chart('c-sc', (t) => {
+  const o = R.base(t);
+  const parts = [['holding_usd', 'Holding', t.c[4]], ['ageing_usd', 'Ageing', t.c[6]], ['rework_usd', 'Rework', t.c[3]], ['mwd_claimed_usd', 'MWD', t.c[5]]];
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.usd(v) },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'category', data: codes, splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 12 } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    series: parts.map(([k, name, color]) => ({ type: 'bar', stack: 's', name, barWidth: '55%', itemStyle: { color },
+      data: D.scenarios.map((x) => ({ value: x.summary[k], itemStyle: { opacity: x.code === S.s ? 1 : .4 } })) })),
+  };
+});
+cSc.inst && cSc.inst.on('click', (p) => { S.s = codes[p.dataIndex]; segS.set(S.s); draw(); });
+
+const cMat = R.chart('c-mat', (t) => {
+  const o = R.base(t);
+  const rows = filt(sc().rows).slice().sort((a, b) => b.freed_usd - a.freed_usd).slice(0, 14).reverse();
+  const val = (r, k) => r[k] * unit(r);
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.usd(v) },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    yAxis: R.axis(t, { type: 'category', data: rows.map((r) => r.material), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 11 } }),
+    series: [
+      { type: 'bar', stack: 'm', name: 'Netted', data: rows.map((r) => val(r, 'absorbed_qty')), itemStyle: { color: t.c[2] }, barWidth: '60%' },
+      { type: 'bar', stack: 'm', name: 'Converted', data: rows.map((r) => val(r, 'reworked_qty')), itemStyle: { color: t.c[3] } },
+      { type: 'bar', stack: 'm', name: 'MWD', data: rows.map((r) => r.mwd_usd), itemStyle: { color: t.c[5] } },
+    ],
+  };
+});
+
+const cGantt = R.chart('c-gantt', (t) => {
+  const o = R.base(t);
+  const rows = filt(sc().rows).filter((r) => r.absorbed_qty > 0 && r.done != null).sort((a, b) => b.done - a.done).reverse();
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const r = rows[ps[0].dataIndex]; return R.tip(t, [[CLS_COLOR(t, r.cls), 'Netting from week', r.start], [CLS_COLOR(t, r.cls), 'Last unit absorbed', 'week ' + r.done], [t.c[5], 'Left as MWD', R.num(r.mwd_qty) + ' units']], r.material + ' · ' + r.name); } },
+    legend: { show: false },
+    grid: { ...o.grid, top: 12, bottom: 18 },
+    xAxis: R.axis(t, { type: 'value', min: 0, name: 'week after the event', nameLocation: 'middle', nameGap: 26 }),
+    yAxis: R.axis(t, { type: 'category', data: rows.map((r) => r.material), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 11 } }),
+    series: [
+      { type: 'bar', stack: 'g', data: rows.map((r) => r.start), itemStyle: { color: 'transparent' }, tooltip: { show: false }, silent: true },
+      { type: 'bar', stack: 'g', name: 'Burn-down', barWidth: '55%', data: rows.map((r) => ({ value: Math.max(1, r.done - r.start + 1), itemStyle: { color: CLS_COLOR(t, r.cls) } })) },
+    ],
+  };
+});
+
+function ledger() {
+  const rows = filt(sc().rows).slice().sort((a, b) => b.mwd_usd - a.mwd_usd || b.freed_usd - a.freed_usd);
+  R.$('#h-led').textContent = `${rows.length} part numbers · sorted by MWD`;
+  const max = Math.max(1, ...rows.map((r) => r.freed_usd));
+  R.$('#t-led').innerHTML = '<thead><tr><th class="txt">Part</th><th class="txt">Class</th><th>Netting from</th><th>Freed</th><th>Netted</th><th>Done by</th><th>Converted</th><th>MWD units</th><th>MWD $</th><th>Freed $</th></tr></thead><tbody>' +
+    rows.map((r) => `<tr><td class="txt"><code>${R.esc(r.material)}</code><small>${R.esc(r.name)}</small></td><td class="txt"><span class="chip">${r.cls}</span> ${r.std === 1 ? '<span class="chip">standard</span>' : ''}</td><td>wk ${r.start}</td><td>${R.num(r.freed_qty)}</td><td>${R.num(r.absorbed_qty)}</td><td>${r.done == null ? '–' : 'wk ' + r.done}</td><td>${R.num(r.reworked_qty)}</td><td>${R.num(r.mwd_qty)}</td><td>${r.mwd_usd ? '<span class="chip bad">' + R.usd(r.mwd_usd) + '</span>' : '–'}</td><td class="bar-cell"><i style="width:${(100 * r.freed_usd / max).toFixed(1)}%"></i><span>${R.usd(r.freed_usd)}</span></td></tr>`).join('') + '</tbody>';
+}
+
+function insight() {
+  const c0 = sc('C0').summary, c = sc('C').summary, b = sc('B').summary, d = sc('D').summary;
+  R.$('#insight').innerHTML = `
+    <p><b>Timing against EOL drives MWD more than volume.</b> The same US transfer costs ${R.usd(b.total_cost_usd)} with 30 weeks of P1 life left (B), ${R.usd(c.total_cost_usd)} with 20 weeks (C) and ${R.usd(d.total_cost_usd)} with 8 weeks (D): fewer future plans are left to absorb the freed stock.</p>
+    <p>Netting from the non-cancellable window instead of the full lead time (C vs C0) cuts the cost from ${R.usd(c0.total_cost_usd)} to ${R.usd(c.total_cost_usd)}. Factories push out other plans' open orders, so freed standard parts burn down within weeks (R3, R10).</p>`;
+}
+
+function draw() {
+  R.save(S);
+  kpis(); ledger(); insight();
+  [cSc, cMat, cGantt].forEach(R.update);
+}
+draw();
+</script>
+
+</body>
+</html>

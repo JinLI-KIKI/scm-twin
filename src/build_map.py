@@ -1,11 +1,11 @@
 """
-Build the network atlas (docs/index.html) from the editable data files.
+Build the network atlas (docs/atlas.html) from the editable data files.
 
 Inputs  data/nodes.csv, data/tariffs.csv, data/leadtime_params.csv
         Natural Earth 1:50m countries and 1:10m roads (public domain), downloaded once to
-        data/geo/ (git-ignored; only the processed result goes into docs/index.html)
+        data/geo/ (git-ignored; only the processed result goes into docs/atlas.html)
 Outputs data/network.json   lanes with real sea-lane geometry, distances, lead-time steps
-        docs/index.html     self-contained Leaflet map (open it in a browser, or GitHub Pages)
+        docs/atlas.html     self-contained Leaflet map with the site's top navigation
 
 Sea lanes come from the open-source `searoute` package (pip install searoute), which routes
 over a global maritime network and lets us close passages (Suez / Bab-el-Mandeb) to model the
@@ -23,6 +23,7 @@ import os
 import sys
 
 import geo_layers as GL
+import site_chrome as SITE
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
@@ -226,20 +227,18 @@ def build():
                           "window": [GL.WINDOW_WEST, GL.WINDOW_EAST, GL.LAT_SOUTH, GL.LAT_NORTH]},
                          separators=(",", ":"),
                          ensure_ascii=False).replace("</", "<\\/")
-    body = tpl.replace("/*__LEAFLET_CSS__*/", leaflet_css).replace("/*__DATA__*/null", payload)
+    body = (tpl.replace("/*__LEAFLET_CSS__*/", leaflet_css).replace("/*__DATA__*/null", payload)
+            .replace("/*__CHROME__*/", SITE.read("chrome.css")).replace("<!--__NAV__-->", SITE.nav_html("atlas")))
     os.makedirs(os.path.join(ROOT, "docs"), exist_ok=True)
-    page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
-            '<meta name="viewport" content="width=device-width, initial-scale=1, '
-            'viewport-fit=cover">\n</head>\n<body>\n' + body + '\n</body>\n</html>\n')
-    with open(os.path.join(ROOT, "docs", "index.html"), "w", encoding="utf-8") as f:
-        f.write(page)
+    with open(os.path.join(ROOT, "docs", "atlas.html"), "w", encoding="utf-8") as f:
+        f.write(SITE.document(body))
     frag = os.environ.get("ATLAS_FRAGMENT")  # optional: page body only, for embedding
     if frag:
         with open(frag, "w", encoding="utf-8") as f:
             f.write(body)
 
-    print(f"{len(lanes)} lanes, {len(routes)} routes -> data/network.json, docs/index.html "
-          f"({os.path.getsize(os.path.join(ROOT, 'docs', 'index.html')) / 1e6:.2f} MB)")
+    print(f"{len(lanes)} lanes, {len(routes)} routes -> data/network.json, docs/atlas.html "
+          f"({os.path.getsize(os.path.join(ROOT, 'docs', 'atlas.html')) / 1e6:.2f} MB)")
     for r in routes:
         if r["mode"] == "sea":
             print(f"  {r['origin']} -> {r['mgi']:<5} {r['variant']:<5} {r['nm']:>7,} nm "

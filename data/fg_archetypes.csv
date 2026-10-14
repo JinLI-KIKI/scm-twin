@@ -1,0 +1,5 @@
+product_line,channel_net_price_usd,unit_cost_usd,rework_cost_pct,teardown_recovery_pct,liquidation_recovery_pct,status
+gaming,1200,900,0.30,0.20,0.45,PLACEHOLDER
+consumer,650,490,0.35,0.18,0.40,PLACEHOLDER
+education,330,285,0.50,0.22,0.35,PLACEHOLDER
+convertible,900,690,0.70,0.18,0.40,PLACEHOLDER
