@@ -29,7 +29,7 @@ Last updated: 2026-10-14
 | ✓ | Network atlas v1 — one-world map, sea/air/truck lanes, duty layer, highways | done |
 | ✓ | Module 4 — finished goods at MGI and in the channel (`src/finished_goods.py`) | done |
 | ✓ | Report pages — eight linked BI-style pages (`src/build_dashboards.py`) | done |
-| → | Phase A — core loop closure | **next: Q24, then A2 demand and KPI view** |
+| → | Phase A — core loop closure | **next: Q25, then A2 demand and KPI view** |
 
 ## Phase A — core loop closure · 5 days → release v1
 

@@ -7,7 +7,8 @@ Flow:  factory -> MGI (regional DC after customs) -> dealer channel -> end custo
               not see the demand-level surprise of this model (level_error_sd).
   lock (R28)  About 22 weeks before EOL (virtualized) the brand's sales team, after talking
               with dealers, locks the old model's remaining volume. The number reads recent
-              sell-through, so it carries the true demand level (plus a lock bias, OPEN). After
+              sell-through, so it carries the true demand level, plus each GEO's own bias:
+              some sales teams lock high, some low (Q24; drawn per region and run). After
               the lock, forecasts can only go down: builds still to be started are cut to the
               locked volume, never raised. The lock is the brand's commitment, not the
               dealers': sales must sell it (R31).
@@ -136,7 +137,7 @@ def market_shape(m, launch, tail_weeks, horizon):
     return out
 
 
-def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs):
+def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs, lock_bias=0.0):
     """Weekly loop for one model in one MGI region.
     S planned sell-through, A actual sell-through. Builds stop at EOL (last build week)."""
     n = len(S)
@@ -172,7 +173,7 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs):
             locked = True
             hist = range(max(0, w - int(P["lock_window_weeks"])), w)
             r_d = sum(A[i] for i in hist) / max(1e-9, sum(S[i] for i in hist)) if w > 0 else 1.0
-            mult = r_d * (1 + P["lock_bias"])
+            mult = r_d * (1 + lock_bias)              # each GEO's sales style (Q24)
             for i in range(w, n):
                 fc[i] = min(fc[i], S[i] * mult)
         elif not locked:                        # sales chases upside, never cuts below plan
@@ -265,6 +266,8 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
                          lq=float(info["liquidation_recovery_pct"]))
     for _ in range(runs):
         tot = defaultdict(float)
+        # Q24: every GEO's sales team locks high or low in its own way
+        style = {g: rng.gauss(P["lock_bias"], P["lock_bias_sd"]) for g in regions}
         for m, im in info_m.items():
             price, cost = im["price"], im["cost"]
             drop = price * P["launch_drop_pct"]
@@ -279,7 +282,7 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
                 A = [S[w] * level * noise[w] for w in range(horizon)]
                 t_lock = int(im["eol"] - P["lock_lead_weeks"] + spread)
                 mgi_left, chan_left, kits_left, c = _region_run(
-                    S, A, P, cfg, launch, im["eol"], liability, t_lock, traj, runs)
+                    S, A, P, cfg, launch, im["eol"], liability, t_lock, traj, runs, style[region])
                 # R30: dealer leftovers come back through stock rotation (capped by the
                 # dealer's recent purchases); the rest the dealer clears on its own
                 returned = min(chan_left, P["stock_rotation_cap"] * c["rotation_base"])

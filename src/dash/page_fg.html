@@ -11,7 +11,7 @@
       <h1>Old Stock at Successor Launch</h1>
       <p class="sub">What happens to an old laptop model's finished units when its successor reaches the market: the price-protection bill, units left with the brand or with dealers, material left over (MWD) and sales lost, under five ways of running the last months.</p>
     </div>
-    <div class="asof">Model run __TODAY__ · 300 Monte Carlo runs per cell</div>
+    <div class="asof">Model run __TODAY__ · 200 Monte Carlo runs per cell</div>
   </div>
 
   <section class="slicers" aria-label="Filters">
@@ -19,6 +19,7 @@
     <div class="slicer"><span class="s-label" id="l-d">Net price drop at launch</span><div class="seg" role="group" aria-labelledby="l-d" id="f-d"></div></div>
     <div class="slicer"><span class="s-label" id="l-b">Sales forecast optimism</span><div class="seg" role="group" aria-labelledby="l-b" id="f-b"></div></div>
     <div class="slicer"><span class="s-label" id="l-c">US duty and MGI customs status</span><div class="seg" role="group" aria-labelledby="l-c" id="f-c"></div></div>
+    <div class="slicer"><span class="s-label" id="l-l">How sales lock (average across GEOs)</span><div class="seg" role="group" aria-labelledby="l-l" id="f-l"></div></div>
     <div class="slicer"><span class="s-label" id="l-v">Whose cost</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
   </section>
 
@@ -53,6 +54,10 @@
       <div class="viz-h"><h2>Customs status of the MGI</h2><span class="hint">US duty 25% · same strategy</span></div>
       <div id="c-ftz" class="chart short"></div>
     </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>How accurate must the lock be?</h2><span class="hint" id="h-curve"></span></div>
+      <div id="c-curve" class="chart"></div>
+    </div>
   </section>
 
   <section class="insight" id="insight"></section>
@@ -61,7 +66,7 @@
     <p><b>How it is computed.</b> Two old models (P1-14, P1-16) sell through five MGI regions. Builds follow the sales forecast through an order-up-to rule and need material kits ordered 16 weeks ahead (the liability window); the MGI refills dealers to a forward cover. The successor reaches the market in week <span id="n-launch"></span>; the old model's last build is week <span id="n-eol"></span> (EOL, R29). Units held by dealers at launch get price protection (R27). At the end, MGI stock and dealer leftovers go down the disposition paths; unused kits of platform-only parts are counted as MWD.</p>
     <p><b>Avoidable cost</b> = price protection and post-launch markdown above the unavoidable floor (units that only sell after launch) + loss on excess finished goods (landed cost minus recovery, re-inspection, carrying, return handling) + EOL MWD + half the margin on lost sales (the other half is assumed to buy the successor).</p>
     <p><b>Dealer leftovers (R30).</b> What dealers still hold at the end comes back through stock rotation up to 10% of their last-quarter purchases, against a new order; the rest the dealer clears itself. Once sold in, most of the risk has left the brand, so the brand view and the brand + dealer view can pick different strategies. Lost goodwill and smaller future orders from dealers left with stock are not modelled.</p>
-    <p><b>Sales lock (R28, R31).</b> About 22 weeks before EOL (virtualized; ±2 weeks by region) the brand's sales team, after talking with dealers, locks the remaining volume; forecasts can only fall after that. The lock is the brand's commitment, not the dealers'. Sales must sell it; what is left the BU either absorbs or resells through other GEOs, shown here as the first two disposition paths. How far the locked number usually sits from what finally sells is open (Q24).</p>
+    <p><b>Sales lock (R28, R31).</b> About 22 weeks before EOL (virtualized; ±2 weeks by region) the brand's sales team, after talking with dealers, locks the remaining volume; forecasts can only fall after that. The lock is the brand's commitment, not the dealers'. Sales must sell it; what is left the BU either absorbs or resells through other GEOs, shown here as the first two disposition paths. Each GEO and salesperson locks high or low in their own way (Q24), modelled as a ±10% spread between GEOs.</p>
     <p><b>Status.</b> Lock timing and the rules are practitioner input, virtualized. All other numbers are placeholders; see <a href="rules.html">Rules register</a> and <code>data/fg_params.csv</code>. Drawback rules: <a href="https://gingercontrol.com/resources/duty-drawback">GingerControl drawback matrix</a>.</p>
   </footer>
 </main>
@@ -79,10 +84,11 @@ const S = {
   b: D.biases.includes(saved.b) ? saved.b : 0.08,
   c: D.customs.includes(saved.c) ? saved.c : 'base',
   v: ['brand', 'system'].includes(saved.v) ? saved.v : 'brand',
+  l: Object.keys(D.lockstyles).includes(saved.l) ? saved.l : 'even',
 };
 const COSTK = () => (S.v === 'brand' ? 'avoidable_cost_usd' : 'system_cost_usd');
-const key = (s, d = S.d, b = S.b, c = S.c) => `${s}|${d.toFixed(2)}|${b.toFixed(2)}|${c}`;
-const cell = (s = S.s, d, b, c) => D.cells[key(s, d, b, c)];
+const key = (s, d = S.d, b = S.b, c = S.c, l = S.l) => `${s}|${d.toFixed(2)}|${b.toFixed(2)}|${c}|${l}`;
+const cell = (s = S.s, d, b, c, l) => D.cells[key(s, d, b, c, l)];
 const M = D.meta;
 document.getElementById('n-launch').textContent = M.launch_week;
 document.getElementById('n-eol').textContent = M.eol_week;
@@ -92,6 +98,8 @@ R.seg(R.$('#f-d'), D.drops.map((v) => [v, R.pct(v)]), S.d, (v) => { S.d = v; dra
 R.seg(R.$('#f-b'), D.biases.map((v) => [v, '+' + R.pct(v)]), S.b, (v) => { S.b = v; draw(); });
 R.seg(R.$('#f-c'), D.customs.map((v) => [v, CUST[v]]), S.c, (v) => { S.c = v; draw(); });
 R.seg(R.$('#f-v'), [['brand', 'Brand'], ['system', 'Brand + dealers']], S.v, (v) => { S.v = v; draw(); });
+const LSTYLE = { low: 'Lock low (−10%)', even: 'About right', high: 'Lock high (+10%)' };
+R.seg(R.$('#f-l'), Object.keys(D.lockstyles).map((k) => [k, LSTYLE[k]]), S.l, (v) => { S.l = v; draw(); });
 
 const COMP = [
   ['markdown_above_floor_usd', 'Markdown above floor', 1],
@@ -205,6 +213,23 @@ const cMix = R.chart('c-mix', (t) => {
   };
 });
 
+const cCurve = R.chart('c-curve', (t) => {
+  const o = R.base(t), k = COSTK(), xs = D.curve_x;
+  const line = (s, ci, extra = {}) => ({ type: 'line', name: SHORT[s], data: xs.map((x) => D.curve[s][x.toFixed(2)][k]), showSymbol: true, symbolSize: 5,
+    lineStyle: { width: s === S.s ? 3 : 2, color: t.c[ci] }, itemStyle: { color: t.c[ci] }, ...extra });
+  const flat = (s, ci) => ({ type: 'line', name: SHORT[s] + ' (no lock)', data: xs.map(() => D.curve[s]['0.00'][k]), showSymbol: false,
+    lineStyle: { width: 1.5, type: [6, 4], color: t.c[ci] }, itemStyle: { color: t.c[ci] } });
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, valueFormatter: (v) => R.usd(v) },
+    grid: { ...o.grid, top: 40, bottom: 20 },
+    xAxis: R.axis(t, { type: 'category', data: xs.map((x) => (x > 0 ? '+' : '') + Math.round(x * 100) + '%'), boundaryGap: false, splitLine: { show: false },
+      name: 'Locked volume vs true run rate (every GEO the same)', nameLocation: 'middle', nameGap: 26 }),
+    yAxis: R.axis(t, { type: 'value', scale: true, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    series: [line('lock', SCOL.lock), line('lock_drain', SCOL.lock_drain), line('lock_push', SCOL.lock_push), flat('plan', SCOL.plan), flat('push', SCOL.push)],
+  };
+});
+
 const cFtz = R.chart('c-ftz', (t) => {
   const o = R.base(t);
   const cases = [['base', 'Current duties'], ['us25_post', 'US 25% · post-customs'], ['us25_ftz', 'US 25% · FTZ']];
@@ -245,13 +270,14 @@ function insight() {
     <p><b>Cheapest for the brand: ${SHORT[bB]}. Cheapest for brand and dealers together: ${SHORT[bS]}.</b> ${bB !== bS ? 'Once units are sold in, dealers carry most of the leftover risk (R30), so pushing stock into the channel looks better from the brand side than it is for the chain.' : ''}</p>
     <p>Pushing sell-in adds ${R.usd(push.price_protection_usd[0] - p.price_protection_usd[0])} of price protection and leaves ${R.num(push.dealer_kept_units[0])} units with dealers (their loss ${R.usd(push.dealer_loss_usd[0])}), against ${R.num(p.dealer_kept_units[0])} under the plan. Stock rotation brings back only ${R.num(push.returned_units[0])}; the cap is 10% of their last-quarter purchases.</p>
     <p>The sales lock cuts the BU's excess finished goods from ${R.num(p.excess_units[0])} to ${R.num(lk.excess_units[0])} units, but most material for the cut builds is already ordered, so EOL MWD rises (${R.usd(p.mwd_usd[0])} → ${R.usd(lk.mwd_usd[0])}) and lost sales rise (${R.num(p.lost_units[0])} → ${R.num(lk.lost_units[0])}). Locking and then pushing the rest into the channel leaves the BU ${R.num(bd.excess_units[0])} units and dealers ${R.num(bd.dealer_kept_units[0])}. Draining the channel mainly moves the protection bill (${R.usd(lk.price_protection_usd[0])} → ${R.usd(dr.price_protection_usd[0])}).</p>
-    <p>All of this assumes the locked number is about right (+3%). If sales lock high to protect the target, the lock saves less; Q24 asks which way it usually misses.</p>`;
+    <p>Each GEO's sales team locks in its own way (Q24), modelled as a ±10% spread between GEOs around the average chosen above. The lock can only cut, so a GEO that locks low strands material already bought and loses sales, while one that locks high changes nothing. Here the lock never beats the plain plan: once the kit is bought, building the laptop and reselling it through another GEO loses less than leaving the kit as MWD. Whether the lock still sets the last material buy is the next question (Q25).</p>`;
 }
 
 function draw() {
   R.save(S);
   kpis(); regionTable(); insight();
-  [cStack, cTrade, cWeek, cMix, cFtz].forEach(R.update);
+  [cStack, cTrade, cWeek, cMix, cFtz, cCurve].forEach(R.update);
+  R.$('#h-curve').textContent = `${S.v === 'brand' ? 'Brand cost' : 'Brand + dealer cost'} · default settings · 300 runs per point`;
   R.$('#h-week').textContent = `${D.strategies[S.s]} · mean units per week (flows) and on hand (stock), both models, all regions`;
   R.$('#h-stack').textContent = S.v === 'brand' ? 'Avoidable cost to the brand' : 'Avoidable cost, brand + dealers';
 }

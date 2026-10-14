@@ -175,10 +175,14 @@ FG_REGION = ["excess_units", "lost_units", "price_protection_usd", "excess_loss_
 FG_TRAJ = ["demand", "forecast", "sold", "lost", "builds", "sell_in", "mgi", "channel", "kits"]
 
 
+FG_LOCKSTYLE = {"low": -0.10, "even": 0.0, "high": 0.10}
+FG_CURVE = [round(-0.25 + 0.05 * i, 2) for i in range(11)]
+
+
 def _fg_cell(args):
-    s, d, b, ck = args
-    res = FG.simulate(s, overrides={"launch_drop_pct": d, "sales_bias": b}, runs=300,
-                      **FG_CUSTOMS[ck])
+    s, d, b, ck, ls = args
+    res = FG.simulate(s, overrides={"launch_drop_pct": d, "sales_bias": b,
+                                    "lock_bias": FG_LOCKSTYLE[ls]}, runs=200, **FG_CUSTOMS[ck])
     cell = {
         "s": {k: [rnd(v["mean"]), rnd(v["p10"]), rnd(v["p90"])] for k, v in res["summary"].items()
               if k in FG_SUMMARY},
@@ -187,19 +191,33 @@ def _fg_cell(args):
     }
     meta = {k: res[k] for k in ("launch_week", "eol_week", "lock_week", "horizon",
                                 "liability_weeks", "landed_cost", "kit_mwd_value")}
-    return f"{s}|{d:.2f}|{b:.2f}|{ck}", cell, meta
+    return f"{s}|{d:.2f}|{b:.2f}|{ck}|{ls}", cell, meta
+
+
+def _fg_curve(args):
+    s, lb = args
+    res = FG.simulate(s, overrides={"lock_bias": lb, "lock_bias_sd": 0.0}, runs=300)
+    sm = res["summary"]
+    return s, lb, {k: rnd(sm[k]["mean"]) for k in ("avoidable_cost_usd", "system_cost_usd",
+                                                  "excess_units", "lost_units", "mwd_usd")}
 
 
 def data_fg(pool):
-    args = [(s, d, b, ck) for s in FG.STRATEGIES for d in FG_DROPS for b in FG_BIAS for ck in FG_CUSTOMS]
+    args = [(s, d, b, ck, ls) for s in FG.STRATEGIES for d in FG_DROPS for b in FG_BIAS
+            for ck in FG_CUSTOMS for ls in FG_LOCKSTYLE]
     cells, meta = {}, None
     for key, cell, m in pool.map(_fg_cell, args):
         cells[key] = cell
         meta = m
+    curve = {}
+    for s, lb, v in pool.map(_fg_curve, [(s, lb) for s in FG.STRATEGIES for lb in
+                                          (FG_CURVE if FG.STRATEGIES[s]["lock"] else [0.0])]):
+        curve.setdefault(s, {})[f"{lb:.2f}"] = v
     P, models, arche, _ = FG.load_fg()
     return {"strategies": {k: v["label"] for k, v in FG.STRATEGIES.items()},
             "drops": FG_DROPS, "biases": FG_BIAS, "customs": list(FG_CUSTOMS),
-            "cells": cells, "meta": meta,
+            "lockstyles": FG_LOCKSTYLE, "curve": curve, "curve_x": FG_CURVE,
+            "lock_bias_sd": P["lock_bias_sd"], "cells": cells, "meta": meta,
             "archetypes": [{**r, "nets": {k: rnd(v) for k, v in r["nets"].items()}}
                            for r in FG.archetype_table()],
             "models": [{"model": m, **{k: v for k, v in r.items() if k != "model"}}
@@ -313,7 +331,7 @@ def data_overview(mwd, tr, bc, fg, lanes, rules):
                                        and r["mode"] == "sea" and r["variant"] in (v, "any"))
     best25 = min(tr["sweeps"]["0.25|1"], key=lambda r: r["total"])
     now25 = tr["sweeps"]["0.25|1"][0]
-    fgk = lambda s: fg["cells"][f"{s}|0.15|0.08|base"]["s"]
+    fgk = lambda s: fg["cells"][f"{s}|0.15|0.08|base|even"]["s"]
     counts = {}
     for r in rules["rules"] + rules["numbers"]:
         counts[r["kind"]] = counts.get(r["kind"], 0) + 1

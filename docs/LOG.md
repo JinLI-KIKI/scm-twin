@@ -42,6 +42,8 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
 - Q23: dealer leftovers go back through stock rotation or the dealer clears them; once sold in,
   the brand is mostly safe (R30). The lock is the brand's own: sales must sell it, otherwise the
   BU absorbs it or resells through other GEOs (R31).
+- Q24: lock accuracy varies by GEO and salesperson, high or low → modelled as a ±10% spread
+  between GEOs; new chart of cost against lock accuracy.
 - **Module 4 `src/finished_goods.py`** (Roadmap A1): weekly Monte Carlo of two old models in five
   MGI regions — order-up-to builds limited by material ordered 16 weeks ahead, dealer cover,
   sales volume lock, price protection at launch, excess disposition by net recovery, post-customs vs
@@ -56,11 +58,14 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   strategy for the brand, because dealers keep most leftovers beyond the stock-rotation cap (R30).
   Counted with the dealers' loss, the plain sales plan wins.
 - The sales lock cuts the BU's excess finished goods sharply, but most material for the cut builds
-  is already ordered, so EOL MWD and lost sales rise. Its value depends on how accurate the
-  locked number is (Q24).
+  is already ordered, so EOL MWD and lost sales rise. Because the lock can only cut, a GEO that
+  locks low is expensive and one that locks high changes nothing; in this model the lock never
+  beats the plain plan. Once a kit is bought, building it and reselling through another GEO loses
+  less than leaving it as MWD. The lock's value hinges on whether it still sets the last material
+  buy (Q25).
 - Rework pays for gaming and consumer lines and not for education or convertibles, matching R11.
 
 ## Next
-- Q24: is the locked volume usually too high, too low or about right?
+- Q25: when sales locks, is the material for the last builds still unordered?
 - Roadmap A2, Module 5: demand and KPI view (tariff → price → units → FY shipment gap; BU vs
   company view).
