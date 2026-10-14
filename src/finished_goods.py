@@ -5,11 +5,12 @@ Flow:  factory -> MGI (regional DC after customs) -> dealer channel -> end custo
 
   plan        Builds follow the sales forecast, which runs optimistic (sales_bias) and does
               not see the demand-level surprise of this model (level_error_sd).
-  lock (R28)  About 18 weeks before EOL each region locks volumes with its dealers. Dealers
-              commit from their own recent sell-through, so the committed volume carries the
-              true level (plus a small dealer bias). After the lock, forecasts can only go
-              down: builds still to be started are cut to the committed volume, never raised.
-              A cut reaches the MGI build_to_mgi_weeks later; earlier builds are in flight.
+  lock (R28)  About 22 weeks before EOL (virtualized) the brand's sales team, after talking
+              with dealers, locks the old model's remaining volume. The number reads recent
+              sell-through, so it carries the true demand level (plus a lock bias, OPEN). After
+              the lock, forecasts can only go down: builds still to be started are cut to the
+              locked volume, never raised. The lock is the brand's commitment, not the
+              dealers': sales must sell it (R31).
   channel     The MGI replenishes dealers to a forward cover (weeks of forecast). Two
               variants before launch: drain (low cover) and push (high cover, to hit a
               sell-in target).
@@ -18,15 +19,17 @@ Flow:  factory -> MGI (regional DC after customs) -> dealer channel -> end custo
               invoiced at the lower price. The old model keeps selling until EOL, tapering.
   end         Dealer leftovers come back through stock rotation, capped at a share of the
               dealer's last-quarter purchases; the rest the dealer clears itself (R30). Once
-              sold in, most of the risk has left the brand. Returns join MGI leftovers as
-              excess. Excess is re-inspected (R26) and sent down paths 2-6 of R11 by net
-              recovery per unit, within capacity: divert, rework, tear down, liquidate, scrap.
+              sold in, most of the risk has left the brand. What sales could not sell stays
+              with the BU: it either absorbs the loss or resells through other GEOs (R31).
+              Excess is re-inspected (R26) and sent down paths 2-6 of R11 by net recovery per
+              unit, within capacity: resell to another GEO as is, rework and resell, tear down,
+              liquidate, scrap.
   customs     Post-customs MGI: duty was paid on entry; exported or destroyed units get back
               only drawback_share of it. FTZ: duty is paid only on units that enter domestic
               commerce (R25).
 
-Strategies:  push · plan (no lock) · lock · lock + drain · binding lock (dealers must take
-the volume they committed at the lock; open question Q24). Common random numbers: every
+Strategies:  push · plan (no lock) · sales lock · lock + drain · lock + push (sales locks,
+then pushes what is left into the channel before launch). Common random numbers: every
 strategy sees the same demand draws, so differences come from the decision, not the dice.
 
 Run:  python3 src/finished_goods.py
@@ -46,10 +49,9 @@ DUTY_COUNTRY = {"US": "USA", "EU": "EU", "UK": "GBR", "JP": "JPN", "BR": "BRA"}
 STRATEGIES = {
     "push": dict(lock=False, cover="push", label="Push sell-in before launch"),
     "plan": dict(lock=False, cover="normal", label="Sales plan, no lock"),
-    "lock": dict(lock=True, cover="normal", label="Dealer lock (R28)"),
-    "lock_drain": dict(lock=True, cover="drain", label="Dealer lock + drain channel"),
-    "lock_binding": dict(lock=True, cover="normal", binding=True,
-                         label="Dealer lock, volume binding (Q24)"),
+    "lock": dict(lock=True, cover="normal", label="Sales volume lock (R28)"),
+    "lock_drain": dict(lock=True, cover="drain", label="Sales lock + drain channel"),
+    "lock_push": dict(lock=True, cover="push", label="Sales lock + push into channel"),
 }
 PATHS = ["divert", "rework", "teardown", "liquidate", "scrap"]
 
@@ -161,22 +163,18 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs):
         kit[b] = f(b + T + C)                   # ordered before the start (inside liability)
     bank = 0.0
     c = dict(lost=0.0, sold_pre=0.0, sold_post=0.0, sell_in_pre=0.0, sell_in_post=0.0,
-             chan_launch=0.0, builds=0.0, kits=sum(kit[:L]), fc_peak=bias, trued_up=0.0)
+             chan_launch=0.0, builds=0.0, kits=sum(kit[:L]), fc_peak=bias)
     sell_in = [0.0] * n
-    committed = None                            # dealer purchase commitment at the lock
     for w in range(n):
         seen = range(max(0, w - 4), w)
         r = sum(A[i] for i in seen) / max(1e-9, sum(S[i] for i in seen)) if w >= 4 else 1.0
-        if cfg["lock"] and w == t_lock:         # R28: dealers commit from their sell-through
+        if cfg["lock"] and w == t_lock:         # R28: sales locks from recent sell-through
             locked = True
-            hist = range(max(0, w - int(P["dealer_window_weeks"])), w)
+            hist = range(max(0, w - int(P["lock_window_weeks"])), w)
             r_d = sum(A[i] for i in hist) / max(1e-9, sum(S[i] for i in hist)) if w > 0 else 1.0
-            mult = r_d * (1 + P["dealer_bias"])
+            mult = r_d * (1 + P["lock_bias"])
             for i in range(w, n):
                 fc[i] = min(fc[i], S[i] * mult)
-            # what dealers agree to buy from now on: expected sell-through minus their stock
-            committed = max(0.0, sum(fc[w:]) - chan)
-            taken_from = w
         elif not locked:                        # sales chases upside, never cuts below plan
             mult = bias * (1 + P["sales_chase"] * max(0.0, r - 1))
             c["fc_peak"] = max(c["fc_peak"], mult)
@@ -217,14 +215,6 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs):
         ship = min(mgi, max(0.0, cover - chan))
         mgi -= ship
         chan += ship
-        if cfg.get("binding") and committed is not None and w == n - 1:
-            # take-or-pay: at the end dealers take the rest of what they committed (Q24)
-            due = max(0.0, committed - sum(sell_in[taken_from:w]) - ship)
-            extra = min(mgi, due)
-            mgi -= extra
-            chan += extra
-            ship += extra
-            c["trued_up"] = extra
         sell_in[w] = ship
         c["sell_in_pre" if w < launch else "sell_in_post"] += ship
         for key, val in (("demand", A[w]), ("forecast", fc[w]), ("sold", s), ("lost", A[w] - s),
@@ -311,7 +301,6 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
                     "channel_at_launch_units": c["chan_launch"],
                     "excess_units": excess, "returned_units": returned, "lost_units": c["lost"],
                     "dealer_kept_units": kept, "dealer_loss_usd": dealer_loss,
-                    "trued_up_units": c["trued_up"],
                     "mwd_kits": kits_left,
                     "price_protection_usd": prot, "launch_markdown_usd": markdown,
                     "markdown_floor_usd": floor, "markdown_above_floor_usd": markdown - floor,

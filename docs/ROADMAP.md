@@ -29,13 +29,13 @@ Last updated: 2026-10-14
 | ✓ | Network atlas v1 — one-world map, sea/air/truck lanes, duty layer, highways | done |
 | ✓ | Module 4 — finished goods at MGI and in the channel (`src/finished_goods.py`) | done |
 | ✓ | Report pages — eight linked BI-style pages (`src/build_dashboards.py`) | done |
-| → | Phase A — core loop closure | **next: Q23, then A2 demand and KPI view** |
+| → | Phase A — core loop closure | **next: Q24, then A2 demand and KPI view** |
 
 ## Phase A — core loop closure · 5 days → release v1
 
 | Step | Scope | Done when |
 |---|---|---|
-| A1 ✓ | **Module 4 — finished goods at MGI.** Sell-in vs sell-through, excess build-up, step price drop at successor launch paid as price protection (R26, R27), dealer volume lock (R28), disposition paths 1–6 (R11), post-customs vs FTZ (R25). | An excess-stock scenario returns the cost of each path and the cheapest path per product line. |
+| A1 ✓ | **Module 4 — finished goods at MGI.** Sell-in vs sell-through, excess build-up, step price drop at successor launch paid as price protection (R26, R27), sales volume lock (R28, R31), dealer leftovers and stock rotation (R30), disposition paths 1–6 (R11), post-customs vs FTZ (R25). | An excess-stock scenario returns the cost of each path and the cheapest path per product line. |
 | A2 | **Module 5 — demand and KPI view.** Tariff → retail price (pass-through) → units (elasticity by segment) → fiscal-year shipment gap. Score decisions twice: BU view (MWD + shipment target) and company view (total cost). | The same transfer decision is scored both ways and the page shows where the two views disagree. |
 | A3 | **Module 6 — new-site ramp and risk board hedge.** Capacity, yield and certification ramp curves; board-build timing vs the ODM's capacity response; GSM strength as a parameter. | The model returns a recommended board-build lead per model under demand uncertainty. |
 | A4 | **Integrated simulation.** Chain modules 1–6 week by week. | One command runs a full transfer scenario end to end and writes a summary report. |

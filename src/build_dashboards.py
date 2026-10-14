@@ -7,7 +7,7 @@ Build the linked report pages in docs/ from the model modules.
   docs/mwd.html              Module 1: MWD by scenario and material
   docs/transfer.html         Module 2: cutover week sweep, tariff vs MWD
   docs/business-case.html    Module 3: Monte Carlo, waterfall, tornado, break-even curve
-  docs/finished-goods.html   Module 4: dealer lock, price protection, excess disposition
+  docs/finished-goods.html   Module 4: sales volume lock, price protection, excess disposition
   docs/rules.html            Rules register, numbers and question log from ASSUMPTIONS.md
 
 Each page is one self-contained HTML file: data embedded as JSON, charts drawn with
@@ -168,7 +168,7 @@ FG_SUMMARY = ["demand_units", "sold_units", "builds_units", "kits_ordered", "sel
               "price_protection_usd", "launch_markdown_usd", "markdown_floor_usd",
               "markdown_above_floor_usd", "excess_loss_usd", "mwd_usd", "lost_margin_usd",
               "duty_sunk_usd", "avoidable_cost_usd", "dealer_kept_units", "dealer_loss_usd",
-              "system_cost_usd", "trued_up_units"] + ["mix_" + p for p in FG.PATHS]
+              "system_cost_usd"] + ["mix_" + p for p in FG.PATHS]
 FG_REGION = ["excess_units", "lost_units", "price_protection_usd", "excess_loss_usd", "mwd_usd",
              "lost_margin_usd", "duty_sunk_usd", "avoidable_cost_usd", "demand_units",
              "dealer_kept_units", "dealer_loss_usd", "system_cost_usd"]

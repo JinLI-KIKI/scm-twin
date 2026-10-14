@@ -37,25 +37,30 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
 
 - Wrote [`ROADMAP.md`](ROADMAP.md): phases A–G, about 40–45 working days to a complete version.
 - Q20–Q22 answered: value flat until the successor launches, then a step drop (R26); the drop is
-  paid as price protection to dealers (R27); dealers lock volumes well before EOL, after which
-  forecasts can only fall (R28, virtualized to 22 weeks).
+  paid as price protection to dealers (R27); sales locks the remaining volume well before EOL,
+  after which forecasts can only fall (R28, virtualized to 22 weeks).
+- Q23: dealer leftovers go back through stock rotation or the dealer clears them; once sold in,
+  the brand is mostly safe (R30). The lock is the brand's own: sales must sell it, otherwise the
+  BU absorbs it or resells through other GEOs (R31).
 - **Module 4 `src/finished_goods.py`** (Roadmap A1): weekly Monte Carlo of two old models in five
   MGI regions — order-up-to builds limited by material ordered 16 weeks ahead, dealer cover,
-  dealer lock, price protection at launch, excess disposition by net recovery, post-customs vs
-  FTZ with drawback rules from public sources. Four strategies compared.
+  sales volume lock, price protection at launch, excess disposition by net recovery, post-customs vs
+  FTZ with drawback rules from public sources. Five strategies compared, from the brand's
+  view and from the brand + dealer view.
 - **Report pages**: eight linked BI-style pages in `docs/` (`src/build_dashboards.py`,
   `src/dash/`); the atlas moved to `docs/atlas.html` and shares the top navigation.
 
 **Key findings (placeholder costs):**
 - Pushing sell-in before launch raises the price-protection bill, but most of it is a shift:
-  those units would otherwise be invoiced after launch at the lower price. The real extra cost is
-  dealer leftovers that come back.
-- A dealer lock that is information only cuts excess finished goods by about three quarters but
-  turns part of it into EOL MWD (the material is already ordered) and raises lost sales. Its value
-  depends on whether the locked volume binds the dealer (Q23).
+  those units would otherwise be invoiced after launch at the lower price. It is the cheapest
+  strategy for the brand, because dealers keep most leftovers beyond the stock-rotation cap (R30).
+  Counted with the dealers' loss, the plain sales plan wins.
+- The sales lock cuts the BU's excess finished goods sharply, but most material for the cut builds
+  is already ordered, so EOL MWD and lost sales rise. Its value depends on how accurate the
+  locked number is (Q24).
 - Rework pays for gaming and consumer lines and not for education or convertibles, matching R11.
 
 ## Next
-- Q23: is the locked volume binding on the dealer, and who carries the leftover?
+- Q24: is the locked volume usually too high, too low or about right?
 - Roadmap A2, Module 5: demand and KPI view (tariff → price → units → FY shipment gap; BU vs
   company view).

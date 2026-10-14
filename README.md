@@ -28,10 +28,12 @@ and one-time costs (tariff leakage during ramp, rush expediting), by GSM strengt
 
 **Module 4 — finished goods** (`src/finished_goods.py`): an old model's finished laptops as its
 successor launches. Builds follow an optimistic sales forecast and need material ordered 16 weeks
-ahead; dealers lock volumes 22 weeks before EOL (forecasts can then only fall); units held by
+ahead; sales locks the remaining volume 22 weeks before EOL (forecasts can then only fall); units held by
 dealers at launch get price protection; leftovers go down the disposition paths (divert, rework,
 tear down, liquidate, scrap) by net recovery; post-customs vs FTZ decides whether duty on
-re-exported excess is sunk. Compares push sell-in, sales plan, dealer lock, lock + drain.
+re-exported excess is sunk. Dealer leftovers return through stock rotation up to a cap; what
+sales cannot sell the BU absorbs or resells through other GEOs. Compares push sell-in, sales plan,
+sales lock, lock + drain and lock + push, for the brand alone and for brand + dealers.
 
 **Report pages** (`src/build_dashboards.py`, templates in `src/dash/`): runs every module over
 a grid of scenarios and writes self-contained pages to `docs/` (data embedded, charts from
