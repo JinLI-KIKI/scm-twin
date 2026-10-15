@@ -36,13 +36,22 @@ ROAD_FACTOR = 1.3
 ORIGINS = {
     "CN": {"factory": "F_CN", "port": "P_SHA", "airport": "A_PVG", "label": "China · Kunshan"},
     "ID": {"factory": "F_ID", "port": "P_JKT", "airport": "A_CGK", "label": "Indonesia · Cikarang"},
+    "VN": {"factory": "F_VN", "port": "P_HPH", "airport": "A_HAN", "label": "Vietnam · Bac Ninh"},
+    "MY": {"factory": "F_MY", "port": "P_PEN", "airport": "A_PEN", "label": "Malaysia · Penang"},
+    "BR": {"factory": "F_BR", "port": "P_SSZ", "airport": "A_VCP", "label": "Brazil · Jundiai"},
+    "AE": {"factory": "F_AE", "port": "P_JEA", "airport": "A_DWC", "label": "UAE · Jebel Ali"},
 }
-MGIS = {  # mgi: (dest port, dest airport, air hub or None, importing country for duty)
+ASIA_ORIGINS = {"CN", "ID", "VN", "MY"}
+MGIS = {  # mgi: (dest port, dest airport, air hub from Asia or None, importing country for duty)
     "M_US": ("P_LAX", "A_LAX", None, "USA"),
     "M_EU": ("P_RTM", "A_AMS", None, "EU"),
     "M_UK": ("P_FXT", "A_LHR", None, "GBR"),
     "M_JP": ("P_YOK", "A_NRT", None, "JPN"),
     "M_BR": ("P_SSZ", "A_VCP", "A_FRA", "BRA"),
+    "M_AU": ("P_SYD", "A_SYD", None, "AUS"),
+    "M_SG": ("P_SIN", "A_SIN", None, "SGP"),
+    "M_IN": ("P_NSA", "A_BOM", None, "IND"),
+    "M_AE": ("P_JEA", "A_DWC", None, "ARE"),
 }
 EUROPE_PORTS = {"P_RTM", "P_FXT"}
 
@@ -141,15 +150,32 @@ def build():
 
     routes = []
     for o, O in ORIGINS.items():
+        o_country = nodes[O["factory"]]["country_iso3"]
         t_fp = truck_lane(O["factory"], O["port"])
         t_fa = truck_lane(O["factory"], O["airport"])
         for m, (port, apt, hub, tkey) in MGIS.items():
             country = nodes[m]["country_iso3"]
+            if country == o_country:
+                # domestic: the factory trucks straight to the MGI (free-zone output still
+                # clears customs on the way into the domestic market)
+                t_fm = truck_lane(O["factory"], m)
+                steps = [("Factory to MGI (truck)", truck_days(lanes[t_fm]["km"]))]
+                if "Free Zone" in nodes[O["factory"]]["name"]:
+                    steps.append(("Free-zone exit and customs entry", P["free_zone_exit_days"]))
+                steps.append(("MGI receiving", P["mgi_receiving_days"]))
+                for mode in ("sea", "air"):
+                    routes.append({"origin": o, "mgi": m, "mode": mode, "variant": "any", "domestic": True,
+                                   "lanes": [t_fm], "km": lanes[t_fm]["km"], "nm": 0, "passages": [],
+                                   "steps": [[k, r1(d)] for k, d in steps],
+                                   "days": r1(sum(d for _, d in steps))})
+                continue
             t_pm = truck_lane(port, m)
             t_am = truck_lane(apt, m)
-            variants = ["cape", "suez"] if port in EUROPE_PORTS else ["any"]
-            for v in variants:
-                s = ocean_lane(O["port"], port, "cape" if v == "cape" else "open")
+            s_open = ocean_lane(O["port"], port, "open")
+            uses_red_sea = bool({"suez", "babalmandab"} & set(lanes[s_open]["passages"]))
+            variants = [("cape", ocean_lane(O["port"], port, "cape")), ("suez", s_open)] \
+                if uses_red_sea else [("any", s_open)]
+            for v, s in variants:
                 steps = [
                     ("Factory to port (truck)", truck_days(lanes[t_fp]["km"])),
                     ("Export handling & vessel wait", P["origin_sea_handling_days"]),
@@ -160,19 +186,20 @@ def build():
                 ]
                 routes.append({"origin": o, "mgi": m, "mode": "sea", "variant": v,
                                "lanes": [t_fp, s, t_pm], "km": lanes[s]["km"],
-                               "nm": lanes[s]["nm"],
+                               "nm": lanes[s]["nm"], "passages": lanes[s]["passages"],
                                "steps": [[k, r1(d)] for k, d in steps],
                                "days": r1(sum(d for _, d in steps))})
-            # air
-            legs = [air_lane(O["airport"], hub), air_lane(hub, apt)] if hub else \
+            # air (Asia to Brazil goes through a European hub)
+            use_hub = hub if o in ASIA_ORIGINS else None
+            legs = [air_lane(O["airport"], use_hub), air_lane(use_hub, apt)] if use_hub else \
                    [air_lane(O["airport"], apt)]
             km = sum(lanes[l]["km"] for l in legs)
             flight = math.ceil(km / (800 * 24) * 2) / 2
             steps = [
                 ("Factory to airport (truck)", truck_days(lanes[t_fa]["km"])),
                 ("Export build-up & clearance", P["origin_air_handling_days"]),
-                ("Flight" + (" via " + nodes[hub]["code"] if hub else ""), flight +
-                 (P["air_hub_transit_days"] if hub else 0)),
+                ("Flight" + (" via " + nodes[use_hub]["code"] if use_hub else ""), flight +
+                 (P["air_hub_transit_days"] if use_hub else 0)),
                 ("Import clearance", P.get(f"air_dest_handling_days_{country}",
                                            P["air_dest_handling_days"])),
                 ("Airport to MGI (truck)", truck_days(lanes[t_am]["km"])),
@@ -180,37 +207,50 @@ def build():
             ]
             routes.append({"origin": o, "mgi": m, "mode": "air", "variant": "any",
                            "lanes": [t_fa] + legs + [t_am], "km": km, "nm": round(km / 1.852),
+                           "passages": [],
                            "steps": [[k, r1(d)] for k, d in steps],
                            "days": r1(sum(d for _, d in steps))})
 
-    # parts feed into the new Indonesia site (R14: China parts keep flowing after transfer)
-    tsh = lanes["T:F_CN>P_SHA"]["km"]
-    tpa = lanes["T:F_CN>A_PVG"]["km"]
-    sea = ocean_lane("P_SHA", "P_JKT", "open")
-    tjf = truck_lane("P_JKT", "F_ID")
-    air = air_lane("A_PVG", "A_CGK")
-    taf = truck_lane("A_CGK", "F_ID")
-    feed = [
-        {"name": "Sea via Shanghai → Jakarta", "lanes": ["T:F_CN>P_SHA", sea, tjf],
-         "steps": [["Factory to port (truck)", truck_days(tsh)],
-                   ["Export handling & vessel wait", P["origin_sea_handling_days"]],
-                   ["Ocean voyage", r1(sea_days(lanes[sea]["km"]))],
-                   ["Import clearance", P["dest_handling_days_IDN"]],
-                   ["Port to factory (truck)", truck_days(lanes[tjf]["km"])]]},
-        {"name": "Air expedite via Pudong → Soekarno-Hatta", "lanes": ["T:F_CN>A_PVG", air, taf],
-         "steps": [["Factory to airport (truck)", truck_days(tpa)],
-                   ["Export build-up & clearance", P["origin_air_handling_days"]],
-                   ["Flight", 1.0],
-                   ["Import clearance", P["air_dest_handling_days"]],
-                   ["Airport to factory (truck)", truck_days(lanes[taf]["km"])]]},
-    ]
-    for f in feed:
-        f["days"] = r1(sum(d for _, d in f["steps"]))
+    # parts feed from the China supply base into every other site (R14: parts keep flowing)
+    feeds = {}
+    C = ORIGINS["CN"]
+    tsh = lanes[f"T:{C['factory']}>{C['port']}"]["km"]
+    tpa = lanes[f"T:{C['factory']}>{C['airport']}"]["km"]
+    for o, O in ORIGINS.items():
+        if o == "CN":
+            continue
+        country = nodes[O["factory"]]["country_iso3"]
+        sea = ocean_lane(C["port"], O["port"], "open")
+        tpf = truck_lane(O["port"], O["factory"])
+        air = air_lane(C["airport"], O["airport"])
+        taf = truck_lane(O["airport"], O["factory"])
+        pn = {"P_JKT": "Jakarta", "P_HPH": "Hai Phong", "P_PEN": "Penang", "P_SSZ": "Santos",
+              "P_JEA": "Jebel Ali"}.get(O["port"], nodes[O["port"]]["name"])
+        an = nodes[O["airport"]]["code"]
+        feeds[o] = [
+            {"name": f"Sea via Shanghai → {pn}", "lanes": [f"T:{C['factory']}>{C['port']}", sea, tpf],
+             "passages": lanes[sea]["passages"],
+             "steps": [["Factory to port (truck)", truck_days(tsh)],
+                       ["Export handling & vessel wait", P["origin_sea_handling_days"]],
+                       ["Ocean voyage", r1(sea_days(lanes[sea]["km"]))],
+                       ["Import clearance", P[f"dest_handling_days_{country}"]],
+                       ["Port to factory (truck)", truck_days(lanes[tpf]["km"])]]},
+            {"name": f"Air expedite via Pudong → {an}", "lanes": [f"T:{C['factory']}>{C['airport']}", air, taf],
+             "passages": [],
+             "steps": [["Factory to airport (truck)", truck_days(tpa)],
+                       ["Export build-up & clearance", P["origin_air_handling_days"]],
+                       ["Flight", max(1.0, math.ceil(lanes[air]["km"] / (800 * 24) * 2) / 2)],
+                       ["Import clearance", P.get(f"air_dest_handling_days_{country}", P["air_dest_handling_days"])],
+                       ["Airport to factory (truck)", truck_days(lanes[taf]["km"])]]},
+        ]
+        for f in feeds[o]:
+            f["days"] = r1(sum(d for _, d in f["steps"]))
+    feed = feeds["ID"]                               # kept for older readers of network.json
 
     countries = GL.countries(geo_dir, tariffs, EU27)
     road_layer = roads.display_layer()
     net = {
-        "nodes": nodes, "lanes": lanes, "routes": routes, "feed": feed,
+        "nodes": nodes, "lanes": lanes, "routes": routes, "feed": feed, "feeds": feeds,
         "tariffs": tariffs, "origins": ORIGINS,
         "mgis": {m: {"port": v[0], "airport": v[1], "hub": v[2], "tkey": v[3]}
                  for m, v in MGIS.items()},
@@ -243,8 +283,9 @@ def build():
         if r["mode"] == "sea":
             print(f"  {r['origin']} -> {r['mgi']:<5} {r['variant']:<5} {r['nm']:>7,} nm "
                   f"{r['days']:>5} days")
-    for f in feed:
-        print(f"  parts feed: {f['name']:<40} {f['days']} days")
+    for o, fs in feeds.items():
+        for f in fs:
+            print(f"  parts feed {o}: {f['name']:<44} {f['days']} days")
     for l in lanes.values():
         if l["mode"] == "inland":
             print(f"  truck {l['from']:>6} -> {l['to']:<6} {l['km']:>5} km  "

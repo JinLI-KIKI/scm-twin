@@ -1,0 +1,363 @@
+<title>Finished Goods Simulator</title>
+<!--__HEAD__-->
+<style>/*__CSS__*/
+/*__SIMCSS__*/
+</style>
+<!--__NAV__-->
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Module 4 · live model</p>
+      <h1>Finished Goods Simulator</h1>
+      <p class="sub">Move any input and the model runs again in your browser. It is the same engine as the Python model: for the same seed both give identical results, checked automatically. Switch inputs to ranges to let the uncertainty run through the Monte Carlo.</p>
+    </div>
+    <div class="asof">Built __TODAY__ · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/finished_goods.md">formulas</a></div>
+  </div>
+
+  <div class="sim">
+    <aside class="inputs" id="inputs" aria-label="Model inputs">
+      <div class="inputs-h">
+        <h2>Inputs</h2>
+        <span><button type="button" class="btn mobile-toggle" id="fold">Show inputs</button> <button type="button" class="btn" id="reset">Reset all</button></span>
+      </div>
+      <div id="groups"></div>
+    </aside>
+
+    <div class="results">
+      <section class="ctrl" aria-label="Scenario">
+        <div class="slicer"><span class="s-label" id="l-s">Strategy</span><div class="seg" role="group" aria-labelledby="l-s" id="f-s"></div></div>
+        <div class="slicer"><span class="s-label" id="l-c">US duty and MGI customs status</span><div class="seg" role="group" aria-labelledby="l-c" id="f-c"></div></div>
+        <div class="slicer"><span class="s-label" id="l-m">Inputs as</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
+        <div class="slicer"><span class="s-label" id="l-r">Monte Carlo runs</span><div class="seg" role="group" aria-labelledby="l-r" id="f-r"></div></div>
+        <div class="slicer"><span class="s-label" id="l-v">Whose cost</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
+        <span class="status" id="status" aria-live="polite">Starting…</span>
+      </section>
+
+      <div class="chips" id="changed" aria-label="Changed inputs"></div>
+      <section class="kpis" id="kpis" aria-live="polite"></section>
+
+      <section class="canvas">
+        <div class="viz w12">
+          <div class="viz-h"><h2>Supply chain state</h2><span class="hint" id="h-state"></span></div>
+          <div class="state-ctl">
+            <button type="button" class="btn" id="play" aria-pressed="false">Play</button>
+            <span class="wk" id="wk">Week 0</span>
+            <input type="range" id="week" min="0" max="39" value="0" aria-label="Week">
+          </div>
+          <p class="phase" id="phase"></p>
+          <div id="state" role="img" aria-label="Stock and flow at the chosen week"></div>
+        </div>
+        <div class="viz w12">
+          <div class="viz-h"><h2>Week by week</h2><span class="hint">Mean of all runs · the dashed line is the week shown above</span></div>
+          <div id="c-week" class="chart tall"></div>
+        </div>
+        <div class="viz w12">
+          <div class="viz-h"><h2 id="h-stack">All strategies under these inputs</h2><span class="hint">Mean of all runs · click a bar to select it</span></div>
+          <div id="c-stack" class="chart"></div>
+        </div>
+      </section>
+
+      <footer class="notes">
+        <p><b>How to read it.</b> Values on the left are the model's current inputs; an orange value differs from the base case in <code>data/fg_params.csv</code>. In range mode each run draws every input with a range from a triangular distribution between its low and high, peaking at the slider value, so the P10–P90 bands widen with what is not known. Inputs that change the calendar (build-to-MGI weeks, tail weeks, MGI cover) stay fixed in range mode.</p>
+        <p><b>Engine.</b> <code>src/dash/fg_engine.js</code> is a line-by-line port of <code>src/finished_goods.py</code> with the same random numbers; <code>tests/test_fg_parity.py</code> checks they agree for every strategy. Rules behind each step are in the <a href="rules.html">Rules register</a>; the formulas are written out in <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/finished_goods.md">docs/models/finished_goods.md</a>.</p>
+      </footer>
+    </div>
+  </div>
+</main>
+<script>/*__JS__*/</script>
+<script id="fge">/*__ENGINE__*/</script>
+<script>
+const D = /*__DATA__*/null;
+const IN = D.input, P0 = { ...IN.P };
+const ST = Object.keys(IN.strategies);
+const SHORT = { push: 'Push, no lock', plan: 'Plan, no lock', lock: 'Sales lock', lock_drain: 'Lock + drain', lock_push: 'Lock + push', lock_ibp: 'Lock + IBP hedge' };
+const CUST = { base: ['Current duties', null, false], us25_post: ['US 25% · post-customs', { US: 0.25 }, false], us25_ftz: ['US 25% · FTZ', { US: 0.25 }, true] };
+const RANGES = Object.fromEntries(D.ranges.map((r) => [r.key, r]));
+const STATUS = Object.fromEntries(D.params.map((r) => [r.key, r]));
+const saved = R.load();
+const S = {
+  s: ST.includes(saved.s) ? saved.s : 'lock_ibp',
+  c: Object.keys(CUST).includes(saved.c) ? saved.c : 'base',
+  m: saved.m === 'range' ? 'range' : 'fixed',
+  n: [100, 200, 500].includes(saved.n) ? saved.n : 200,
+  v: saved.v === 'system' ? 'system' : 'brand',
+  P: { ...P0, ...(saved.P || {}) },
+  lo: { ...(saved.lo || {}) }, hi: { ...(saved.hi || {}) },
+  week: 0,
+};
+Object.keys(S.P).forEach((k) => { if (!(k in P0)) delete S.P[k]; });
+const COSTK = () => (S.v === 'brand' ? 'avoidable_cost_usd' : 'system_cost_usd');
+
+// ---------------------------------------------------------------- formatting of inputs
+const fmtVal = (key, v) => {
+  const u = RANGES[key] ? RANGES[key].unit : '';
+  if (u === 'share') return (v * 100).toFixed(Math.abs(v * 100) < 10 && v * 100 % 1 ? 1 : 0) + '%';
+  if (u === 'usd') return '$' + R.num(v, v % 1 ? 1 : 0);
+  if (u === 'weeks') return R.num(v, v % 1 ? 1 : 0) + ' wk';
+  return String(v);
+};
+const loOf = (k) => (k in S.lo ? S.lo[k] : +RANGES[k].low);
+const hiOf = (k) => (k in S.hi ? S.hi[k] : +RANGES[k].high);
+
+// ---------------------------------------------------------------- inputs panel
+function buildInputs() {
+  const groups = [];
+  D.ranges.forEach((r) => { if (!groups.includes(r.group)) groups.push(r.group); });
+  const box = R.$('#groups');
+  box.innerHTML = groups.map((g, gi) => `<details class="grp" ${gi < 2 ? 'open' : ''} data-g="${R.esc(g)}"><summary>${R.esc(g)}<span class="cnt"></span></summary>` +
+    D.ranges.filter((r) => r.group === g).map((r) => {
+      const st = STATUS[r.key] ? STATUS[r.key].status : '';
+      const kind = /^PRACTITIONER/.test(st) ? 'prac' : /^WEB/.test(st) ? 'web' : /^OPEN/.test(st) ? 'open' : 'ph';
+      return `<div class="prm" data-key="${r.key}">
+        <div class="prm-h"><label for="p-${r.key}">${R.esc(r.label)}</label><output id="o-${r.key}"></output></div>
+        <input type="range" id="p-${r.key}" min="${r.min}" max="${r.max}" step="${r.step}">
+        <div class="prm-r${r.sample === '1' ? '' : ' off'}" data-r="${r.key}" hidden>
+          <span>range</span><input type="number" id="lo-${r.key}" step="${r.step}" aria-label="Low value"><span>to</span><input type="number" id="hi-${r.key}" step="${r.step}" aria-label="High value">
+          ${r.sample === '1' ? '' : '<span>fixed in range mode</span>'}
+        </div>
+        <div class="prm-meta"><span class="chip ${kind}" title="${R.esc(STATUS[r.key] ? STATUS[r.key].note : '')}">${R.esc(st.split(' ')[0] || 'PLACEHOLDER')}</span><button type="button" class="rst" data-reset="${r.key}" hidden>reset</button></div>
+      </div>`;
+    }).join('') + '</details>').join('');
+  D.ranges.forEach((r) => {
+    const el = R.$('#p-' + r.key);
+    el.value = S.P[r.key];
+    el.addEventListener('input', () => { S.P[r.key] = +el.value; paintInputs(); schedule(); });
+    const lo = R.$('#lo-' + r.key), hi = R.$('#hi-' + r.key);
+    lo.value = loOf(r.key); hi.value = hiOf(r.key);
+    lo.addEventListener('change', () => { S.lo[r.key] = +lo.value; schedule(); });
+    hi.addEventListener('change', () => { S.hi[r.key] = +hi.value; schedule(); });
+  });
+  box.addEventListener('click', (e) => {
+    const k = e.target.getAttribute && e.target.getAttribute('data-reset');
+    if (k) { S.P[k] = P0[k]; R.$('#p-' + k).value = P0[k]; paintInputs(); schedule(); }
+  });
+  paintInputs();
+}
+function paintInputs() {
+  const changed = [];
+  D.ranges.forEach((r) => {
+    const v = S.P[r.key], diff = Math.abs(v - P0[r.key]) > 1e-12;
+    R.$('#o-' + r.key).textContent = fmtVal(r.key, v);
+    const row = R.$(`.prm[data-key="${r.key}"]`);
+    row.classList.toggle('changed', diff);
+    row.querySelector('.rst').hidden = !diff;
+    row.querySelector('.prm-r').hidden = S.m !== 'range';
+    if (diff) changed.push(r);
+  });
+  document.querySelectorAll('details.grp').forEach((d) => {
+    const n = D.ranges.filter((r) => r.group === d.dataset.g && Math.abs(S.P[r.key] - P0[r.key]) > 1e-12).length;
+    d.querySelector('.cnt').textContent = n ? n + ' changed' : '';
+  });
+  R.$('#changed').innerHTML = changed.length ? changed.map((r) => `<button type="button" data-k="${r.key}" title="Reset">${R.esc(r.label)}: ${fmtVal(r.key, P0[r.key])} → ${fmtVal(r.key, S.P[r.key])} ✕</button>`).join('') : '';
+}
+R.$('#changed').addEventListener('click', (e) => {
+  const k = e.target.closest('button') && e.target.closest('button').dataset.k;
+  if (k) { S.P[k] = P0[k]; R.$('#p-' + k).value = P0[k]; paintInputs(); schedule(); }
+});
+R.$('#reset').addEventListener('click', () => {
+  S.P = { ...P0 }; S.lo = {}; S.hi = {};
+  D.ranges.forEach((r) => { R.$('#p-' + r.key).value = P0[r.key]; R.$('#lo-' + r.key).value = r.low; R.$('#hi-' + r.key).value = r.high; });
+  paintInputs(); schedule();
+});
+R.$('#fold').addEventListener('click', () => {
+  const box = R.$('#inputs'), folded = box.classList.toggle('folded');
+  R.$('#fold').textContent = folded ? 'Show inputs' : 'Hide inputs';
+});
+if (matchMedia('(max-width: 980px)').matches) R.$('#inputs').classList.add('folded');
+
+// ---------------------------------------------------------------- engine in a worker
+const ENGINE_SRC = document.getElementById('fge').textContent;
+let worker = null;
+try {
+  const src = ENGINE_SRC + '\nself.onmessage = (e) => { const d = e.data; const t0 = Date.now(); const out = d.jobs.map((j) => FGE.simulate(d.input, d.P, j)); self.postMessage({ id: d.id, out, ms: Date.now() - t0 }); };';
+  worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+} catch (e) { worker = null; }
+let jobId = 0, timer = null, RES = null, BASE = {};
+function jobsFor(P, withTraj) {
+  const [, duty, ftz] = CUST[S.c];
+  const ranges = {};
+  if (S.m === 'range') D.ranges.forEach((r) => { if (r.sample === '1') ranges[r.key] = [Math.min(loOf(r.key), S.P[r.key]), Math.max(hiOf(r.key), S.P[r.key])]; });
+  return ST.map((s) => ({ strategy: s, runs: S.n, seed: 11, ftz, dutyOverride: duty, ranges: P === P0 ? {} : ranges, traj: withTraj ? true : s === S.s }));
+}
+function run(P, jobs) {
+  return new Promise((resolve) => {
+    if (worker) {
+      const id = ++jobId;
+      const h = (e) => { if (e.data.id === id) { worker.removeEventListener('message', h); resolve(e.data); } };
+      worker.addEventListener('message', h);
+      worker.postMessage({ id, input: IN, P, jobs });
+    } else {
+      const t0 = Date.now();
+      resolve({ out: jobs.map((j) => FGE.simulate(IN, P, j)), ms: Date.now() - t0 });
+    }
+  });
+}
+let pending = 0;
+async function compute() {
+  const my = ++pending;
+  R.$('#status').textContent = 'Running…'; R.$('#status').classList.add('busy');
+  const baseKey = `${S.c}|${S.n}`;
+  if (!BASE[baseKey]) {
+    const b = await run(P0, jobsFor(P0, false).map((j) => ({ ...j, traj: false, ranges: {} })));
+    BASE[baseKey] = Object.fromEntries(b.out.map((r) => [r.strategy, r]));
+  }
+  const res = await run(S.P, jobsFor(S.P, false));
+  if (my !== pending) return;                                   // a newer change is on its way
+  RES = Object.fromEntries(res.out.map((r) => [r.strategy, r]));
+  RES._base = BASE[baseKey];
+  R.$('#status').textContent = `${S.n} runs × ${ST.length} strategies · ${(res.ms / 1000).toFixed(2)} s${S.m === 'range' ? ' · inputs sampled' : ''}`;
+  R.$('#status').classList.remove('busy');
+  draw();
+}
+function schedule() { R.save({ s: S.s, c: S.c, m: S.m, n: S.n, v: S.v, P: S.P, lo: S.lo, hi: S.hi }); clearTimeout(timer); timer = setTimeout(compute, 160); }
+
+// ---------------------------------------------------------------- scenario controls
+R.seg(R.$('#f-s'), ST.map((s) => [s, SHORT[s]]), S.s, (v) => { S.s = v; schedule(); });
+R.seg(R.$('#f-c'), Object.keys(CUST).map((k) => [k, CUST[k][0]]), S.c, (v) => { S.c = v; schedule(); });
+R.seg(R.$('#f-m'), [['fixed', 'Fixed values'], ['range', 'Ranges']], S.m, (v) => { S.m = v; paintInputs(); schedule(); });
+R.seg(R.$('#f-r'), [[100, '100'], [200, '200'], [500, '500']], S.n, (v) => { S.n = +v; schedule(); });
+R.seg(R.$('#f-v'), [['brand', 'Brand'], ['system', 'Brand + dealers']], S.v, (v) => { S.v = v; if (RES) draw(); });
+
+// ---------------------------------------------------------------- KPIs
+function kpis() {
+  const r = RES[S.s].summary, b = RES._base[S.s].summary, k = COSTK();
+  const delta = (key, money, goodDown = true) => {
+    const d = r[key].mean - b[key].mean;
+    if (Math.abs(d) < (money ? 500 : 0.5)) return '<span class="k-delta flat">= base</span>';
+    const up = d > 0, cls = (up === goodDown) ? 'up' : 'down';
+    return `<span class="k-delta ${cls}">${up ? '+' : '−'}${money ? R.usd(Math.abs(d)) : R.kunits(Math.abs(d))} vs base</span>`;
+  };
+  const card = (label, value, sub, dl) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span>${dl}</div>`;
+  R.$('#kpis').innerHTML = [
+    card(S.v === 'brand' ? 'Avoidable cost to the brand' : 'Avoidable cost, brand + dealers', R.usd(r[k].mean), `P10–P90 ${R.usd(r[k].p10)}–${R.usd(r[k].p90)}`, delta(k, true)),
+    card('Price-protection bill', R.usd(r.price_protection_usd.mean), `${R.kunits(r.channel_at_launch_units.mean)} units with dealers at launch`, delta('price_protection_usd', true)),
+    card('Excess with the BU', R.kunits(r.excess_units.mean) + ' units', `loss ${R.usd(r.excess_loss_usd.mean)}`, delta('excess_units', false)),
+    card('Left with dealers', R.kunits(r.dealer_kept_units.mean) + ' units', `their loss ${R.usd(r.dealer_loss_usd.mean)}`, delta('dealer_kept_units', false)),
+    card('Material left (MWD)', R.usd(r.mwd_usd.mean), `${R.kunits(r.mwd_kits.mean)} kits`, delta('mwd_usd', true)),
+    card('Sales lost', R.kunits(r.lost_units.mean) + ' units', `${R.pct(r.lost_units.mean / r.demand_units.mean, 1)} of demand`, delta('lost_units', false)),
+  ].join('');
+}
+
+// ---------------------------------------------------------------- strategy comparison
+const COMP = [['markdown_above_floor_usd', 'Markdown above floor', 1], ['excess_loss_usd', 'Excess stock', 3], ['mwd_usd', 'EOL MWD', 5],
+  ['lost_margin_usd', 'Lost margin', 6], ['dealer_loss_usd', 'Dealer leftovers', 4]];
+const cStack = R.chart('c-stack', (t) => {
+  const o = R.base(t);
+  if (!RES) return { ...o };
+  const comps = COMP.filter((c) => S.v === 'system' || c[0] !== 'dealer_loss_usd');
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => R.tip(t, ps.map((p) => [p.color, p.seriesName, R.usd(p.value)]).concat([[t.ink, 'Total', R.usd(RES[ST[ps[0].dataIndex]].summary[COSTK()].mean)], [t.muted, 'Base inputs', R.usd(RES._base[ST[ps[0].dataIndex]].summary[COSTK()].mean)]]), SHORT[ST[ps[0].dataIndex]]) },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: ST.map((s) => SHORT[s]), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fBody, fontSize: 12 } }),
+    series: comps.map(([k, name, ci]) => ({ type: 'bar', stack: 'a', name, barWidth: '56%', itemStyle: { color: t.c[ci] },
+      data: ST.map((s) => ({ value: RES[s].summary[k].mean, itemStyle: { opacity: s === S.s ? 1 : 0.4 } })) }))
+      .concat([{ type: 'scatter', name: 'Base inputs', symbol: 'diamond', symbolSize: 10, itemStyle: { color: t.ink }, data: ST.map((s) => RES._base[s].summary[COSTK()].mean), z: 5 }]),
+  };
+});
+cStack.inst && cStack.inst.on('click', (p) => { if (p.seriesType === 'bar') { S.s = ST[p.dataIndex]; document.querySelectorAll('#f-s button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === S.s))); schedule(); } });
+
+// ---------------------------------------------------------------- week by week
+const cWeek = R.chart('c-week', (t) => {
+  const o = R.base(t);
+  if (!RES) return { ...o };
+  const r = RES[S.s], x = r.traj, n = r.horizon;
+  const weeks = Array.from({ length: n }, (_, i) => 'W' + i);
+  const line = (name, data, color, extra = {}) => ({ type: 'line', name, data, showSymbol: false, lineStyle: { width: 2, color }, itemStyle: { color }, ...extra });
+  return {
+    ...o, tooltip: { ...o.tooltip, valueFormatter: (v) => R.num(v) },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'category', data: weeks, boundaryGap: false, splitLine: { show: false } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.kunits } }),
+    series: [
+      line('MGI stock', x.mgi, t.c[3], { areaStyle: { color: t.c[3], opacity: .12 } }),
+      line('Dealer stock', x.channel, t.c[2], { areaStyle: { color: t.c[2], opacity: .12 } }),
+      line('In transit', x.transit, t.sea, { lineStyle: { width: 1.5, color: t.sea, type: [4, 3] } }),
+      line('Sell-through (actual)', x.demand, t.ink),
+      line('Forecast in use', x.forecast, t.c[0], { lineStyle: { width: 2, type: [6, 4], color: t.c[0] } }),
+      { type: 'bar', name: 'Builds', data: x.builds, barWidth: '45%', itemStyle: { color: t.c[6], opacity: .55 } },
+      line('Kits on hand', x.kits, t.c[5], { lineStyle: { width: 1.5, type: [2, 3], color: t.c[5] },
+        markLine: { symbol: 'none', silent: true, label: { color: t.ink2, fontSize: 11, position: 'insideEndTop' }, lineStyle: { color: t.muted, type: [4, 4] },
+          data: [{ xAxis: 'W' + Math.round(r.lock_week), label: { formatter: 'Sales lock' } }, { xAxis: 'W' + r.eol_week, label: { formatter: 'EOL' } },
+            { xAxis: 'W' + r.launch_week, label: { formatter: 'Launch' } }, { xAxis: 'W' + S.week, label: { formatter: '' }, lineStyle: { color: t.ink, type: 'solid', width: 1.5 } }] } }),
+    ],
+  };
+});
+
+// ---------------------------------------------------------------- state view (SVG)
+function phaseOf(r, w) {
+  if (w < r.lock_week) return 'Before the lock: builds follow the sales forecast, which runs optimistic.';
+  if (w < r.eol_week) return S.s === 'plan' || S.s === 'push' ? 'No lock in this strategy: builds keep following the sales forecast.' : 'Locked: the remaining builds are frozen and their material is bought.';
+  if (w < r.launch_week) return 'After EOL: no more builds; stock in the chain sells down.';
+  return 'Successor on the market: dealers got price protection on what they held; the old model fades out.';
+}
+function drawState() {
+  if (!RES) return;
+  const t = R.theme(), r = RES[S.s], x = r.traj, w = Math.min(S.week, r.horizon - 1);
+  const W = 960, H = 300, top = 70, tankH = 150, tankW = 120;
+  const stockMax = Math.max(1, ...['kits', 'transit', 'mgi', 'channel'].flatMap((k) => x[k]));
+  const flowMax = Math.max(1, ...['builds', 'arrivals', 'sell_in', 'sold'].flatMap((k) => x[k]));
+  const tanks = [
+    ['kits', 'Material kits', t.c[5], 30], ['transit', 'In transit', t.sea, 270], ['mgi', 'MGI stock', t.c[3], 510], ['channel', 'Dealer stock', t.c[2], 750],
+  ];
+  const flows = [
+    ['builds', 'builds', 30 + tankW, 270], ['arrivals', 'arrive', 270 + tankW, 510], ['sell_in', 'sell-in', 510 + tankW, 750],
+  ];
+  const esc = R.esc;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="${esc(t.fBody)}">`;
+  tanks.forEach(([k, label, col, x0]) => {
+    const v = x[k][w], h = Math.max(0, Math.min(tankH, tankH * v / stockMax));
+    svg += `<text x="${x0}" y="${top - 30}" font-size="13" fill="${t.ink2}">${esc(label)}</text>`;
+    svg += `<text x="${x0}" y="${top - 10}" font-size="18" font-weight="600" fill="${t.ink}" font-family="${esc(t.fMono)}">${R.kunits(v)}</text>`;
+    svg += `<rect x="${x0}" y="${top}" width="${tankW}" height="${tankH}" rx="4" fill="${t.chip}" stroke="${t.rule}"/>`;
+    svg += `<rect x="${x0}" y="${top + tankH - h}" width="${tankW}" height="${h}" rx="3" fill="${col}" opacity=".85"/>`;
+  });
+  flows.forEach(([k, label, xa, xb]) => {
+    const v = x[k][w], sw = 2 + 12 * Math.min(1, v / flowMax), y = top + tankH / 2;
+    svg += `<line x1="${xa + 6}" y1="${y}" x2="${xb - 14}" y2="${y}" stroke="${t.muted}" stroke-width="${sw.toFixed(1)}" stroke-linecap="round" opacity=".7"/>`;
+    svg += `<path d="M${xb - 14} ${y - 8} L${xb - 4} ${y} L${xb - 14} ${y + 8} Z" fill="${t.muted}"/>`;
+    svg += `<text x="${(xa + xb) / 2 - 4}" y="${y - 14}" text-anchor="middle" font-size="12" fill="${t.ink2}">${label}</text>`;
+    svg += `<text x="${(xa + xb) / 2 - 4}" y="${y + 26}" text-anchor="middle" font-size="13" fill="${t.ink}" font-family="${esc(t.fMono)}">${R.kunits(v)}/wk</text>`;
+  });
+  // customers
+  const cx = 750 + tankW, y = top + tankH / 2, sold = x.sold[w], lost = x.lost[w];
+  const sw = 2 + 12 * Math.min(1, sold / flowMax);
+  svg += `<line x1="${cx + 6}" y1="${y}" x2="${W - 18}" y2="${y}" stroke="${t.ink}" stroke-width="${sw.toFixed(1)}" stroke-linecap="round" opacity=".7"/>`;
+  svg += `<text x="${W - 10}" y="${y - 14}" text-anchor="end" font-size="12" fill="${t.ink2}">sold</text>`;
+  svg += `<text x="${W - 10}" y="${y + 26}" text-anchor="end" font-size="13" fill="${t.ink}" font-family="${esc(t.fMono)}">${R.kunits(sold)}/wk</text>`;
+  if (lost > 1) svg += `<text x="${W - 10}" y="${y + 46}" text-anchor="end" font-size="12" fill="${t.bad}" font-family="${esc(t.fMono)}">lost ${R.kunits(lost)}</text>`;
+  svg += `<text x="30" y="${H - 18}" font-size="12" fill="${t.muted}">Mean of ${r.runs} runs · stocks scaled to the largest stock over the whole horizon · forecast this week ${R.kunits(x.forecast[w])}/wk</text>`;
+  svg += '</svg>';
+  R.$('#state').innerHTML = svg;
+  R.$('#wk').textContent = 'Week ' + w;
+  R.$('#phase').textContent = phaseOf(r, w);
+  R.$('#h-state').textContent = `${SHORT[S.s]} · lock ≈ week ${Math.round(r.lock_week)}, EOL week ${r.eol_week}, launch week ${r.launch_week}`;
+}
+const wk = R.$('#week');
+wk.addEventListener('input', () => { S.week = +wk.value; stopPlay(); drawState(); R.update(cWeek); });
+let playT = null;
+function stopPlay() { clearInterval(playT); playT = null; R.$('#play').textContent = 'Play'; R.$('#play').setAttribute('aria-pressed', 'false'); }
+R.$('#play').addEventListener('click', () => {
+  if (playT) { stopPlay(); return; }
+  if (RES && S.week >= RES[S.s].horizon - 1) S.week = 0;
+  R.$('#play').textContent = 'Pause'; R.$('#play').setAttribute('aria-pressed', 'true');
+  playT = setInterval(() => {
+    if (!RES) return;
+    S.week += 1;
+    if (S.week >= RES[S.s].horizon - 1) { S.week = RES[S.s].horizon - 1; stopPlay(); }
+    wk.value = S.week; drawState(); R.update(cWeek);
+  }, 380);
+});
+
+function draw() {
+  wk.max = RES[S.s].horizon - 1;
+  kpis(); drawState();
+  R.$('#h-stack').textContent = S.v === 'brand' ? 'All strategies under these inputs · brand cost' : 'All strategies under these inputs · brand + dealer cost';
+  [cStack, cWeek].forEach(R.update);
+}
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawState); } catch (e) { /* ignore */ }
+new MutationObserver(drawState).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+buildInputs();
+compute();
+</script>

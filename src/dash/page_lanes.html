@@ -1,13 +1,19 @@
 <title>Lanes and Lead Time</title>
 <!--__HEAD__-->
-<style>/*__CSS__*/</style>
+<style>/*__CSS__*/
+.tbl td.selo, .tbl th.selo { background: var(--hl); }
+.tbl td.dom { color: var(--good); }
+.pass { display: flex; flex-wrap: wrap; gap: 3px; }
+.pass .chip.bad { font-size: 10px; }
+.tbl th small { display: block; color: var(--muted); font: 400 10px/1.3 var(--f-body); text-transform: none; letter-spacing: 0; }
+</style>
 <!--__NAV__-->
 <main class="report">
   <div class="report-head">
     <div>
       <p class="eyebrow">Network · door to MGI</p>
       <h1>Lanes and Lead Time</h1>
-      <p class="sub">Days from the factory door to each regional distribution centre (MGI), step by step, with the import duty each market charges. Lane geometry and distances come from the <a href="atlas.html">Network atlas</a>.</p>
+      <p class="sub">Days from the factory door to each of nine regional distribution centres (MGIs), step by step, from six candidate sites, with the straits each ocean lane passes and the import duty each market charges. Lane geometry and distances come from the <a href="atlas.html">Network atlas</a>; costs and the choice of sites are on the <a href="footprint.html">Footprint</a> page.</p>
     </div>
     <div class="asof">Built __TODAY__ · every handling time is a placeholder</div>
   </div>
@@ -15,7 +21,7 @@
   <section class="slicers" aria-label="Filters">
     <div class="slicer"><span class="s-label" id="l-o">Ship from</span><div class="seg" role="group" aria-labelledby="l-o" id="f-o"></div></div>
     <div class="slicer"><span class="s-label" id="l-m">Mode</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
-    <div class="slicer"><span class="s-label" id="l-v">Asia–Europe ocean routing</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
+    <div class="slicer"><span class="s-label" id="l-v">Red Sea</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
   </section>
 
   <section class="kpis" id="kpis" aria-live="polite"></section>
@@ -23,80 +29,85 @@
   <section class="canvas">
     <div class="viz w7">
       <div class="viz-h"><h2>Door to MGI, step by step</h2><span class="hint" id="h-steps"></span></div>
-      <div id="c-steps" class="chart"></div>
+      <div id="c-steps" class="chart tall"></div>
     </div>
     <div class="viz w5">
-      <div class="viz-h"><h2>China vs Indonesia, days</h2><span class="hint" id="h-cmp"></span></div>
-      <div id="c-cmp" class="chart"></div>
+      <div class="viz-h"><h2>Every site, every MGI</h2><span class="hint" id="h-cmp"></span></div>
+      <div id="c-cmp" class="chart tall"></div>
     </div>
     <div class="viz w12">
-      <div class="viz-h"><h2>Lane ledger</h2><span class="hint">Both origins · demand share from the locale mix</span></div>
+      <div class="viz-h"><h2>Lane ledger</h2><span class="hint" id="h-ledger"></span></div>
       <div class="tbl-wrap"><table class="tbl" id="t-lanes"></table></div>
     </div>
     <div class="viz w7">
-      <div class="viz-h"><h2>Lead time against import duty</h2><span class="hint">Ocean · bubble size = demand share</span></div>
+      <div class="viz-h"><h2>Lead time against import duty</h2><span class="hint">Ocean · bubble size = demand share · selected site labelled</span></div>
       <div id="c-scatter" class="chart"></div>
     </div>
     <div class="viz w5">
-      <div class="viz-h"><h2>Parts feed into Indonesia</h2><span class="hint">China supply base to the new site · same step colours</span></div>
-      <div id="c-feed" class="chart short"></div>
-      <p class="hint" style="margin:0">Most parts still come from China after a transfer. This leg is why the new site's lead time grows by about four weeks (R17).</p>
+      <div class="viz-h"><h2>Parts feed from the China supply base</h2><span class="hint">Ocean, by site · same step colours</span></div>
+      <div id="c-feed" class="chart"></div>
     </div>
   </section>
 
   <section class="insight" id="insight"></section>
 
   <footer class="notes">
-    <p><b>How it is computed.</b> Ocean distance from the open-source <code>searoute</code> network at 15 knots plus 4 days for intermediate calls; the Cape option closes Suez and Bab-el-Mandeb, which most Asia–Europe services still avoid in 2026. Air legs are great circles; Brazil air goes via Frankfurt. Truck legs follow the Natural Earth road network. Handling days per step are in <code>data/leadtime_params.csv</code> (all placeholders).</p>
-    <p><b>Duty.</b> Import duty on laptops by market from <code>data/tariffs.csv</code>: EU, UK and Japan zero under the WTO Information Technology Agreement (to verify); Brazil 16% plus IPI. US laptops are exempt from the 2026 Section 301 action; a Section 232 semiconductor phase 2 could still reach them.</p>
+    <p><b>How it is computed.</b> Ocean distance from the open-source <code>searoute</code> network at 15 knots plus 4 days for intermediate calls; the Cape option closes Suez and Bab-el-Mandeb, which most Asia–Europe services still avoid in 2026. The straits listed are the passages <code>searoute</code> reports for each lane. Air legs are great circles; Brazil air from Asia goes via Frankfurt. Truck legs follow the Natural Earth road network. A site selling in its own country (Brazil to Brazil, UAE to UAE) ships by truck only; the UAE adds a free-zone exit. Handling days per step are in <code>data/leadtime_params.csv</code> (all placeholders).</p>
+    <p><b>Duty.</b> Import duty on laptops by market and by where the unit is assembled, from <code>data/tariffs.csv</code> (October 2026): zero in the US, EU, UK, Japan, Australia, Singapore and India; Brazil 16% (0% for Brazil-made); the UAE 5%. Origin and duty scenarios are handled on the <a href="footprint.html">Footprint</a> page.</p>
   </footer>
 </main>
 <script>/*__JS__*/</script>
 <script>
 const D = /*__DATA__*/null;
-const MG = Object.keys(D.mgis);
+const MG = Object.keys(D.mgis), ORG = Object.keys(D.origins);
+const COL = { CN: 0, ID: 2, VN: 3, MY: 4, BR: 1, AE: 5 };
 const saved = R.load();
-const S = { o: ['CN', 'ID'].includes(saved.o) ? saved.o : 'CN', m: ['sea', 'air'].includes(saved.m) ? saved.m : 'sea', v: ['cape', 'suez'].includes(saved.v) ? saved.v : 'cape' };
-R.seg(R.$('#f-o'), [['CN', D.origins.CN], ['ID', D.origins.ID]], S.o, (v) => { S.o = v; draw(); });
+const S = { o: ORG.includes(saved.o) ? saved.o : 'CN', m: ['sea', 'air'].includes(saved.m) ? saved.m : 'sea', v: ['cape', 'suez'].includes(saved.v) ? saved.v : 'cape' };
+R.seg(R.$('#f-o'), ORG.map((o) => [o, D.origins[o].split(' · ')[0]]), S.o, (v) => { S.o = v; draw(); });
 R.seg(R.$('#f-m'), [['sea', 'Ocean'], ['air', 'Air']], S.m, (v) => { S.m = v; draw(); });
-R.seg(R.$('#f-v'), [['cape', 'Cape of Good Hope'], ['suez', 'Suez Canal']], S.v, (v) => { S.v = v; draw(); });
+R.seg(R.$('#f-v'), [['cape', 'Avoid (Cape)'], ['suez', 'Through Suez']], S.v, (v) => { S.v = v; draw(); });
 const route = (o, m, mode, v = S.v) => D.routes.find((r) => r.origin === o && r.mgi === m && r.mode === mode && (r.variant === 'any' || r.variant === v));
 const GROUPS = [
   ['Factory to gateway', /^factory to/i],
   ['Export handling', /export/i],
   ['Main leg', /voyage|flight/i],
-  ['Import clearance', /import/i],
+  ['Import clearance', /import|customs entry/i],
   ['Gateway to MGI', /to mgi|to factory/i],
   ['MGI receiving', /receiving/i],
 ];
 const group = (steps) => GROUPS.map(([g, re]) => steps.filter((s) => re.test(s[0])).reduce((a, s) => a + s[1], 0));
 const mgiLabel = (m) => D.mgis[m].code;
+const site = (o) => D.origins[o].split(' · ')[0];
+const PNAME = { malacca: 'Malacca', sunda: 'Sunda', ormuz: 'Hormuz', suez: 'Suez', babalmandab: 'Bab-el-Mandeb', gibraltar: 'Gibraltar', south_africa: 'Cape', panama: 'Panama', chili: 'Chile' };
+const RISKY = new Set(['ormuz', 'suez', 'babalmandab']);
+const wavg = (f) => MG.reduce((a, m) => a + f(m) * D.mgis[m].share, 0) / MG.reduce((a, m) => a + D.mgis[m].share, 0);
 
 function kpis() {
   const rs = MG.map((m) => [m, route(S.o, m, S.m)]);
-  const w = rs.reduce((a, [m, r]) => a + r.days * D.mgis[m].share, 0) / rs.reduce((a, [m]) => a + D.mgis[m].share, 0);
+  const w = wavg((m) => route(S.o, m, S.m).days), wcn = wavg((m) => route('CN', m, S.m).days);
   const fast = rs.reduce((a, b) => (b[1].days < a[1].days ? b : a)), slow = rs.reduce((a, b) => (b[1].days > a[1].days ? b : a));
-  const dutyKey = S.o === 'CN' ? 'duty_cn' : 'duty_id';
-  const duty = MG.reduce((a, m) => a + D.mgis[m][dutyKey] * D.mgis[m].share, 0) / MG.reduce((a, m) => a + D.mgis[m].share, 0);
-  const other = S.o === 'CN' ? 'ID' : 'CN';
-  const w2 = MG.reduce((a, m) => a + route(other, m, S.m).days * D.mgis[m].share, 0) / MG.reduce((a, m) => a + D.mgis[m].share, 0);
+  const duty = wavg((m) => D.mgis[m].duty[S.o]);
+  const risky = MG.filter((m) => (route(S.o, m, 'sea').passages || []).some((p) => RISKY.has(p))).reduce((a, m) => a + D.mgis[m].share, 0);
+  const feed = D.feeds[S.o];
   const card = (label, value, sub) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span></div>`;
   R.$('#kpis').innerHTML = [
-    card('Demand-weighted door to MGI', R.num(w, 1) + ' days', `${S.m === 'sea' ? 'ocean' : 'air'} · ${(w - w2 >= 0 ? '+' : '−') + R.num(Math.abs(w - w2), 1)} days vs ${D.origins[other]}`),
+    card('Demand-weighted door to MGI', R.num(w, 1) + ' days', `${S.m === 'sea' ? 'ocean' : 'air'}${S.o === 'CN' ? '' : ` · ${(w - wcn >= 0 ? '+' : '−') + R.num(Math.abs(w - wcn), 1)} days vs China`}`),
     card('Fastest MGI', mgiLabel(fast[0]) + ' · ' + R.num(fast[1].days, 1) + ' d', D.mgis[fast[0]].name),
     card('Slowest MGI', mgiLabel(slow[0]) + ' · ' + R.num(slow[1].days, 1) + ' d', D.mgis[slow[0]].name),
-    card('Demand-weighted import duty', R.num(duty, 1) + '%', 'on laptops from ' + D.origins[S.o].split(' · ')[0]),
-    card('Parts feed to Indonesia', R.num(D.feed[0].days, 1) + ' d sea', `${R.num(D.feed[1].days, 1)} d by air expedite`),
+    card('Demand-weighted import duty', R.num(duty, 1) + '%', 'on laptops assembled in ' + site(S.o)),
+    card('Demand via Red Sea or Hormuz', R.pct(risky), S.v === 'cape' ? 'ocean, Red Sea avoided' : 'ocean, through Suez'),
+    feed ? card('Parts feed from China', R.num(feed[0].days, 1) + ' d sea', `${R.num(feed[1].days, 1)} d by air expedite`) : card('Parts feed from China', '–', 'China builds from its own supply base'),
   ].join('');
 }
 
+const STEP_COLS = (t, mode) => [t.c[6], t.c[4], mode === 'sea' ? t.sea : t.air, t.c[3], t.inland, t.c[5]];
 const cSteps = R.chart('c-steps', (t) => {
   const o = R.base(t), rows = MG.map((m) => group(route(S.o, m, S.m).steps));
-  const cols = [t.c[6], t.c[4], S.m === 'sea' ? t.sea : t.air, t.c[3], t.inland, t.c[5]];
+  const cols = STEP_COLS(t, S.m);
   return {
     ...o,
     tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.num(v, 1) + ' d' },
-    grid: { ...o.grid, top: 40, bottom: 20 },
+    grid: { ...o.grid, top: 54, bottom: 20, right: 50 },
     xAxis: R.axis(t, { type: 'value', name: 'days', nameLocation: 'middle', nameGap: 24 }),
     yAxis: R.axis(t, { type: 'category', inverse: true, data: MG.map(mgiLabel), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 12 } }),
     series: GROUPS.map(([g], i) => ({ type: 'bar', stack: 'd', name: g, barWidth: '58%', itemStyle: { color: cols[i] }, data: rows.map((r) => r[i]) }))
@@ -110,62 +121,78 @@ const cCmp = R.chart('c-cmp', (t) => {
   const o = R.base(t);
   return {
     ...o,
-    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.num(v, 1) + ' d' },
-    grid: { ...o.grid, top: 40 },
-    xAxis: R.axis(t, { type: 'category', data: MG.map(mgiLabel), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 11, interval: 0 } }),
-    yAxis: R.axis(t, { type: 'value' }),
-    series: ['CN', 'ID'].map((og, i) => ({ type: 'bar', name: D.origins[og], barGap: '12%', itemStyle: { color: [t.c[0], t.c[2]][i], opacity: og === S.o ? 1 : .6 },
-      data: MG.map((m) => route(og, m, S.m).days) })),
+    tooltip: { ...o.tooltip, trigger: 'item', formatter: (p) => `${R.esc(p.seriesName)} → ${MG[p.value[1]] ? mgiLabel(MG[p.value[1]]) : ''}<br><b>${R.num(p.value[0], 1)} d</b>` },
+    grid: { ...o.grid, top: 54, bottom: 20 },
+    legend: { ...o.legend, data: ORG.map(site) },
+    xAxis: R.axis(t, { type: 'value', name: 'days', nameLocation: 'middle', nameGap: 24, min: 0 }),
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: MG.map(mgiLabel), splitLine: { show: true, lineStyle: { color: t.rule, type: [2, 4] } }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 12 } }),
+    series: ORG.map((og) => ({ type: 'scatter', name: site(og), symbolSize: og === S.o ? 14 : 9, z: og === S.o ? 5 : 2,
+      itemStyle: { color: t.c[COL[og]], opacity: og === S.o ? 1 : 0.65, borderColor: t.panel, borderWidth: 1 },
+      data: MG.map((m, j) => [route(og, m, S.m).days, j]) })),
   };
 });
 
 const cScatter = R.chart('c-scatter', (t) => {
   const o = R.base(t);
-  const pts = (og, i) => MG.map((m) => ({ name: mgiLabel(m), value: [route(og, m, 'sea').days, D.mgis[m][og === 'CN' ? 'duty_cn' : 'duty_id'], D.mgis[m].share] }));
+  const pts = (og) => MG.map((m) => ({ name: mgiLabel(m), value: [route(og, m, 'sea').days, D.mgis[m].duty[og], D.mgis[m].share] }));
   return {
     ...o,
-    tooltip: { ...o.tooltip, trigger: 'item', formatter: (p) => R.tip(t, [[p.color, 'Door to MGI', R.num(p.value[0], 1) + ' d'], [p.color, 'Import duty', R.num(p.value[1], 1) + '%'], [p.color, 'Demand share', R.pct(p.value[2])]], p.name + ' · ' + p.seriesName) },
-    grid: { ...o.grid, top: 40, bottom: 18, right: 40 },
-    xAxis: R.axis(t, { type: 'value', name: 'days door to MGI (ocean)', nameLocation: 'middle', nameGap: 26, scale: true }),
-    yAxis: R.axis(t, { type: 'value', min: 0, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => v + '%' } }),
-    series: ['CN', 'ID'].map((og, i) => ({ type: 'scatter', name: D.origins[og], data: pts(og, i), symbolSize: (v) => 10 + 60 * v[2],
-      itemStyle: { color: [t.c[0], t.c[2]][i], opacity: .75, borderColor: t.panel, borderWidth: 1 },
+    tooltip: { ...o.tooltip, trigger: 'item', formatter: (p) => R.tip(t, [[p.color, 'Door to MGI', R.num(p.value[0], 1) + ' d'], [p.color, 'Import duty', R.num(p.value[1], 1) + '%'], [p.color, 'Demand share', R.pct(p.value[2])]], p.name + ' · from ' + p.seriesName) },
+    grid: { ...o.grid, top: 54, bottom: 18, right: 40 },
+    legend: { ...o.legend, data: ORG.map(site) },
+    xAxis: R.axis(t, { type: 'value', name: 'days door to MGI (ocean)', nameLocation: 'middle', nameGap: 26, min: 0 }),
+    yAxis: R.axis(t, { type: 'value', min: 0, max: 20, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => v + '%' } }),
+    series: ORG.map((og) => ({ type: 'scatter', name: site(og), data: pts(og), symbolSize: (v) => 8 + 60 * v[2], z: og === S.o ? 5 : 2,
+      itemStyle: { color: t.c[COL[og]], opacity: og === S.o ? 0.9 : 0.35, borderColor: t.panel, borderWidth: 1 },
       label: { show: og === S.o, formatter: '{b}', position: 'top', color: t.ink2, fontFamily: t.fMono, fontSize: 11 }, labelLayout: { hideOverlap: true } })),
   };
 });
 
 const cFeed = R.chart('c-feed', (t) => {
-  const o = R.base(t), rows = D.feed.map((f) => group(f.steps));
-  const cols = [t.c[6], t.c[4], t.sea, t.c[3], t.inland, t.c[5]];
+  const o = R.base(t), F = ORG.filter((og) => D.feeds[og]), rows = F.map((og) => group(D.feeds[og][0].steps));
+  const cols = STEP_COLS(t, 'sea');
   return {
     ...o,
-    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.num(v, 1) + ' d' },
-    grid: { ...o.grid, top: 8, bottom: 20 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => R.tip(t, ps.filter((p) => p.value > 0).map((p) => [p.color, p.seriesName, R.num(p.value, 1) + ' d']).concat([[t.air, 'Air expedite instead', R.num(D.feeds[F[ps[0].dataIndex]][1].days, 1) + ' d']]), 'Parts to ' + D.origins[F[ps[0].dataIndex]]) },
+    grid: { ...o.grid, top: 8, bottom: 20, right: 50 },
     legend: { show: false },
     xAxis: R.axis(t, { type: 'value', name: 'days', nameLocation: 'middle', nameGap: 24 }),
-    yAxis: R.axis(t, { type: 'category', inverse: true, data: D.feed.map((f) => f.name.startsWith('Air') ? 'Air expedite' : 'Ocean'), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12 } }),
-    series: GROUPS.map(([g], i) => ({ type: 'bar', stack: 'f', name: g, barWidth: '50%', itemStyle: { color: cols[i] }, data: rows.map((r) => r[i]) })),
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: F.map(site), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12 } }),
+    series: GROUPS.map(([g], i) => ({ type: 'bar', stack: 'f', name: g, barWidth: '55%', itemStyle: { color: cols[i] },
+      data: rows.map((r, k) => ({ value: r[i], itemStyle: { opacity: F[k] === S.o || S.o === 'CN' ? 1 : 0.45 } })) }))
+      .concat([{ type: 'bar', stack: 'f', name: 'total', data: F.map(() => 0.001), itemStyle: { color: 'transparent' }, tooltip: { show: false },
+        label: { show: true, position: 'right', color: t.ink, fontFamily: t.fMono, fontSize: 12, formatter: (p) => R.num(D.feeds[F[p.dataIndex]][0].days, 1) + ' d' } }]),
   };
 });
 
 function table() {
-  const air = (o, m) => route(o, m, 'air').days;
-  R.$('#t-lanes').innerHTML = '<thead><tr><th class="txt">MGI</th><th>Demand</th><th class="txt">Gateways</th><th>Ocean CN</th><th>Ocean ID</th><th>Air CN</th><th>Air ID</th><th>Ocean nm (CN)</th><th>Duty CN / ID</th><th class="txt">Other barriers</th></tr></thead><tbody>' +
-    MG.map((m) => { const g = D.mgis[m], rc = route('CN', m, 'sea'), ri = route('ID', m, 'sea');
-      return `<tr><td class="txt"><b>${g.code}</b><small>${R.esc(g.name)}</small></td><td>${R.pct(g.share)}</td><td class="txt">${R.esc(g.port)}<small>${g.airport} air</small></td><td>${R.num(rc.days, 1)} d</td><td>${R.num(ri.days, 1)} d</td><td>${R.num(air('CN', m), 1)} d</td><td>${R.num(air('ID', m), 1)} d</td><td>${R.num(rc.nm || 0)}</td><td>${g.duty_cn}% / ${g.duty_id}%</td><td class="txt" style="max-width:300px;font-size:12px">${R.esc(g.barrier || '–')}</td></tr>`; }).join('') + '</tbody>';
+  const uniq = (d) => { const v = [...new Set(ORG.map((o) => d[o]))]; return v.length === 1 ? v[0] + '%' : ORG.filter((o) => d[o] !== d.CN).length ? `${d.CN}%; ${ORG.filter((o) => d[o] !== d.CN).map((o) => `${o} ${d[o]}%`).join(', ')}` : v.join('/'); };
+  R.$('#h-ledger').textContent = `${S.m === 'sea' ? 'Ocean' : 'Air'} days from every site · straits and nautical miles for ${site(S.o)} · demand share from the market plan`;
+  R.$('#t-lanes').innerHTML = '<thead><tr><th class="txt">MGI</th><th>Demand</th><th class="txt">Gateways</th>' +
+    ORG.map((o) => `<th class="${o === S.o ? 'selo' : ''}">${o}<small>${S.m === 'sea' ? 'ocean' : 'air'} d</small></th>`).join('') +
+    `<th>Ocean nm<small>from ${S.o}</small></th><th class="txt">Straits<small>from ${S.o}, ocean</small></th><th class="txt">Duty on laptops</th><th class="txt">Other barriers</th></tr></thead><tbody>` +
+    MG.map((m) => {
+      const g = D.mgis[m], rs = route(S.o, m, 'sea');
+      const ps = (rs.passages || []).map((p) => `<span class="chip${RISKY.has(p) ? ' bad' : ''}">${PNAME[p] || p}</span>`).join('');
+      const days = ORG.map((o) => { const r = route(o, m, S.m); return `<td class="${[o === S.o ? 'selo' : '', r.domestic ? 'dom' : ''].join(' ')}" title="${R.esc(D.origins[o])} → ${g.code}${r.domestic ? ' · same country, by truck' : ''}">${R.num(r.days, 1)}</td>`; }).join('');
+      return `<tr><td class="txt"><b>${g.code}</b><small>${R.esc(g.name)}</small></td><td>${R.pct(g.share)}</td><td class="txt">${R.esc(g.port)}<small>${g.airport} air</small></td>${days}<td>${rs.domestic ? '–' : R.num(rs.nm || 0)}</td><td class="txt"><div class="pass">${ps || (rs.domestic ? '<span class="hint">truck</span>' : '–')}</div></td><td class="txt">${uniq(g.duty)}</td><td class="txt" style="max-width:280px;font-size:12px">${R.esc(g.barrier || '–')}</td></tr>`;
+    }).join('') + '</tbody>';
 }
 
 function insight() {
-  const eu = (o, v) => route(o, 'M_EU', 'sea', v).days, us = (o) => route(o, 'M_US', 'sea').days;
+  const d = (o, m, v) => route(o, m, 'sea', v).days;
+  const wa = (o) => wavg((m) => route(o, m, 'sea').days);
+  const ranked = ORG.slice().sort((a, b) => wa(a) - wa(b));
+  const hormuz = ORG.filter((o) => MG.every((m) => { const r = route(o, m, 'sea', 'cape'); return r.domestic || (r.passages || []).includes('ormuz'); }));
   R.$('#insight').innerHTML = `
-    <p><b>Moving production south trades Pacific days for Europe days.</b> Indonesia adds ${R.num(us('ID') - us('CN'), 1)} days to the US by sea but saves ${R.num(eu('CN', 'cape') - eu('ID', 'cape'), 1)} days to Europe around the Cape.</p>
-    <p>The Red Sea choice matters more for Europe than the origin does: Suez would save ${R.num(eu('CN', 'cape') - eu('CN', 'suez'), 1)} days from China. With laptop duty at zero in the US, EU, UK and Japan today, only Brazil's duty separates the markets; that changes at once if a US tariff on China-origin laptops returns.</p>`;
+    <p><b>No site is fastest everywhere.</b> Weighted by demand, ${site(ranked[0])} is closest to the market (${R.num(wa(ranked[0]), 1)} days by sea) and ${site(ranked[ranked.length - 1])} furthest (${R.num(wa(ranked[ranked.length - 1]), 1)} days). Moving south from China costs Pacific days for the US (Vietnam +${R.num(d('VN', 'M_US') - d('CN', 'M_US'), 1)}, Indonesia +${R.num(d('ID', 'M_US') - d('CN', 'M_US'), 1)}) and saves Europe days (Malaysia −${R.num(d('CN', 'M_EU', 'cape') - d('MY', 'M_EU', 'cape'), 1)} around the Cape). Every non-China site also waits ${R.num(Math.min(...ORG.filter((o) => D.feeds[o]).map((o) => D.feeds[o][0].days)), 0)}–${R.num(Math.max(...ORG.filter((o) => D.feeds[o]).map((o) => D.feeds[o][0].days)), 0)} days for parts from China before it can build.</p>
+    <p><b>Chokepoints.</b> ${hormuz.length ? `${hormuz.map(site).join(' and ')} ship${hormuz.length === 1 ? 's' : ''} through the Strait of Hormuz on every ocean lane. ` : ''}Through Suez, China to Europe would save ${R.num(d('CN', 'M_EU', 'cape') - d('CN', 'M_EU', 'suez'), 1)} days. Brazil and the UAE serve their own markets by truck in two to four days, which is their main advantage besides duty.</p>`;
 }
 
 function draw() {
   R.save(S);
-  R.$('#h-steps').textContent = `${D.origins[S.o]} · ${S.m === 'sea' ? 'ocean, ' + (S.v === 'cape' ? 'Cape' : 'Suez') + ' to Europe' : 'air'}`;
-  R.$('#h-cmp').textContent = `${S.m === 'sea' ? 'Ocean' : 'Air'} days door to MGI`;
+  R.$('#h-steps').textContent = `${D.origins[S.o]} · ${S.m === 'sea' ? 'ocean, Red Sea ' + (S.v === 'cape' ? 'avoided' : 'open') : 'air'}`;
+  R.$('#h-cmp').textContent = `${S.m === 'sea' ? 'Ocean' : 'Air'} days door to MGI · selected site larger`;
   kpis(); table(); insight();
   [cSteps, cCmp, cScatter, cFeed].forEach(R.update);
 }

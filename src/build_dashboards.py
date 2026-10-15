@@ -8,11 +8,14 @@ Build the linked report pages in docs/ from the model modules.
   docs/transfer.html         Module 2: cutover week sweep, tariff vs MWD
   docs/business-case.html    Module 3: Monte Carlo, waterfall, tornado, break-even curve
   docs/finished-goods.html   Module 4: sales volume lock, price protection, excess disposition
+  docs/fg-live.html          Module 4 simulator: every input as a slider or a range, re-run live
+  docs/footprint.html        Module 7: six sites, nine markets, real duties, footprints live
   docs/rules.html            Rules register, numbers and question log from ASSUMPTIONS.md
 
 Each page is one self-contained HTML file: data embedded as JSON, charts drawn with
-ECharts from cdnjs. Scenario grids are precomputed here, so slicers on the page only
-filter (as in a BI report); nothing is re-simulated in the browser.
+ECharts from cdnjs. Scenario grids are precomputed here, so slicers on most pages only
+filter (as in a BI report). The two studio pages (fg-live, footprint) embed a JavaScript
+port of their model and recompute in the browser; tests/ check the ports match Python.
 
 Run:  python3 src/build_dashboards.py            (about two minutes; Module 4 grid dominates)
       PREVIEW_DIR=/some/dir python3 src/build_dashboards.py   also writes the overview as a
@@ -28,6 +31,7 @@ from multiprocessing import Pool
 
 import business_case as BC
 import finished_goods as FG
+import footprint as FP
 import mwd_engine as E
 import scenarios as SC
 import site_chrome as S
@@ -234,23 +238,23 @@ def data_fg(pool):
 def data_lanes():
     with open(os.path.join(DATA, "network.json"), encoding="utf-8") as f:
         net = json.load(f)
-    share = {}
-    mgi_of = {"US": "M_US", "UK": "M_UK", "FR": "M_EU", "DE": "M_EU", "JP": "M_JP", "BR": "M_BR"}
-    for r in read_csv("locales.csv"):
-        share[mgi_of[r["locale"]]] = share.get(mgi_of[r["locale"]], 0) + float(r["share"])
+    origins = list(net["origins"])
+    weekly = {r["mgi"]: float(r["weekly_units"]) for r in read_csv("markets.csv")}
+    tot = sum(weekly.values()) or 1.0
     mgis = {}
     for m, v in net["mgis"].items():
         n = net["nodes"][m]
         t = net["tariffs"][v["tkey"]]
         mgis[m] = {"code": n["code"], "name": n["name"], "tkey": v["tkey"], "country": t["country"],
-                   "duty_cn": float(t["duty_cn_origin_pct"]), "duty_id": float(t["duty_id_origin_pct"]),
+                   "duty": {o: float(t[f"duty_{o.lower()}_origin_pct"]) for o in origins},
                    "barrier": t.get("other_barrier") or "", "note": t.get("note") or "",
-                   "share": round(share.get(m, 0), 3), "port": net["nodes"][v["port"]]["name"],
+                   "share": round(weekly.get(m, 0) / tot, 4), "port": net["nodes"][v["port"]]["name"],
                    "airport": net["nodes"][v["airport"]]["code"]}
-    routes = [{k: r[k] for k in ("origin", "mgi", "mode", "variant", "km", "nm", "steps", "days")
+    routes = [{k: r[k] for k in ("origin", "mgi", "mode", "variant", "km", "nm", "steps", "days", "passages", "domestic")
                if k in r} for r in net["routes"]]
-    return {"mgis": mgis, "routes": routes, "feed": [{k: f[k] for k in ("name", "steps", "days")}
-                                                      for f in net["feed"]],
+    feeds = {o: [{k: f[k] for k in ("name", "steps", "days", "passages") if k in f} for f in fs]
+             for o, fs in net["feeds"].items()}
+    return {"mgis": mgis, "routes": routes, "feeds": feeds,
             "origins": {k: v["label"] for k, v in net["origins"].items()},
             "params": read_csv("leadtime_params.csv")}
 
@@ -319,18 +323,32 @@ def data_rules():
 
 # ----------------------------------------------------------------------------- overview
 ROADMAP = [
-    ("Modules 1–3 + atlas", "MWD, transfer timing, business case, network map", "done"),
-    ("A · Core loop", "A1 finished goods (done) · A2 demand & KPI · A3 ramp & risk board · A4 integrated run", "active"),
-    ("B · Breadth", "AI servers, more origins and markets, rail and sea-air", "next"),
-    ("C · Decision engine", "Network MILP, inventory policy, forecast module", "next"),
-    ("D · Risk and cost", "Disruption Monte Carlo, carbon per lane, landed cost", "next"),
+    ("Modules 1–4 + atlas", "MWD, transfer timing, business case, finished goods, network map", "done"),
+    ("Module 7 · Footprint", "Six sites, nine markets, real duties, origin by main board, build now or wait", "done"),
+    ("A · Core loop", "A2 demand & KPI · A3 ramp & risk board · A4 integrated run", "active"),
+    ("B · Breadth", "AI servers, rail and sea-air (more origins and markets done)", "next"),
+    ("C · Decision engine", "Inventory policy, forecast module (footprint optimiser done)", "next"),
+    ("D · Risk and cost", "Disruption Monte Carlo, carbon per lane (landed cost done)", "next"),
     ("E · Calibration", "Replace placeholders, scheduled data refresh", "next"),
-    ("F · Product", "Scenario explorer, BI exports, tests and CI", "next"),
+    ("F · Product", "Two live studios done · BI exports, CI", "active"),
     ("G · Packaging", "Case studies, methodology note", "next"),
 ]
 
 
-def data_overview(mwd, tr, bc, fg, lanes, rules):
+def data_fp_summary():
+    inp = FP.fp_input()
+    rows = FP.footprints(inp, inp["P"], inp["sites"], "cape")
+    name = lambda r: " + ".join(r["open"]) + (" · own boards" if r["board"] else "")
+    rob = min(rows, key=lambda r: r["regret"])
+    hedge = min((r for r in rows if not r["is_base"] and FP.tipping_weight(r, inp["scenarios"], "cn301", inp["P"]["horizon_years"])),
+                key=lambda r: FP.tipping_weight(r, inp["scenarios"], "cn301", inp["P"]["horizon_years"]))
+    return {"best": name(rows[0]), "best_expected": rows[0]["expected"], "robust": name(rob),
+            "robust_regret": rob["regret"], "hedge": name(hedge),
+            "hedge_weight": FP.tipping_weight(hedge, inp["scenarios"], "cn301", inp["P"]["horizon_years"]),
+            "n": len(rows)}
+
+
+def data_overview(mwd, tr, bc, fg, lanes, rules, fp):
     sc = {s["code"]: s["summary"] for s in mwd["scenarios"]}
     route = lambda o, m, v="any": next(r for r in lanes["routes"] if r["origin"] == o and r["mgi"] == m
                                        and r["mode"] == "sea" and r["variant"] in (v, "any"))
@@ -355,6 +373,7 @@ def data_overview(mwd, tr, bc, fg, lanes, rules):
         "fg": {s: {"avoidable": fgk(s)["avoidable_cost_usd"][0], "protection": fgk(s)["price_protection_usd"][0],
                    "excess": fgk(s)["excess_units"][0], "lost": fgk(s)["lost_units"][0],
                    "mwd": fgk(s)["mwd_usd"][0]} for s in fg["strategies"]},
+        "fp": fp,
         "status_counts": counts, "open_questions": open_q[:3],
         "roadmap": [{"name": a, "scope": b, "state": c} for a, b, c in ROADMAP],
     }
@@ -367,6 +386,9 @@ def render(page_file, key, title_tag, data, extra_head=""):
             .replace("/*__CSS__*/", S.read("report.css") + "\n" + S.read("chrome.css"))
             .replace("<!--__NAV__-->", S.nav_html(key))
             .replace("/*__JS__*/", S.read("report.js"))
+            .replace("/*__SIMCSS__*/", S.read("sim.css"))
+            .replace("/*__ENGINE__*/", S.read("fg_engine.js"))
+            .replace("/*__FPENGINE__*/", S.read("fp_engine.js"))
             .replace("/*__DATA__*/null", json.dumps(data, separators=(",", ":"), ensure_ascii=False)
                      .replace("</", "<\\/"))
             .replace("__TODAY__", TODAY))
@@ -396,11 +418,14 @@ def main():
             with open(cache, "w", encoding="utf-8") as f:
                 json.dump([fg, bc], f)
     mwd, tr, lanes, rules = data_mwd(), data_transfer(), data_lanes(), data_rules()
-    ov = data_overview(mwd, tr, bc, fg, lanes, rules)
+    ov = data_overview(mwd, tr, bc, fg, lanes, rules, data_fp_summary())
     for page_file, key, data in [
         ("index.html", "overview", ov), ("lanes.html", "lanes", lanes), ("mwd.html", "mwd", mwd),
         ("transfer.html", "transfer", tr), ("business-case.html", "business", bc),
         ("finished-goods.html", "fg", fg), ("rules.html", "rules", rules),
+        ("fg-live.html", "fglive", {"input": FG.engine_input(), "ranges": read_csv("fg_ranges.csv"),
+                                    "params": read_csv("fg_params.csv")}),
+        ("footprint.html", "footprint", {"input": FP.fp_input()}),
     ]:
         n = render(page_file, key, None, data)
         print(f"  docs/{page_file:<22}{n / 1e3:>8.0f} kB")

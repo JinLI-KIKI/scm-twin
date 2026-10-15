@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Finished Goods Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
+<style>/* Layout: a BI-style report. Sticky page tabs on top; under them a header, a slicer bar,
+   a row of KPI cards, then a 12-column canvas of visual containers. One column on phones.
+   Tokens match the network atlas so every page reads as one product. */
+:root {
+  --paper: #f6f7f5; --panel: #fbfcfb; --ink: #14181c; --ink-2: #4a525a; --muted: #6f777e;
+  --rule: #d9dde0; --chip: #eceeec; --hl: #fff3c4;
+  --sea: #2a78d6; --air: #eb6834; --inland: #1baf7a;
+  --d0: #9d90e6; --d5: #7464d9; --d16: #4a3aa7;
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #7464d9; --c5: #c9940f; --c6: #c2417a; --c7: #8a939a;
+  --good: #16794c; --warn: #9a6408; --bad: #b8322a;
+  --good-bg: #e3f2ea; --warn-bg: #f7eedb; --bad-bg: #f8e4e1;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+    --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+    --sea: #3987e5; --air: #d95926; --inland: #199e70;
+    --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+    --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+    --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+    --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+  --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+  --sea: #3987e5; --air: #d95926; --inland: #199e70;
+  --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+  --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+  --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+  --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font: 14px/1.5 var(--f-body); margin: 0; }
+a { color: inherit; }
+
+.report { max-width: 1440px; margin: 0 auto; display: grid; gap: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 40px; }
+.report-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 6px 24px; }
+.report-head > div { min-width: 0; }
+.eyebrow { font: 500 12px var(--f-mono); color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin: 0 0 4px; }
+h1 { font: 600 34px/1.02 var(--f-display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--ink-2); margin: 6px 0 0; max-width: 78ch; }
+.asof { font: 12px var(--f-mono); color: var(--muted); text-align: right; }
+
+/* slicers */
+.slicers { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end;
+  padding: 10px 14px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+.slicer { display: grid; gap: 4px; min-width: 0; }
+.slicer > .s-label { font-size: 12px; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-body); color: var(--ink-2); background: transparent; border: 0;
+  padding: 5px 11px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button:hover { background: var(--chip); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.range { display: flex; align-items: center; gap: 10px; }
+.range input[type="range"] { width: min(260px, 60vw); accent-color: var(--sea); }
+.range output { font: 600 18px var(--f-display); min-width: 3.4em; font-variant-numeric: tabular-nums; }
+input[type="search"] { font: 13px var(--f-body); color: var(--ink); background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 5px 10px; width: min(280px, 70vw); }
+button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+
+/* KPI cards */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .k-value { font-size: 24px; } .kpi { padding: 8px 10px 10px; } }
+.kpi { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px 12px;
+  display: grid; gap: 2px; align-content: start; min-width: 0; }
+.k-label { font-size: 12px; color: var(--muted); }
+.k-value { font: 600 30px/1.08 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.k-sub { font: 12px/1.4 var(--f-mono); color: var(--ink-2); overflow-wrap: anywhere; }
+.k-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+/* canvas of visuals */
+.canvas { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+.viz { grid-column: span 6; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.viz.w3 { grid-column: span 3; } .viz.w4 { grid-column: span 4; } .viz.w5 { grid-column: span 5; } .viz.w6 { grid-column: span 6; }
+.viz.w7 { grid-column: span 7; } .viz.w8 { grid-column: span 8; } .viz.w12 { grid-column: span 12; }
+.viz-h { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.viz-h h2 { font: 600 15px/1.2 var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.hint { font-size: 12px; color: var(--muted); }
+.chart { width: 100%; height: 300px; min-width: 0; }
+.chart.short { height: 230px; } .chart.tall { height: 380px; } .chart.xtall { height: 460px; }
+.chart .nolib { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 13px; text-align: center; padding: 12px; }
+@media (max-width: 1180px) { .viz.w3, .viz.w4, .viz.w5 { grid-column: span 6; } .viz.w7, .viz.w8 { grid-column: span 12; } }
+@media (max-width: 860px) { .viz, .viz.w3, .viz.w4, .viz.w5, .viz.w6, .viz.w7, .viz.w8 { grid-column: span 12; } h1 { font-size: 28px; } .asof { text-align: left; } }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; min-width: 0; }
+table.tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.tbl th { font: 500 11px var(--f-body); color: var(--muted); text-align: right; padding: 0 8px 6px; border-bottom: 1px solid var(--rule);
+  letter-spacing: .03em; white-space: nowrap; }
+.tbl td { padding: 7px 8px; border-bottom: 1px solid var(--rule); text-align: right; font: 13px var(--f-mono); vertical-align: top; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; padding-left: 0; }
+.tbl td.txt, .tbl th.txt { text-align: left; font-family: var(--f-body); }
+.tbl tr.sel td { background: var(--hl); }
+.tbl tr.click { cursor: pointer; }
+.tbl tr.click:hover td { background: var(--chip); }
+.tbl td small { display: block; font: 12px var(--f-body); color: var(--muted); }
+.bar-cell { position: relative; }
+.bar-cell i { position: absolute; left: 0; top: 4px; bottom: 4px; background: var(--chip); border-radius: 2px; z-index: 0; }
+.bar-cell span { position: relative; z-index: 1; }
+
+/* chips and notes */
+.chip { display: inline-block; font: 500 11px/1.6 var(--f-body); padding: 0 7px; border-radius: 10px; white-space: nowrap;
+  border: 1px solid var(--rule); color: var(--ink-2); background: var(--paper); }
+.chip.good { color: var(--good); background: var(--good-bg); border-color: transparent; }
+.chip.warn { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.bad { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.prac { color: var(--c1); border-color: var(--c1); }
+.chip.web { color: var(--c3); border-color: var(--c3); }
+.chip.ph { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.open { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.ill, .chip.design { color: var(--muted); }
+.insight { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--ink-2);
+  background: var(--panel); display: grid; gap: 4px; }
+.insight b { color: var(--ink); font-weight: 600; }
+.insight p { margin: 0; }
+.notes { font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.notes p { margin: 0; max-width: 100ch; }
+.notes a, .tbl a, .insight a { color: var(--ink-2); overflow-wrap: anywhere; }
+code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border-radius: 3px; }
+.legend-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.sw { width: 12px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+
+/* Top navigation shared by every page, including the atlas. Uses the page's own tokens. */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1200; display: flex; align-items: stretch; gap: 14px;
+  height: 46px; background: var(--panel); border-bottom: 1px solid var(--rule); box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topbar .brand { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; flex: none;
+  font: 500 13px var(--f-mono); }
+.topbar .brand-mark { width: 12px; height: 12px; background: var(--ink); border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--ink); box-sizing: border-box; }
+.topbar .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
+.topbar .tabs::-webkit-scrollbar { display: none; }
+.topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
+  font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
+.topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
+.topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }
+.topbar .repo:hover { color: var(--ink); }
+@media (max-width: 560px) { .topbar .repo { display: none; } .topbar .brand-name { display: none; } }
+
+/* Layout: inputs on the left (scrolls on its own), results on the right; inputs fold above results on phones. */
+.sim { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 14px; align-items: start; }
+.inputs { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); max-height: calc(100vh - 72px); overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px 14px; display: grid; gap: 4px; }
+.inputs-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--rule); }
+.inputs-h h2 { font: 600 15px var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.btn { font: 500 12px var(--f-body); color: var(--ink-2); background: transparent; border: 1px solid var(--rule); border-radius: 5px; padding: 3px 9px; cursor: pointer; }
+.btn:hover { background: var(--chip); color: var(--ink); }
+details.grp { border-bottom: 1px solid var(--rule); padding: 6px 0; }
+details.grp > summary { cursor: pointer; font: 600 13px var(--f-body); color: var(--ink); list-style: none; display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; }
+details.grp > summary::-webkit-details-marker { display: none; }
+details.grp > summary::after { content: '+'; color: var(--muted); font-family: var(--f-mono); }
+details.grp[open] > summary::after { content: '–'; }
+details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); margin-left: auto; margin-right: 8px; }
+.prm { display: grid; gap: 2px; padding: 7px 0 6px; }
+.prm + .prm { border-top: 1px dashed var(--rule); }
+.prm-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.prm-h label { font-size: 12.5px; color: var(--ink-2); line-height: 1.3; }
+.prm-h output { font: 500 13px var(--f-mono); color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.prm.changed .prm-h output { color: var(--c2); }
+.prm input[type="range"] { width: 100%; accent-color: var(--sea); margin: 2px 0 0; }
+.prm-meta { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.prm-meta .rst { font: 11px var(--f-body); color: var(--c2); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+.prm-r { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.prm-r input { width: 72px; font: 12px var(--f-mono); color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 5px; }
+.prm-r.off { opacity: .45; }
+.results { display: grid; gap: 12px; min-width: 0; }
+.ctrl { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end; padding: 10px 14px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+.status { font: 12px var(--f-mono); color: var(--muted); margin-left: auto; align-self: center; }
+.status.busy::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c2); margin-right: 6px; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .status.busy::before { animation: none; } }
+.k-delta { font: 12px var(--f-mono); }
+.k-delta.up { color: var(--bad); } .k-delta.down { color: var(--good); } .k-delta.flat { color: var(--muted); }
+.state-ctl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.state-ctl input[type="range"] { flex: 1 1 220px; accent-color: var(--ink); }
+.state-ctl .wk { font: 600 18px var(--f-display); min-width: 4.5em; }
+.phase { font-size: 13px; color: var(--ink-2); }
+#state svg { width: 100%; height: auto; display: block; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { font: 12px var(--f-body); border: 1px solid var(--rule); background: var(--paper); color: var(--ink-2); border-radius: 12px; padding: 2px 9px; cursor: pointer; }
+.chips button:hover { border-color: var(--c2); color: var(--ink); }
+.mobile-toggle { display: none; }
+@media (max-width: 980px) {
+  .sim { grid-template-columns: 1fr; }
+  .inputs { position: static; max-height: none; }
+  .inputs.folded .grp { display: none; }
+  .mobile-toggle { display: inline-block; }
+}
+
+</style>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
+  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html">Overview</a><a class="tab" href="atlas.html">Network atlas</a><a class="tab" href="lanes.html">Lanes & lead time</a><a class="tab" href="mwd.html">MWD</a><a class="tab" href="transfer.html">Transfer timing</a><a class="tab" href="business-case.html">Business case</a><a class="tab" href="finished-goods.html">Finished goods</a><a class="tab" href="fg-live.html" aria-current="page">FG simulator</a><a class="tab" href="footprint.html">Footprint</a><a class="tab" href="rules.html">Rules register</a></nav>
+  <a class="repo" href="https://github.com/jinli-kiki/scm-twin">GitHub</a>
+</header>
+<script>(function(){var a=document.querySelector(".topbar .tab[aria-current]");if(a){var n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.clientWidth)/2;}})();</script>
+
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Module 4 · live model</p>
+      <h1>Finished Goods Simulator</h1>
+      <p class="sub">Move any input and the model runs again in your browser. It is the same engine as the Python model: for the same seed both give identical results, checked automatically. Switch inputs to ranges to let the uncertainty run through the Monte Carlo.</p>
+    </div>
+    <div class="asof">Built 2026-10-15 · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/finished_goods.md">formulas</a></div>
+  </div>
+
+  <div class="sim">
+    <aside class="inputs" id="inputs" aria-label="Model inputs">
+      <div class="inputs-h">
+        <h2>Inputs</h2>
+        <span><button type="button" class="btn mobile-toggle" id="fold">Show inputs</button> <button type="button" class="btn" id="reset">Reset all</button></span>
+      </div>
+      <div id="groups"></div>
+    </aside>
+
+    <div class="results">
+      <section class="ctrl" aria-label="Scenario">
+        <div class="slicer"><span class="s-label" id="l-s">Strategy</span><div class="seg" role="group" aria-labelledby="l-s" id="f-s"></div></div>
+        <div class="slicer"><span class="s-label" id="l-c">US duty and MGI customs status</span><div class="seg" role="group" aria-labelledby="l-c" id="f-c"></div></div>
+        <div class="slicer"><span class="s-label" id="l-m">Inputs as</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
+        <div class="slicer"><span class="s-label" id="l-r">Monte Carlo runs</span><div class="seg" role="group" aria-labelledby="l-r" id="f-r"></div></div>
+        <div class="slicer"><span class="s-label" id="l-v">Whose cost</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
+        <span class="status" id="status" aria-live="polite">Starting…</span>
+      </section>
+
+      <div class="chips" id="changed" aria-label="Changed inputs"></div>
+      <section class="kpis" id="kpis" aria-live="polite"></section>
+
+      <section class="canvas">
+        <div class="viz w12">
+          <div class="viz-h"><h2>Supply chain state</h2><span class="hint" id="h-state"></span></div>
+          <div class="state-ctl">
+            <button type="button" class="btn" id="play" aria-pressed="false">Play</button>
+            <span class="wk" id="wk">Week 0</span>
+            <input type="range" id="week" min="0" max="39" value="0" aria-label="Week">
+          </div>
+          <p class="phase" id="phase"></p>
+          <div id="state" role="img" aria-label="Stock and flow at the chosen week"></div>
+        </div>
+        <div class="viz w12">
+          <div class="viz-h"><h2>Week by week</h2><span class="hint">Mean of all runs · the dashed line is the week shown above</span></div>
+          <div id="c-week" class="chart tall"></div>
+        </div>
+        <div class="viz w12">
+          <div class="viz-h"><h2 id="h-stack">All strategies under these inputs</h2><span class="hint">Mean of all runs · click a bar to select it</span></div>
+          <div id="c-stack" class="chart"></div>
+        </div>
+      </section>
+
+      <footer class="notes">
+        <p><b>How to read it.</b> Values on the left are the model's current inputs; an orange value differs from the base case in <code>data/fg_params.csv</code>. In range mode each run draws every input with a range from a triangular distribution between its low and high, peaking at the slider value, so the P10–P90 bands widen with what is not known. Inputs that change the calendar (build-to-MGI weeks, tail weeks, MGI cover) stay fixed in range mode.</p>
+        <p><b>Engine.</b> <code>src/dash/fg_engine.js</code> is a line-by-line port of <code>src/finished_goods.py</code> with the same random numbers; <code>tests/test_fg_parity.py</code> checks they agree for every strategy. Rules behind each step are in the <a href="rules.html">Rules register</a>; the formulas are written out in <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/finished_goods.md">docs/models/finished_goods.md</a>.</p>
+      </footer>
+    </div>
+  </div>
+</main>
+<script>/* Shared helpers for the report pages: theme-aware ECharts, number formats, slicers. */
+const R = (() => {
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const theme = () => ({
+    ink: css('--ink'), ink2: css('--ink-2'), muted: css('--muted'), rule: css('--rule'),
+    panel: css('--panel'), paper: css('--paper'), chip: css('--chip'), hl: css('--hl'),
+    c: [1, 2, 3, 4, 5, 6, 7].map((i) => css('--c' + i)),
+    sea: css('--sea'), air: css('--air'), inland: css('--inland'),
+    d0: css('--d0'), d5: css('--d5'), d16: css('--d16'),
+    good: css('--good'), warn: css('--warn'), bad: css('--bad'),
+    fBody: css('--f-body'), fMono: css('--f-mono'), fDisp: css('--f-display'),
+  });
+
+  // ---------- numbers
+  const usd = (v, d) => {
+    if (v == null || isNaN(v)) return '–';
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e9) return s + '$' + (a / 1e9).toFixed(d ?? 2) + 'B';
+    if (a >= 1e6) return s + '$' + (a / 1e6).toFixed(d ?? 2) + 'M';
+    if (a >= 1e3) return s + '$' + (a / 1e3).toFixed(d ?? 0) + 'k';
+    return s + '$' + a.toFixed(0);
+  };
+  const num = (v, d = 0) => (v == null || isNaN(v)) ? '–' :
+    (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+  const kunits = (v) => Math.abs(v) >= 1e3 ? num(v / 1e3, 1) + 'k' : num(v);
+  const pct = (v, d = 0) => (v == null || isNaN(v)) ? '–' : (v * 100).toFixed(d) + '%';
+  const axUsd = (v) => usd(v, Math.abs(v) >= 1e6 ? 1 : 0);
+
+  // ---------- charts
+  const charts = [];
+  const hasLib = () => typeof window.echarts !== 'undefined';
+  function base(t) {
+    return {
+      animationDuration: 280, animationDurationUpdate: 280,
+      textStyle: { fontFamily: t.fBody, color: t.ink2, fontSize: 12 },
+      tooltip: { trigger: 'axis', confine: true, backgroundColor: t.panel, borderColor: t.rule,
+        textStyle: { color: t.ink, fontFamily: t.fBody, fontSize: 12 }, axisPointer: { lineStyle: { color: t.muted }, shadowStyle: { color: t.chip, opacity: .6 } } },
+      legend: { top: 0, left: 0, type: 'scroll', icon: 'roundRect', itemWidth: 12, itemHeight: 8, itemGap: 14,
+        textStyle: { color: t.ink2, fontSize: 12 }, pageTextStyle: { color: t.ink2 }, pageIconColor: t.ink2, pageIconInactiveColor: t.rule },
+      grid: { left: 6, right: 18, top: 34, bottom: 6, containLabel: true },
+    };
+  }
+  function axis(t, o = {}) {
+    return Object.assign({
+      axisLine: { lineStyle: { color: t.rule } }, axisTick: { show: false },
+      axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true },
+      splitLine: { lineStyle: { color: t.rule, type: [3, 3] } },
+      nameTextStyle: { color: t.muted, fontSize: 11, fontFamily: t.fBody },
+    }, o);
+  }
+  function chart(id, build) {
+    const el = document.getElementById(id);
+    const c = { el, build, inst: null };
+    if (!el) return c;
+    if (!hasLib()) {
+      el.innerHTML = '<div class="nolib">The chart library did not load. The numbers in the cards and tables are still current.</div>';
+      return c;
+    }
+    c.inst = echarts.init(el, null, { renderer: 'svg' });
+    c.inst.setOption(build(theme()), true);
+    charts.push(c);
+    return c;
+  }
+  function update(c) { if (c && c.inst) c.inst.setOption(c.build(theme()), true); }
+  function refreshAll() { charts.forEach(update); }
+  let rt;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => charts.forEach((c) => c.inst && c.inst.resize()), 120); });
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshAll); } catch (e) { /* old browsers */ }
+  new MutationObserver(refreshAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ---------- per-viewer memory for slicers (optional; page works without it)
+  const KEY = 'scm-twin:' + location.pathname.split('/').pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } };
+  const save = (state) => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage blocked */ } };
+
+  // ---------- segmented slicer
+  function seg(el, options, value, onChange) {
+    el.innerHTML = '';
+    options.forEach(([v, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = label; b.dataset.v = String(v);
+      b.setAttribute('aria-pressed', String(String(v) === String(value)));
+      b.addEventListener('click', () => {
+        el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        onChange(v);
+      });
+      el.appendChild(b);
+    });
+    return { set(v) { el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === String(v)))); } };
+  }
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const tip = (t, rows, title) => `<div style="font-weight:600;margin-bottom:4px">${esc(title)}</div>` +
+    rows.map(([color, name, val]) => `<div style="display:flex;justify-content:space-between;gap:18px"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${color};margin-right:6px"></span>${esc(name)}</span><span style="font-family:${t.fMono}">${val}</span></div>`).join('');
+  return { theme, usd, num, kunits, pct, axUsd, base, axis, chart, update, refreshAll, load, save, seg, $, esc, tip, hasLib };
+})();
+</script>
+<script id="fge">/* Module 4 engine for the browser: a line-by-line port of src/finished_goods.py.
+   Same random numbers as src/prng.py, so a given seed gives the same result in both;
+   tests/test_fg_parity.py checks it. Keep the two files in step when either changes. */
+const FGE = (() => {
+  // ---------------------------------------------------------------- random numbers
+  function makeRng(seed) {
+    let s = seed >>> 0;
+    const random = () => {
+      s = (s + 0x6D2B79F5) >>> 0;
+      let t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1) >>> 0;
+      t = ((((t + (Math.imul(t ^ (t >>> 7), t | 61) >>> 0)) >>> 0)) ^ t) >>> 0;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    return {
+      random,
+      gauss(mu = 0, sigma = 1) {
+        const u1 = 1 - random(), u2 = random();
+        return mu + sigma * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+      },
+      randint(a, b) { return a + Math.floor(random() * (b - a + 1)); },
+    };
+  }
+  const sum = (arr, a = 0, b = arr.length) => { let t = 0; for (let i = a; i < Math.min(b, arr.length); i++) t += arr[i]; return t; };
+  const PATHS = ['divert', 'rework', 'teardown', 'liquidate', 'scrap'];
+
+  // ---------------------------------------------------------------- disposition
+  function pathValues(price, cost, dutyUnit, ftz, P, rw, td, lq) {
+    const post = price * (1 - P.launch_drop_pct);
+    const refund = ftz ? 0 : P.drawback_share * dutyUnit;
+    const dom = ftz ? dutyUnit : 0;
+    return {
+      divert: [post * P.divert_price_factor - P.divert_cost_usd + refund, P.divert_capacity_share],
+      rework: [post * P.rework_price_factor - cost * rw - P.rework_labour_usd + refund, P.rework_capacity_share],
+      teardown: [cost * td - dom, 1],
+      liquidate: [price * lq - dom, 1],
+      scrap: [-P.scrap_cost_usd + refund, 1],
+    };
+  }
+  function disposition(units, price, cost, dutyUnit, ftz, P, rw, td, lq) {
+    const mix = { divert: 0, rework: 0, teardown: 0, liquidate: 0, scrap: 0 };
+    if (units <= 1e-9) return [0, mix, 0];
+    const vals = pathValues(price, cost, dutyUnit, ftz, P, rw, td, lq);
+    const landed = cost + (ftz ? 0 : dutyUnit);
+    const good = units * (1 - P.aged_failure_rate);
+    const failed = units - good;
+    let rec = 0, left = good;
+    // stable sort by net, best first (same order as Python's sorted on a dict)
+    const order = PATHS.map((k, i) => [k, i]).sort((a, b) => (vals[b[0]][0] - vals[a[0]][0]) || (a[1] - b[1]));
+    for (const [name] of order) {
+      if (left <= 1e-9) break;
+      const take = Math.min(left, units * vals[name][1]);
+      rec += take * vals[name][0];
+      mix[name] += take;
+      left -= take;
+    }
+    rec += failed * vals.teardown[0];
+    mix.teardown += failed;
+    const carry = units * landed * (P.carrying_rate_annual ?? 0.20) * P.disposition_delay_weeks / 52;
+    const loss = units * landed - rec + units * P.reinspect_cost_usd + carry;
+    let sunk;
+    if (ftz) sunk = (mix.teardown + mix.liquidate) * dutyUnit;
+    else sunk = units * dutyUnit - (mix.divert + mix.rework + mix.scrap) * P.drawback_share * dutyUnit;
+    return [loss, mix, sunk];
+  }
+
+  function marketShape(peak, launch, tail, horizon) {
+    const out = new Array(horizon);
+    for (let w = 0; w < horizon; w++) out[w] = w < launch ? peak : peak * Math.max(0, 1 - (w - launch + 1) / (tail + 1));
+    return out;
+  }
+
+  // ---------------------------------------------------------------- one model in one region
+  function regionRun(S, A, P, cfg, launch, eol, liability, tLock, traj, runs, lockBias, ibpHedge) {
+    const n = S.length, T = Math.trunc(P.build_to_mgi_weeks), L = Math.trunc(liability);
+    const C = Math.trunc(P.mgi_wos_weeks + P.channel_wos_weeks);
+    const bias = 1 + P.sales_bias;
+    const fc = S.map((x) => x * bias);
+    let locked = false;
+    const f = (i) => (i < n ? fc[i] : 0);
+    const fwd = (w, k) => sum(fc, w + 1, w + 1 + k);
+    let mgi = P.mgi_wos_weeks * fc[0];
+    let chan = P.channel_wos_weeks * fc[0];
+    const pipe = new Array(n + T + 1).fill(0);
+    for (let i = 0; i < T; i++) pipe[i] = fc[i + C];
+    const kit = new Array(n + L).fill(0);
+    for (let b = 0; b < Math.min(L, eol); b++) kit[b] = f(b + T + C);
+    let bank = 0, plan = null, backlog = 0;
+    const c = { lost: 0, sold_pre: 0, sold_post: 0, sell_in_pre: 0, sell_in_post: 0, chan_launch: 0, builds: 0,
+      kits: sum(kit, 0, L), final_buy: 0, cut_at_lock: 0, hedge_units: 0 };
+    const sellIn = new Array(n).fill(0);
+    for (let w = 0; w < n; w++) {
+      let r = 1;
+      if (w >= 4) {
+        let a = 0, s = 0;
+        for (let i = Math.max(0, w - 4); i < w; i++) a += A[i];
+        for (let i = Math.max(0, w - 4); i < w; i++) s += S[i];
+        r = a / Math.max(1e-9, s);
+      }
+      if (cfg.lock && w === tLock) {
+        locked = true;
+        let rd = 1;
+        if (w > 0) {
+          const h0 = Math.max(0, w - Math.trunc(P.lock_window_weeks));
+          let a = 0, s = 0;
+          for (let i = h0; i < w; i++) a += A[i];
+          for (let i = h0; i < w; i++) s += S[i];
+          rd = a / Math.max(1e-9, s);
+        }
+        const mult = rd * (1 + lockBias);
+        for (let i = w; i < n; i++) fc[i] = S[i] * mult;
+        const inFlight = sum(pipe, w, w + T + 1);
+        let need = Math.max(0, sum(fc, w, n) - mgi - chan - inFlight);
+        if (cfg.ibp) {
+          need *= Math.max(0, 1 + ibpHedge);
+          c.hedge_units = need * ibpHedge / Math.max(1e-9, 1 + ibpHedge);
+        }
+        const weeks = [];
+        for (let b = w; b < eol; b++) weeks.push(b);
+        if (weeks.length) {
+          const wt = [];
+          for (let k = 0; k < weeks.length - 1; k++) wt.push(f(weeks[k] + T + C));
+          wt.push(sum(fc, Math.min(n, weeks[weeks.length - 1] + T + C), n));
+          const totW = sum(wt) || 1;
+          plan = {};
+          weeks.forEach((b, k) => { plan[b] = need * wt[k] / totW; });
+        }
+        let ks = 0;
+        for (let b = w; b < Math.min(eol, w + L); b++) ks += kit[b];
+        const committed = bank + ks;
+        const buy = Math.max(0, need - committed);
+        let later = weeks.filter((b) => b >= w + L);
+        if (!later.length) later = weeks.slice(-1);
+        for (const b of later) kit[b] += buy / later.length;
+        c.final_buy = buy;
+        c.cut_at_lock = Math.max(0, committed - need);
+        c.kits += buy;
+      } else if (!locked) {
+        const mult = bias * (1 + P.sales_chase * Math.max(0, r - 1));
+        for (let i = w; i < n; i++) fc[i] = S[i] * mult;
+      }
+      // 1) material
+      const b = w + L;
+      if (b < eol && !locked) {
+        let ds = 0;
+        for (let j = w; j < b; j++) ds += kit[j] - f(j + T + C);
+        const proj = bank + ds;
+        kit[b] = Math.max(0, f(b + T + C) - Math.max(0, proj));
+        c.kits += kit[b];
+      }
+      // 2) build release
+      let build = 0;
+      if (w < eol) {
+        bank += kit[w];
+        const position = mgi + chan + sum(pipe, w, w + T + 1);
+        if (plan !== null) {
+          backlog += plan[w] || 0;
+          build = Math.min(bank, backlog);
+          backlog -= build;
+        } else {
+          build = Math.min(bank, Math.max(0, fwd(w, T + C) - position));
+        }
+        bank -= build;
+        pipe[w + T] += build;
+        c.builds += build;
+      }
+      // 3) arrivals, launch, sales
+      mgi += pipe[w];
+      if (w === launch) c.chan_launch = chan;
+      const s = Math.min(chan, A[w]);
+      c.lost += A[w] - s;
+      chan -= s;
+      if (w < launch) c.sold_pre += s; else c.sold_post += s;
+      // 4) channel replenishment
+      const near = launch - P.drain_weeks <= w;
+      let wos = P.channel_wos_weeks;
+      if (near && cfg.cover === 'drain') wos = P.drain_wos_weeks;
+      else if (near && w < launch && cfg.cover === 'push') wos = P.push_wos_weeks;
+      const whole = Math.trunc(wos);
+      const cover = fwd(w, whole) + (wos - whole) * f(w + 1 + whole);
+      const ship = Math.min(mgi, Math.max(0, cover - chan));
+      mgi -= ship;
+      chan += ship;
+      sellIn[w] = ship;
+      if (w < launch) c.sell_in_pre += ship; else c.sell_in_post += ship;
+      if (traj) {
+        traj.demand[w] += A[w] / runs; traj.forecast[w] += fc[w] / runs; traj.sold[w] += s / runs;
+        traj.lost[w] += (A[w] - s) / runs; traj.builds[w] += build / runs; traj.arrivals[w] += pipe[w] / runs;
+        traj.sell_in[w] += ship / runs; traj.mgi[w] += mgi / runs; traj.channel[w] += chan / runs;
+        traj.kits[w] += bank / runs;
+        traj.transit[w] += sum(pipe, w + 1, w + T + 1) / runs;
+      }
+    }
+    c.rotation_base = sum(sellIn, Math.max(0, n - Math.trunc(P.stock_rotation_window_weeks)), n);
+    return [mgi + sum(pipe, n, pipe.length), chan, bank, c];
+  }
+
+  // ---------------------------------------------------------------- Monte Carlo
+  const TRAJ_KEYS = ['demand', 'forecast', 'sold', 'lost', 'builds', 'arrivals', 'sell_in', 'mgi', 'channel', 'kits', 'transit'];
+  const tri = (rng, lo, mode, hi) => {
+    if (hi <= lo) return mode;
+    const u = rng.random(), fc = (mode - lo) / (hi - lo);
+    return u < fc ? lo + Math.sqrt(u * (hi - lo) * (mode - lo)) : hi - Math.sqrt((1 - u) * (hi - lo) * (hi - mode));
+  };
+
+  /* input: from finished_goods.engine_input(); P0: parameter values; opts: {strategy, runs, seed,
+     ftz, dutyOverride, ranges: {key: [lo, hi]} sampled each run around P0 (triangular), traj} */
+  function simulate(input, P0, opts) {
+    const cfg = input.strategies[opts.strategy];
+    const runs = opts.runs || 200, seed = opts.seed ?? 11, ftz = !!opts.ftz;
+    const rng = makeRng(seed);
+    const regions = input.regions, L = input.liability;
+    const rangeKeys = Object.keys(opts.ranges || {});
+    const Tbase = Math.trunc(P0.build_to_mgi_weeks);
+    const launch = input.npi_successor + Tbase;
+    const horizon = launch + Math.trunc(P0.tail_weeks) + 1;
+    const traj = opts.traj === false ? null : Object.fromEntries(TRAJ_KEYS.map((k) => [k, new Array(horizon).fill(0)]));
+    const runsOut = [], byRegion = {};
+    regions.forEach((g) => { byRegion[g] = {}; });
+    for (let run = 0; run < runs; run++) {
+      // parameter uncertainty: draw ranged inputs first (only when ranges are switched on)
+      let P = P0;
+      if (rangeKeys.length) {
+        P = { ...P0 };
+        for (const k of rangeKeys) P[k] = tri(rng, opts.ranges[k][0], P0[k], opts.ranges[k][1]);
+      }
+      const sigmaW = P.weekly_error_mape * Math.sqrt(Math.PI / 2);
+      const tot = {};
+      const add = (k, v) => { tot[k] = (tot[k] || 0) + v; };
+      const style = {}, hedge = {};
+      for (const g of regions) style[g] = rng.gauss(P.lock_bias, P.lock_bias_sd);
+      for (const g of regions) hedge[g] = -P.ibp_learn * (style[g] - 0) + rng.gauss(0, P.ibp_noise_sd);
+      for (const m of input.models) {
+        const price = m.price, cost = m.cv + P.inbound_freight_usd;
+        const drop = price * P.launch_drop_pct;
+        const shape = marketShape(m.peak, launch, Math.trunc(P0.tail_weeks), horizon);
+        const level = Math.max(0.3, rng.gauss(1, P.level_error_sd));
+        for (const g of regions) {
+          const sh = input.share[g];
+          const duty = (opts.dutyOverride && g in opts.dutyOverride) ? opts.dutyOverride[g] : input.duty[g];
+          const dutyUnit = m.cv * duty;
+          const sp = Math.trunc(P.lock_region_spread_weeks);
+          const spread = rng.randint(-sp, sp);
+          const noise = new Array(horizon);
+          for (let w = 0; w < horizon; w++) noise[w] = Math.max(0, 1 + rng.gauss(0, sigmaW));
+          const S = shape.map((x) => x * sh);
+          const A = S.map((x, w) => x * level * noise[w]);
+          const tLock = Math.trunc(m.eol - P.lock_lead_weeks + spread);
+          const [mgiLeft, chanLeft, kitsLeft, c] = regionRun(S, A, P, cfg, launch, m.eol, L, tLock, traj, runs, style[g], hedge[g]);
+          const returned = Math.min(chanLeft, P.stock_rotation_cap * c.rotation_base);
+          const kept = chanLeft - returned;
+          const dealerLoss = kept * price * (1 - P.launch_drop_pct) * (1 - P.dealer_clearance_recovery);
+          const excess = mgiLeft + returned;
+          let [loss, mix, sunk] = disposition(excess, price, cost, dutyUnit, ftz, P, m.rw, m.td, m.lq);
+          loss += returned * P.return_handling_usd;
+          const prot = c.chan_launch * drop;
+          const markdown = prot + c.sell_in_post * drop;
+          const floor = c.sold_post * drop;
+          const mwd = kitsLeft * m.kit_mwd;
+          const lostMargin = c.lost * (price - cost) * (1 - P.lost_to_successor_share);
+          const row = {
+            demand_units: sum(A), sold_units: c.sold_pre + c.sold_post, builds_units: c.builds, kits_ordered: c.kits,
+            sell_in_pre_launch_units: c.sell_in_pre, channel_at_launch_units: c.chan_launch,
+            excess_units: excess, returned_units: returned, lost_units: c.lost,
+            dealer_kept_units: kept, dealer_loss_usd: dealerLoss, mwd_kits: kitsLeft,
+            price_protection_usd: prot, launch_markdown_usd: markdown, markdown_floor_usd: floor,
+            markdown_above_floor_usd: markdown - floor, excess_loss_usd: loss, mwd_usd: mwd,
+            lost_margin_usd: lostMargin, duty_sunk_usd: sunk,
+            avoidable_cost_usd: (markdown - floor) + loss + mwd + lostMargin,
+            system_cost_usd: (markdown - floor) + loss + mwd + lostMargin + dealerLoss,
+            cut_at_lock_kits: c.cut_at_lock, final_buy_kits: c.final_buy,
+          };
+          for (const pth of PATHS) row['mix_' + pth] = mix[pth] || 0;
+          for (const k in row) {
+            add(k, row[k]);
+            byRegion[g][k] = (byRegion[g][k] || 0) + row[k] / runs;
+          }
+        }
+      }
+      runsOut.push(tot);
+    }
+    const summary = {};
+    for (const k of Object.keys(runsOut[0])) {
+      const v = runsOut.map((r) => r[k]).sort((a, b) => a - b);
+      summary[k] = { mean: sum(v) / v.length, p10: v[Math.trunc(0.1 * (v.length - 1))], p90: v[Math.trunc(0.9 * (v.length - 1))] };
+    }
+    return { strategy: opts.strategy, summary, traj, byRegion, runs, launch_week: launch, horizon,
+      eol_week: input.models[0].eol, lock_week: input.models[0].eol - P0.lock_lead_weeks };
+  }
+  return { simulate, makeRng, TRAJ_KEYS };
+})();
+if (typeof module !== 'undefined') module.exports = FGE;
+</script>
+<script>
+const D = {"input":{"P":{"lock_lead_weeks":22.0,"lock_region_spread_weeks":2.0,"build_to_mgi_weeks":5.0,"mgi_wos_weeks":2.0,"channel_wos_weeks":5.0,"drain_wos_weeks":1.5,"push_wos_weeks":8.0,"drain_weeks":6.0,"tail_weeks":8.0,"launch_drop_pct":0.15,"sales_bias":0.08,"sales_chase":0.5,"lock_window_weeks":13.0,"lock_bias":0.0,"lock_bias_sd":0.1,"ibp_learn":0.6,"ibp_noise_sd":0.03,"level_error_sd":0.12,"weekly_error_mape":0.25,"reinspect_cost_usd":3.0,"aged_failure_rate":0.02,"disposition_delay_weeks":8.0,"return_handling_usd":15.0,"stock_rotation_cap":0.1,"stock_rotation_window_weeks":13.0,"dealer_clearance_recovery":0.6,"lost_to_successor_share":0.5,"divert_capacity_share":0.25,"divert_cost_usd":30.0,"divert_price_factor":0.85,"rework_capacity_share":0.3,"rework_price_factor":0.9,"rework_labour_usd":20.0,"scrap_cost_usd":5.0,"drawback_share":0.0,"inbound_freight_usd":8.0,"carrying_rate_annual":0.2},"liability":16.0,"npi_successor":26,"regions":["BR","EU","JP","UK","US"],"share":{"BR":0.18,"EU":0.19,"JP":0.15,"UK":0.08,"US":0.4},"duty":{"BR":0.16,"EU":0.0,"JP":0.0,"UK":0.0,"US":0.0},"models":[{"name":"P1-14","price":650.0,"cv":480.0,"kit_mwd":215.0,"eol":30,"peak":5000.0,"rw":0.35,"td":0.18,"lq":0.4},{"name":"P1-16","price":760.0,"cv":560.0,"kit_mwd":295.0,"eol":30,"peak":2000.0,"rw":0.35,"td":0.18,"lq":0.4}],"paths":["divert","rework","teardown","liquidate","scrap"],"strategies":{"push":{"lock":false,"cover":"push","label":"Push sell-in, no lock (benchmark)"},"plan":{"lock":false,"cover":"normal","label":"Sales plan, no lock (benchmark)"},"lock":{"lock":true,"cover":"normal","label":"Sales volume lock (R28)"},"lock_drain":{"lock":true,"cover":"drain","label":"Sales lock + drain channel"},"lock_push":{"lock":true,"cover":"push","label":"Sales lock + push into channel"},"lock_ibp":{"lock":true,"cover":"normal","ibp":true,"label":"Sales lock + IBP hedge (R32)"}}},"ranges":[{"key":"level_error_sd","group":"Demand and forecast","label":"Demand surprise vs plan (standard deviation)","unit":"share","min":"0","max":"0.3","step":"0.01","low":"0.08","high":"0.16","sample":"1"},{"key":"weekly_error_mape","group":"Demand and forecast","label":"Week-to-week noise in sell-through (MAPE)","unit":"share","min":"0.05","max":"0.5","step":"0.01","low":"0.15","high":"0.35","sample":"1"},{"key":"sales_bias","group":"Demand and forecast","label":"Sales forecast optimism before the lock","unit":"share","min":"-0.05","max":"0.25","step":"0.01","low":"0","high":"0.15","sample":"1"},{"key":"sales_chase","group":"Demand and forecast","label":"Share of an upside surprise sales adds to the forecast","unit":"share","min":"0","max":"1","step":"0.05","low":"0.25","high":"0.75","sample":"1"},{"key":"lock_lead_weeks","group":"Sales lock and IBP","label":"Lock: weeks before EOL","unit":"weeks","min":"10","max":"30","step":"1","low":"18","high":"24","sample":"1"},{"key":"lock_window_weeks","group":"Sales lock and IBP","label":"Weeks of sell-through read at the lock","unit":"weeks","min":"4","max":"26","step":"1","low":"8","high":"13","sample":"1"},{"key":"lock_bias","group":"Sales lock and IBP","label":"Average lock bias across GEOs (+ = locks high)","unit":"share","min":"-0.2","max":"0.2","step":"0.01","low":"-0.05","high":"0.05","sample":"1"},{"key":"lock_bias_sd","group":"Sales lock and IBP","label":"Lock bias spread between GEOs","unit":"share","min":"0","max":"0.25","step":"0.01","low":"0.05","high":"0.15","sample":"1"},{"key":"lock_region_spread_weeks","group":"Sales lock and IBP","label":"Lock date spread between regions (+/- weeks)","unit":"weeks","min":"0","max":"4","step":"1","low":"0","high":"4","sample":"0"},{"key":"ibp_learn","group":"Sales lock and IBP","label":"Share of a GEO's habit the IBP hedge corrects","unit":"share","min":"0","max":"1","step":"0.05","low":"0.4","high":"0.8","sample":"1"},{"key":"ibp_noise_sd","group":"Sales lock and IBP","label":"Error of the IBP hedge","unit":"share","min":"0","max":"0.1","step":"0.01","low":"0.01","high":"0.05","sample":"1"},{"key":"channel_wos_weeks","group":"Channel","label":"Dealer cover (weeks of forecast)","unit":"weeks","min":"2","max":"10","step":"0.5","low":"4","high":"6","sample":"1"},{"key":"mgi_wos_weeks","group":"Channel","label":"MGI cover (weeks of forecast)","unit":"weeks","min":"1","max":"4","step":"1","low":"1","high":"3","sample":"0"},{"key":"build_to_mgi_weeks","group":"Channel","label":"Build release to MGI arrival","unit":"weeks","min":"3","max":"10","step":"1","low":"4","high":"7","sample":"0"},{"key":"drain_weeks","group":"Channel","label":"Weeks before launch a drain or push starts","unit":"weeks","min":"2","max":"12","step":"1","low":"4","high":"8","sample":"1"},{"key":"drain_wos_weeks","group":"Channel","label":"Dealer cover while draining","unit":"weeks","min":"0.5","max":"4","step":"0.5","low":"1","high":"2","sample":"1"},{"key":"push_wos_weeks","group":"Channel","label":"Dealer cover when pushing","unit":"weeks","min":"5","max":"12","step":"0.5","low":"7","high":"10","sample":"1"},{"key":"launch_drop_pct","group":"Successor launch","label":"Net price drop at launch (price protection)","unit":"share","min":"0.05","max":"0.3","step":"0.01","low":"0.1","high":"0.2","sample":"1"},{"key":"tail_weeks","group":"Successor launch","label":"Weeks the old model keeps selling after launch","unit":"weeks","min":"4","max":"16","step":"1","low":"6","high":"10","sample":"0"},{"key":"lost_to_successor_share","group":"Successor launch","label":"Share of out-of-stock buyers who take the successor","unit":"share","min":"0","max":"1","step":"0.05","low":"0.3","high":"0.7","sample":"1"},{"key":"stock_rotation_cap","group":"Dealer leftovers","label":"Stock rotation cap (share of last-quarter purchases)","unit":"share","min":"0","max":"0.3","step":"0.01","low":"0.05","high":"0.15","sample":"1"},{"key":"dealer_clearance_recovery","group":"Dealer leftovers","label":"Dealers recover on stock they keep (share of cost)","unit":"share","min":"0.3","max":"0.9","step":"0.05","low":"0.5","high":"0.7","sample":"1"},{"key":"return_handling_usd","group":"Dealer leftovers","label":"Return handling per unit","unit":"usd","min":"0","max":"50","step":"1","low":"10","high":"20","sample":"1"},{"key":"divert_capacity_share","group":"Excess disposition","label":"Share other GEOs take as is","unit":"share","min":"0","max":"0.6","step":"0.05","low":"0.15","high":"0.35","sample":"1"},{"key":"divert_price_factor","group":"Excess disposition","label":"Price other GEOs pay (vs post-launch price)","unit":"share","min":"0.5","max":"1","step":"0.05","low":"0.75","high":"0.9","sample":"1"},{"key":"divert_cost_usd","group":"Excess disposition","label":"Cost to move a unit to another GEO","unit":"usd","min":"0","max":"80","step":"1","low":"20","high":"40","sample":"1"},{"key":"rework_capacity_share","group":"Excess disposition","label":"Share other GEOs take after rework","unit":"share","min":"0","max":"0.6","step":"0.05","low":"0.2","high":"0.4","sample":"1"},{"key":"rework_price_factor","group":"Excess disposition","label":"Price after rework (vs post-launch price)","unit":"share","min":"0.5","max":"1","step":"0.05","low":"0.85","high":"0.95","sample":"1"},{"key":"rework_labour_usd","group":"Excess disposition","label":"Rework labour per unit","unit":"usd","min":"0","max":"60","step":"1","low":"15","high":"30","sample":"1"},{"key":"aged_failure_rate","group":"Excess disposition","label":"Share failing re-inspection","unit":"share","min":"0","max":"0.1","step":"0.005","low":"0.01","high":"0.04","sample":"1"},{"key":"reinspect_cost_usd","group":"Excess disposition","label":"Re-inspection per unit","unit":"usd","min":"0","max":"10","step":"0.5","low":"2","high":"5","sample":"1"},{"key":"disposition_delay_weeks","group":"Excess disposition","label":"Weeks excess waits before disposition","unit":"weeks","min":"0","max":"26","step":"1","low":"4","high":"12","sample":"1"},{"key":"scrap_cost_usd","group":"Excess disposition","label":"Scrap cost per unit","unit":"usd","min":"0","max":"20","step":"1","low":"3","high":"8","sample":"1"},{"key":"inbound_freight_usd","group":"Cost and customs","label":"Freight factory to MGI per unit","unit":"usd","min":"0","max":"30","step":"1","low":"6","high":"12","sample":"1"},{"key":"drawback_share","group":"Cost and customs","label":"Duty refunded on re-export or destruction","unit":"share","min":"0","max":"0.99","step":"0.01","low":"0","high":"0.99","sample":"0"}],"params":[{"key":"lock_lead_weeks","value":"22","status":"PRACTITIONER (virtualized)","note":"Sales locks the remaining volume this long before EOL, after talking with dealers; forecasts cannot be increased after it. Kept several weeks longer than the liability window, as in practice"},{"key":"lock_region_spread_weeks","value":"2","status":"PRACTITIONER (virtualized)","note":"Regions lock at slightly different times (uniform +/- this many weeks)"},{"key":"build_to_mgi_weeks","value":"5","status":"PLACEHOLDER","note":"Build release to MGI arrival (build + sea transit, ~31 days door-to-MGI CN->US)"},{"key":"mgi_wos_weeks","value":"2","status":"PLACEHOLDER","note":"Forward cover the planner keeps in the MGI"},{"key":"channel_wos_weeks","value":"5","status":"PLACEHOLDER","note":"Normal forward cover held by dealers, in weeks of forecast"},{"key":"drain_wos_weeks","value":"1.5","status":"PLACEHOLDER","note":"Cover targeted while draining the channel before launch"},{"key":"push_wos_weeks","value":"8","status":"PLACEHOLDER","note":"Cover reached when sell-in is pushed to hit a target before launch"},{"key":"drain_weeks","value":"6","status":"PLACEHOLDER","note":"How many weeks before launch a drain or push starts"},{"key":"tail_weeks","value":"8","status":"PLACEHOLDER","note":"After the successor reaches the market, old-model sell-through fades to zero over this many weeks"},{"key":"launch_drop_pct","value":"0.15","status":"PLACEHOLDER","note":"Net price step at successor launch, paid via price protection (web range 10-25%)"},{"key":"sales_bias","value":"0.08","status":"PLACEHOLDER","note":"Sales forecast optimism; drives material and builds until the lock"},{"key":"sales_chase","value":"0.5","status":"PLACEHOLDER","note":"Share of an upside surprise in recent sell-through that sales adds to the forecast; sales never cut below plan"},{"key":"lock_window_weeks","value":"13","status":"PLACEHOLDER","note":"Weeks of recent sell-through (with dealer feedback) sales reads when locking the volume; one quarter"},{"key":"lock_bias","value":"0","status":"PRACTITIONER (direction) / PLACEHOLDER (size)","note":"Average lock bias across GEOs: + means sales locks too high. Each GEO and salesperson has a style, high or low, so the average is set to zero (Q24)"},{"key":"lock_bias_sd","value":"0.10","status":"PLACEHOLDER","note":"Spread of lock bias between GEOs; drawn per region and run"},{"key":"ibp_learn","value":"0.6","status":"PLACEHOLDER","note":"Share of each GEO's habitual lock bias that IBP corrects from past sell-through (R32); the hedge can be negative"},{"key":"ibp_noise_sd","value":"0.03","status":"PLACEHOLDER","note":"Error in the IBP hedge itself"},{"key":"level_error_sd","value":"0.12","status":"PLACEHOLDER","note":"Demand level surprise per model and run; the sales plan does not see it, dealers learn it"},{"key":"weekly_error_mape","value":"0.25","status":"PLACEHOLDER","note":"Week-to-week noise in actual sell-through"},{"key":"reinspect_cost_usd","value":"3","status":"PLACEHOLDER","note":"Every excess unit is re-inspected before disposition (ageing quality risk, R26)"},{"key":"aged_failure_rate","value":"0.02","status":"PLACEHOLDER","note":"Share failing re-inspection; these can only be torn down"},{"key":"disposition_delay_weeks","value":"8","status":"PLACEHOLDER","note":"Weeks excess waits in MGI before it is dispositioned (carrying cost)"},{"key":"return_handling_usd","value":"15","status":"PLACEHOLDER","note":"Reverse freight and repacking per unit returned from the channel"},{"key":"stock_rotation_cap","value":"0.10","status":"WEB (example contract) / PLACEHOLDER","note":"Dealer leftovers can be returned up to this share of the dealer's purchases in the rotation window, dollar for dollar against a new order"},{"key":"stock_rotation_window_weeks","value":"13","status":"WEB (example contract) / PLACEHOLDER","note":"Rotation allowance is measured on the previous quarter's purchases"},{"key":"dealer_clearance_recovery","value":"0.60","status":"PLACEHOLDER","note":"Dealers clear leftovers they keep at this share of their net cost (after price protection)"},{"key":"lost_to_successor_share","value":"0.5","status":"PLACEHOLDER","note":"Share of buyers who find no stock and buy the successor instead of leaving"},{"key":"divert_capacity_share","value":"0.25","status":"PLACEHOLDER","note":"Share of a region's excess that other GEOs with the same layout can take (R31)"},{"key":"divert_cost_usd","value":"30","status":"PLACEHOLDER","note":"Freight, re-labelling, local certification per unit"},{"key":"divert_price_factor","value":"0.85","status":"PLACEHOLDER","note":"Price another GEO pays for units resold as is, vs post-launch price (R31)"},{"key":"rework_capacity_share","value":"0.30","status":"PLACEHOLDER","note":"Share of excess other GEOs can take after rework (R31)"},{"key":"rework_price_factor","value":"0.90","status":"PLACEHOLDER","note":"Price achieved after rework vs post-launch price"},{"key":"rework_labour_usd","value":"20","status":"PRACTITIONER (rule) / PLACEHOLDER (value)","note":"Labour on top of the ODM part-swap quote"},{"key":"scrap_cost_usd","value":"5","status":"PLACEHOLDER","note":""},{"key":"drawback_share","value":"0","status":"WEB","note":"Duty refunded on re-export or destruction from a post-customs MGI. 0 for a Section 232 stress case (drawback barred); up to 0.99 for MFN or Section 301 duty"},{"key":"inbound_freight_usd","value":"8","status":"PLACEHOLDER","note":"Per unit, factory to MGI; landed cost = customs value + freight (+ duty if post-customs)"}]};
+const IN = D.input, P0 = { ...IN.P };
+const ST = Object.keys(IN.strategies);
+const SHORT = { push: 'Push, no lock', plan: 'Plan, no lock', lock: 'Sales lock', lock_drain: 'Lock + drain', lock_push: 'Lock + push', lock_ibp: 'Lock + IBP hedge' };
+const CUST = { base: ['Current duties', null, false], us25_post: ['US 25% · post-customs', { US: 0.25 }, false], us25_ftz: ['US 25% · FTZ', { US: 0.25 }, true] };
+const RANGES = Object.fromEntries(D.ranges.map((r) => [r.key, r]));
+const STATUS = Object.fromEntries(D.params.map((r) => [r.key, r]));
+const saved = R.load();
+const S = {
+  s: ST.includes(saved.s) ? saved.s : 'lock_ibp',
+  c: Object.keys(CUST).includes(saved.c) ? saved.c : 'base',
+  m: saved.m === 'range' ? 'range' : 'fixed',
+  n: [100, 200, 500].includes(saved.n) ? saved.n : 200,
+  v: saved.v === 'system' ? 'system' : 'brand',
+  P: { ...P0, ...(saved.P || {}) },
+  lo: { ...(saved.lo || {}) }, hi: { ...(saved.hi || {}) },
+  week: 0,
+};
+Object.keys(S.P).forEach((k) => { if (!(k in P0)) delete S.P[k]; });
+const COSTK = () => (S.v === 'brand' ? 'avoidable_cost_usd' : 'system_cost_usd');
+
+// ---------------------------------------------------------------- formatting of inputs
+const fmtVal = (key, v) => {
+  const u = RANGES[key] ? RANGES[key].unit : '';
+  if (u === 'share') return (v * 100).toFixed(Math.abs(v * 100) < 10 && v * 100 % 1 ? 1 : 0) + '%';
+  if (u === 'usd') return '$' + R.num(v, v % 1 ? 1 : 0);
+  if (u === 'weeks') return R.num(v, v % 1 ? 1 : 0) + ' wk';
+  return String(v);
+};
+const loOf = (k) => (k in S.lo ? S.lo[k] : +RANGES[k].low);
+const hiOf = (k) => (k in S.hi ? S.hi[k] : +RANGES[k].high);
+
+// ---------------------------------------------------------------- inputs panel
+function buildInputs() {
+  const groups = [];
+  D.ranges.forEach((r) => { if (!groups.includes(r.group)) groups.push(r.group); });
+  const box = R.$('#groups');
+  box.innerHTML = groups.map((g, gi) => `<details class="grp" ${gi < 2 ? 'open' : ''} data-g="${R.esc(g)}"><summary>${R.esc(g)}<span class="cnt"></span></summary>` +
+    D.ranges.filter((r) => r.group === g).map((r) => {
+      const st = STATUS[r.key] ? STATUS[r.key].status : '';
+      const kind = /^PRACTITIONER/.test(st) ? 'prac' : /^WEB/.test(st) ? 'web' : /^OPEN/.test(st) ? 'open' : 'ph';
+      return `<div class="prm" data-key="${r.key}">
+        <div class="prm-h"><label for="p-${r.key}">${R.esc(r.label)}</label><output id="o-${r.key}"></output></div>
+        <input type="range" id="p-${r.key}" min="${r.min}" max="${r.max}" step="${r.step}">
+        <div class="prm-r${r.sample === '1' ? '' : ' off'}" data-r="${r.key}" hidden>
+          <span>range</span><input type="number" id="lo-${r.key}" step="${r.step}" aria-label="Low value"><span>to</span><input type="number" id="hi-${r.key}" step="${r.step}" aria-label="High value">
+          ${r.sample === '1' ? '' : '<span>fixed in range mode</span>'}
+        </div>
+        <div class="prm-meta"><span class="chip ${kind}" title="${R.esc(STATUS[r.key] ? STATUS[r.key].note : '')}">${R.esc(st.split(' ')[0] || 'PLACEHOLDER')}</span><button type="button" class="rst" data-reset="${r.key}" hidden>reset</button></div>
+      </div>`;
+    }).join('') + '</details>').join('');
+  D.ranges.forEach((r) => {
+    const el = R.$('#p-' + r.key);
+    el.value = S.P[r.key];
+    el.addEventListener('input', () => { S.P[r.key] = +el.value; paintInputs(); schedule(); });
+    const lo = R.$('#lo-' + r.key), hi = R.$('#hi-' + r.key);
+    lo.value = loOf(r.key); hi.value = hiOf(r.key);
+    lo.addEventListener('change', () => { S.lo[r.key] = +lo.value; schedule(); });
+    hi.addEventListener('change', () => { S.hi[r.key] = +hi.value; schedule(); });
+  });
+  box.addEventListener('click', (e) => {
+    const k = e.target.getAttribute && e.target.getAttribute('data-reset');
+    if (k) { S.P[k] = P0[k]; R.$('#p-' + k).value = P0[k]; paintInputs(); schedule(); }
+  });
+  paintInputs();
+}
+function paintInputs() {
+  const changed = [];
+  D.ranges.forEach((r) => {
+    const v = S.P[r.key], diff = Math.abs(v - P0[r.key]) > 1e-12;
+    R.$('#o-' + r.key).textContent = fmtVal(r.key, v);
+    const row = R.$(`.prm[data-key="${r.key}"]`);
+    row.classList.toggle('changed', diff);
+    row.querySelector('.rst').hidden = !diff;
+    row.querySelector('.prm-r').hidden = S.m !== 'range';
+    if (diff) changed.push(r);
+  });
+  document.querySelectorAll('details.grp').forEach((d) => {
+    const n = D.ranges.filter((r) => r.group === d.dataset.g && Math.abs(S.P[r.key] - P0[r.key]) > 1e-12).length;
+    d.querySelector('.cnt').textContent = n ? n + ' changed' : '';
+  });
+  R.$('#changed').innerHTML = changed.length ? changed.map((r) => `<button type="button" data-k="${r.key}" title="Reset">${R.esc(r.label)}: ${fmtVal(r.key, P0[r.key])} → ${fmtVal(r.key, S.P[r.key])} ✕</button>`).join('') : '';
+}
+R.$('#changed').addEventListener('click', (e) => {
+  const k = e.target.closest('button') && e.target.closest('button').dataset.k;
+  if (k) { S.P[k] = P0[k]; R.$('#p-' + k).value = P0[k]; paintInputs(); schedule(); }
+});
+R.$('#reset').addEventListener('click', () => {
+  S.P = { ...P0 }; S.lo = {}; S.hi = {};
+  D.ranges.forEach((r) => { R.$('#p-' + r.key).value = P0[r.key]; R.$('#lo-' + r.key).value = r.low; R.$('#hi-' + r.key).value = r.high; });
+  paintInputs(); schedule();
+});
+R.$('#fold').addEventListener('click', () => {
+  const box = R.$('#inputs'), folded = box.classList.toggle('folded');
+  R.$('#fold').textContent = folded ? 'Show inputs' : 'Hide inputs';
+});
+if (matchMedia('(max-width: 980px)').matches) R.$('#inputs').classList.add('folded');
+
+// ---------------------------------------------------------------- engine in a worker
+const ENGINE_SRC = document.getElementById('fge').textContent;
+let worker = null;
+try {
+  const src = ENGINE_SRC + '\nself.onmessage = (e) => { const d = e.data; const t0 = Date.now(); const out = d.jobs.map((j) => FGE.simulate(d.input, d.P, j)); self.postMessage({ id: d.id, out, ms: Date.now() - t0 }); };';
+  worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+} catch (e) { worker = null; }
+let jobId = 0, timer = null, RES = null, BASE = {};
+function jobsFor(P, withTraj) {
+  const [, duty, ftz] = CUST[S.c];
+  const ranges = {};
+  if (S.m === 'range') D.ranges.forEach((r) => { if (r.sample === '1') ranges[r.key] = [Math.min(loOf(r.key), S.P[r.key]), Math.max(hiOf(r.key), S.P[r.key])]; });
+  return ST.map((s) => ({ strategy: s, runs: S.n, seed: 11, ftz, dutyOverride: duty, ranges: P === P0 ? {} : ranges, traj: withTraj ? true : s === S.s }));
+}
+function run(P, jobs) {
+  return new Promise((resolve) => {
+    if (worker) {
+      const id = ++jobId;
+      const h = (e) => { if (e.data.id === id) { worker.removeEventListener('message', h); resolve(e.data); } };
+      worker.addEventListener('message', h);
+      worker.postMessage({ id, input: IN, P, jobs });
+    } else {
+      const t0 = Date.now();
+      resolve({ out: jobs.map((j) => FGE.simulate(IN, P, j)), ms: Date.now() - t0 });
+    }
+  });
+}
+let pending = 0;
+async function compute() {
+  const my = ++pending;
+  R.$('#status').textContent = 'Running…'; R.$('#status').classList.add('busy');
+  const baseKey = `${S.c}|${S.n}`;
+  if (!BASE[baseKey]) {
+    const b = await run(P0, jobsFor(P0, false).map((j) => ({ ...j, traj: false, ranges: {} })));
+    BASE[baseKey] = Object.fromEntries(b.out.map((r) => [r.strategy, r]));
+  }
+  const res = await run(S.P, jobsFor(S.P, false));
+  if (my !== pending) return;                                   // a newer change is on its way
+  RES = Object.fromEntries(res.out.map((r) => [r.strategy, r]));
+  RES._base = BASE[baseKey];
+  R.$('#status').textContent = `${S.n} runs × ${ST.length} strategies · ${(res.ms / 1000).toFixed(2)} s${S.m === 'range' ? ' · inputs sampled' : ''}`;
+  R.$('#status').classList.remove('busy');
+  draw();
+}
+function schedule() { R.save({ s: S.s, c: S.c, m: S.m, n: S.n, v: S.v, P: S.P, lo: S.lo, hi: S.hi }); clearTimeout(timer); timer = setTimeout(compute, 160); }
+
+// ---------------------------------------------------------------- scenario controls
+R.seg(R.$('#f-s'), ST.map((s) => [s, SHORT[s]]), S.s, (v) => { S.s = v; schedule(); });
+R.seg(R.$('#f-c'), Object.keys(CUST).map((k) => [k, CUST[k][0]]), S.c, (v) => { S.c = v; schedule(); });
+R.seg(R.$('#f-m'), [['fixed', 'Fixed values'], ['range', 'Ranges']], S.m, (v) => { S.m = v; paintInputs(); schedule(); });
+R.seg(R.$('#f-r'), [[100, '100'], [200, '200'], [500, '500']], S.n, (v) => { S.n = +v; schedule(); });
+R.seg(R.$('#f-v'), [['brand', 'Brand'], ['system', 'Brand + dealers']], S.v, (v) => { S.v = v; if (RES) draw(); });
+
+// ---------------------------------------------------------------- KPIs
+function kpis() {
+  const r = RES[S.s].summary, b = RES._base[S.s].summary, k = COSTK();
+  const delta = (key, money, goodDown = true) => {
+    const d = r[key].mean - b[key].mean;
+    if (Math.abs(d) < (money ? 500 : 0.5)) return '<span class="k-delta flat">= base</span>';
+    const up = d > 0, cls = (up === goodDown) ? 'up' : 'down';
+    return `<span class="k-delta ${cls}">${up ? '+' : '−'}${money ? R.usd(Math.abs(d)) : R.kunits(Math.abs(d))} vs base</span>`;
+  };
+  const card = (label, value, sub, dl) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span>${dl}</div>`;
+  R.$('#kpis').innerHTML = [
+    card(S.v === 'brand' ? 'Avoidable cost to the brand' : 'Avoidable cost, brand + dealers', R.usd(r[k].mean), `P10–P90 ${R.usd(r[k].p10)}–${R.usd(r[k].p90)}`, delta(k, true)),
+    card('Price-protection bill', R.usd(r.price_protection_usd.mean), `${R.kunits(r.channel_at_launch_units.mean)} units with dealers at launch`, delta('price_protection_usd', true)),
+    card('Excess with the BU', R.kunits(r.excess_units.mean) + ' units', `loss ${R.usd(r.excess_loss_usd.mean)}`, delta('excess_units', false)),
+    card('Left with dealers', R.kunits(r.dealer_kept_units.mean) + ' units', `their loss ${R.usd(r.dealer_loss_usd.mean)}`, delta('dealer_kept_units', false)),
+    card('Material left (MWD)', R.usd(r.mwd_usd.mean), `${R.kunits(r.mwd_kits.mean)} kits`, delta('mwd_usd', true)),
+    card('Sales lost', R.kunits(r.lost_units.mean) + ' units', `${R.pct(r.lost_units.mean / r.demand_units.mean, 1)} of demand`, delta('lost_units', false)),
+  ].join('');
+}
+
+// ---------------------------------------------------------------- strategy comparison
+const COMP = [['markdown_above_floor_usd', 'Markdown above floor', 1], ['excess_loss_usd', 'Excess stock', 3], ['mwd_usd', 'EOL MWD', 5],
+  ['lost_margin_usd', 'Lost margin', 6], ['dealer_loss_usd', 'Dealer leftovers', 4]];
+const cStack = R.chart('c-stack', (t) => {
+  const o = R.base(t);
+  if (!RES) return { ...o };
+  const comps = COMP.filter((c) => S.v === 'system' || c[0] !== 'dealer_loss_usd');
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => R.tip(t, ps.map((p) => [p.color, p.seriesName, R.usd(p.value)]).concat([[t.ink, 'Total', R.usd(RES[ST[ps[0].dataIndex]].summary[COSTK()].mean)], [t.muted, 'Base inputs', R.usd(RES._base[ST[ps[0].dataIndex]].summary[COSTK()].mean)]]), SHORT[ST[ps[0].dataIndex]]) },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: ST.map((s) => SHORT[s]), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fBody, fontSize: 12 } }),
+    series: comps.map(([k, name, ci]) => ({ type: 'bar', stack: 'a', name, barWidth: '56%', itemStyle: { color: t.c[ci] },
+      data: ST.map((s) => ({ value: RES[s].summary[k].mean, itemStyle: { opacity: s === S.s ? 1 : 0.4 } })) }))
+      .concat([{ type: 'scatter', name: 'Base inputs', symbol: 'diamond', symbolSize: 10, itemStyle: { color: t.ink }, data: ST.map((s) => RES._base[s].summary[COSTK()].mean), z: 5 }]),
+  };
+});
+cStack.inst && cStack.inst.on('click', (p) => { if (p.seriesType === 'bar') { S.s = ST[p.dataIndex]; document.querySelectorAll('#f-s button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === S.s))); schedule(); } });
+
+// ---------------------------------------------------------------- week by week
+const cWeek = R.chart('c-week', (t) => {
+  const o = R.base(t);
+  if (!RES) return { ...o };
+  const r = RES[S.s], x = r.traj, n = r.horizon;
+  const weeks = Array.from({ length: n }, (_, i) => 'W' + i);
+  const line = (name, data, color, extra = {}) => ({ type: 'line', name, data, showSymbol: false, lineStyle: { width: 2, color }, itemStyle: { color }, ...extra });
+  return {
+    ...o, tooltip: { ...o.tooltip, valueFormatter: (v) => R.num(v) },
+    grid: { ...o.grid, top: 40 },
+    xAxis: R.axis(t, { type: 'category', data: weeks, boundaryGap: false, splitLine: { show: false } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.kunits } }),
+    series: [
+      line('MGI stock', x.mgi, t.c[3], { areaStyle: { color: t.c[3], opacity: .12 } }),
+      line('Dealer stock', x.channel, t.c[2], { areaStyle: { color: t.c[2], opacity: .12 } }),
+      line('In transit', x.transit, t.sea, { lineStyle: { width: 1.5, color: t.sea, type: [4, 3] } }),
+      line('Sell-through (actual)', x.demand, t.ink),
+      line('Forecast in use', x.forecast, t.c[0], { lineStyle: { width: 2, type: [6, 4], color: t.c[0] } }),
+      { type: 'bar', name: 'Builds', data: x.builds, barWidth: '45%', itemStyle: { color: t.c[6], opacity: .55 } },
+      line('Kits on hand', x.kits, t.c[5], { lineStyle: { width: 1.5, type: [2, 3], color: t.c[5] },
+        markLine: { symbol: 'none', silent: true, label: { color: t.ink2, fontSize: 11, position: 'insideEndTop' }, lineStyle: { color: t.muted, type: [4, 4] },
+          data: [{ xAxis: 'W' + Math.round(r.lock_week), label: { formatter: 'Sales lock' } }, { xAxis: 'W' + r.eol_week, label: { formatter: 'EOL' } },
+            { xAxis: 'W' + r.launch_week, label: { formatter: 'Launch' } }, { xAxis: 'W' + S.week, label: { formatter: '' }, lineStyle: { color: t.ink, type: 'solid', width: 1.5 } }] } }),
+    ],
+  };
+});
+
+// ---------------------------------------------------------------- state view (SVG)
+function phaseOf(r, w) {
+  if (w < r.lock_week) return 'Before the lock: builds follow the sales forecast, which runs optimistic.';
+  if (w < r.eol_week) return S.s === 'plan' || S.s === 'push' ? 'No lock in this strategy: builds keep following the sales forecast.' : 'Locked: the remaining builds are frozen and their material is bought.';
+  if (w < r.launch_week) return 'After EOL: no more builds; stock in the chain sells down.';
+  return 'Successor on the market: dealers got price protection on what they held; the old model fades out.';
+}
+function drawState() {
+  if (!RES) return;
+  const t = R.theme(), r = RES[S.s], x = r.traj, w = Math.min(S.week, r.horizon - 1);
+  const W = 960, H = 300, top = 70, tankH = 150, tankW = 120;
+  const stockMax = Math.max(1, ...['kits', 'transit', 'mgi', 'channel'].flatMap((k) => x[k]));
+  const flowMax = Math.max(1, ...['builds', 'arrivals', 'sell_in', 'sold'].flatMap((k) => x[k]));
+  const tanks = [
+    ['kits', 'Material kits', t.c[5], 30], ['transit', 'In transit', t.sea, 270], ['mgi', 'MGI stock', t.c[3], 510], ['channel', 'Dealer stock', t.c[2], 750],
+  ];
+  const flows = [
+    ['builds', 'builds', 30 + tankW, 270], ['arrivals', 'arrive', 270 + tankW, 510], ['sell_in', 'sell-in', 510 + tankW, 750],
+  ];
+  const esc = R.esc;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="${esc(t.fBody)}">`;
+  tanks.forEach(([k, label, col, x0]) => {
+    const v = x[k][w], h = Math.max(0, Math.min(tankH, tankH * v / stockMax));
+    svg += `<text x="${x0}" y="${top - 30}" font-size="13" fill="${t.ink2}">${esc(label)}</text>`;
+    svg += `<text x="${x0}" y="${top - 10}" font-size="18" font-weight="600" fill="${t.ink}" font-family="${esc(t.fMono)}">${R.kunits(v)}</text>`;
+    svg += `<rect x="${x0}" y="${top}" width="${tankW}" height="${tankH}" rx="4" fill="${t.chip}" stroke="${t.rule}"/>`;
+    svg += `<rect x="${x0}" y="${top + tankH - h}" width="${tankW}" height="${h}" rx="3" fill="${col}" opacity=".85"/>`;
+  });
+  flows.forEach(([k, label, xa, xb]) => {
+    const v = x[k][w], sw = 2 + 12 * Math.min(1, v / flowMax), y = top + tankH / 2;
+    svg += `<line x1="${xa + 6}" y1="${y}" x2="${xb - 14}" y2="${y}" stroke="${t.muted}" stroke-width="${sw.toFixed(1)}" stroke-linecap="round" opacity=".7"/>`;
+    svg += `<path d="M${xb - 14} ${y - 8} L${xb - 4} ${y} L${xb - 14} ${y + 8} Z" fill="${t.muted}"/>`;
+    svg += `<text x="${(xa + xb) / 2 - 4}" y="${y - 14}" text-anchor="middle" font-size="12" fill="${t.ink2}">${label}</text>`;
+    svg += `<text x="${(xa + xb) / 2 - 4}" y="${y + 26}" text-anchor="middle" font-size="13" fill="${t.ink}" font-family="${esc(t.fMono)}">${R.kunits(v)}/wk</text>`;
+  });
+  // customers
+  const cx = 750 + tankW, y = top + tankH / 2, sold = x.sold[w], lost = x.lost[w];
+  const sw = 2 + 12 * Math.min(1, sold / flowMax);
+  svg += `<line x1="${cx + 6}" y1="${y}" x2="${W - 18}" y2="${y}" stroke="${t.ink}" stroke-width="${sw.toFixed(1)}" stroke-linecap="round" opacity=".7"/>`;
+  svg += `<text x="${W - 10}" y="${y - 14}" text-anchor="end" font-size="12" fill="${t.ink2}">sold</text>`;
+  svg += `<text x="${W - 10}" y="${y + 26}" text-anchor="end" font-size="13" fill="${t.ink}" font-family="${esc(t.fMono)}">${R.kunits(sold)}/wk</text>`;
+  if (lost > 1) svg += `<text x="${W - 10}" y="${y + 46}" text-anchor="end" font-size="12" fill="${t.bad}" font-family="${esc(t.fMono)}">lost ${R.kunits(lost)}</text>`;
+  svg += `<text x="30" y="${H - 18}" font-size="12" fill="${t.muted}">Mean of ${r.runs} runs · stocks scaled to the largest stock over the whole horizon · forecast this week ${R.kunits(x.forecast[w])}/wk</text>`;
+  svg += '</svg>';
+  R.$('#state').innerHTML = svg;
+  R.$('#wk').textContent = 'Week ' + w;
+  R.$('#phase').textContent = phaseOf(r, w);
+  R.$('#h-state').textContent = `${SHORT[S.s]} · lock ≈ week ${Math.round(r.lock_week)}, EOL week ${r.eol_week}, launch week ${r.launch_week}`;
+}
+const wk = R.$('#week');
+wk.addEventListener('input', () => { S.week = +wk.value; stopPlay(); drawState(); R.update(cWeek); });
+let playT = null;
+function stopPlay() { clearInterval(playT); playT = null; R.$('#play').textContent = 'Play'; R.$('#play').setAttribute('aria-pressed', 'false'); }
+R.$('#play').addEventListener('click', () => {
+  if (playT) { stopPlay(); return; }
+  if (RES && S.week >= RES[S.s].horizon - 1) S.week = 0;
+  R.$('#play').textContent = 'Pause'; R.$('#play').setAttribute('aria-pressed', 'true');
+  playT = setInterval(() => {
+    if (!RES) return;
+    S.week += 1;
+    if (S.week >= RES[S.s].horizon - 1) { S.week = RES[S.s].horizon - 1; stopPlay(); }
+    wk.value = S.week; drawState(); R.update(cWeek);
+  }, 380);
+});
+
+function draw() {
+  wk.max = RES[S.s].horizon - 1;
+  kpis(); drawState();
+  R.$('#h-stack').textContent = S.v === 'brand' ? 'All strategies under these inputs · brand cost' : 'All strategies under these inputs · brand + dealer cost';
+  [cStack, cWeek].forEach(R.update);
+}
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawState); } catch (e) { /* ignore */ }
+new MutationObserver(drawState).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+buildInputs();
+compute();
+</script>
+
+</body>
+</html>

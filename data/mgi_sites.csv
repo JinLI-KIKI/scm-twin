@@ -4,3 +4,7 @@ M_EU,Europe,"Venlo, Netherlands",51.370,6.172,brand-run or 3PL-leased (never ODM
 M_UK,United Kingdom,"Daventry, England",52.257,-1.163,brand-run or 3PL-leased (never ODM),post-customs,UK,ILLUSTRATIVE
 M_JP,Japan,"Atsugi, Kanagawa",35.443,139.362,brand-run or 3PL-leased (never ODM),post-customs,JP,ILLUSTRATIVE
 M_BR,Brazil,"Campinas, Sao Paulo",-22.906,-47.061,brand-run or 3PL-leased (never ODM),post-customs,BR,ILLUSTRATIVE
+M_AU,Oceania,"Eastern Creek, Sydney",-33.800,150.850,brand-run or 3PL-leased (never ODM),post-customs,AU,ILLUSTRATIVE
+M_SG,Southeast Asia,"Loyang, Singapore",1.375,103.968,brand-run or 3PL-leased (never ODM),post-customs,"SG, SEA re-export",ILLUSTRATIVE
+M_IN,South Asia,"Bhiwandi, Maharashtra",19.296,73.063,brand-run or 3PL-leased (never ODM),post-customs,IN,ILLUSTRATIVE
+M_AE,Middle East,"Jebel Ali, Dubai",25.030,55.140,brand-run or 3PL-leased (never ODM),post-customs (UAE mainland),"AE, GCC",ILLUSTRATIVE

@@ -3,7 +3,7 @@
 Every rule and number in the model, with where it came from. Status:
 **PRACTITIONER** = generalized from hands-on industry practice; sites and numbers are virtualized (no employer-specific data) · **WEB** = sourced online · **PLACEHOLDER** = invented, needs calibration · **OPEN** = question pending.
 
-Last updated: 2026-10-14 (v0.6: Module 4 finished goods — sales volume lock, price protection, disposition)
+Last updated: 2026-10-15 (v0.7: Module 7 footprint — six sites, nine markets, real laptop duties, origin by main board)
 
 ## Business rules — MWD (Material Without Demand)
 
@@ -48,8 +48,8 @@ Last updated: 2026-10-14 (v0.6: Module 4 finished goods — sales volume lock, p
 | Item | Value | Status |
 |---|---|---|
 | Company | Anonymous laptop maker; no real brand is modelled | Design choice |
-| Factory sites | Kunshan, Jiangsu (current) and Cikarang, West Java, Indonesia (new) — `data/nodes.csv` | ILLUSTRATIVE |
-| MGI sites | Inland Empire CA, Venlo NL, Daventry UK, Atsugi JP, Campinas BR — `data/mgi_sites.csv` | ILLUSTRATIVE (typical electronics DC hubs) |
+| Factory sites | Kunshan, Jiangsu (current); candidates Cikarang (Indonesia), Bac Ninh (Vietnam), Penang (Malaysia), Jundiai (Brazil), Jebel Ali Free Zone (UAE) — `data/nodes.csv` | ILLUSTRATIVE |
+| MGI sites | Inland Empire CA, Venlo NL, Daventry UK, Atsugi JP, Campinas BR, Eastern Creek AU, Loyang SG, Bhiwandi IN, Jebel Ali AE — `data/mgi_sites.csv` | ILLUSTRATIVE (typical electronics DC hubs) |
 | Ports and airports | Real gateways (UN/LOCODE, IATA codes) | WEB-KNOWN |
 | Map frame | One complete Pacific-centred world, cut in the mid-Atlantic at 28°W; no repeated copies when zooming out | Design choice |
 | Country shapes | Natural Earth 1:50m, public domain | WEB / open data |
@@ -58,7 +58,40 @@ Last updated: 2026-10-14 (v0.6: Module 4 finished goods — sales volume lock, p
 | Red Sea status | Most Asia–Europe services still go around the Cape in 2026 → Cape is the default | WEB (see sources in Q&A log) |
 | Ocean speed / port-call allowance | 15 kn + 4 days | PLACEHOLDER (`data/leadtime_params.csv`) |
 | Handling days at each step | `data/leadtime_params.csv` | PLACEHOLDER |
-| Duty by importing country | `data/tariffs.csv` (US, MX, BR, IN, AE web-sourced; EU/UK/JP zero under WTO ITA, to verify) | WEB / TO VERIFY |
+| Duty by importing country and assembly origin | `data/tariffs.csv`, one column per site; see the Module 7 section | WEB / TO VERIFY |
+| Same-country lanes | Brazil to Brazil and UAE to UAE go by truck only; the UAE adds 2 days to leave the free zone and clear into the mainland | ILLUSTRATIVE / PLACEHOLDER |
+
+## Footprint and duties (Module 7) — added 2026-10-15
+
+| ID | Rule | Status |
+|---|---|---|
+| R34 | **Origin follows the main board in the footprint model too (R13).** A site that assembles main boards made in China ships China-origin laptops to the US and pays the China rate. To escape a China tariff a new site must make its own boards (SMT), at an extra cost per unit and a yearly fixed cost for the board line. A weight between 0 and 1 lets other customs authorities, or a looser ruling, be tested. | PRACTITIONER (R13) · WEB: CBP rulings [N350187](https://www.tarifflens.ai/rulings/N350187) (Jul 2025) and [N357691](https://www.tarifflens.ai/rulings/N357691) (Jan 2026): boards made in Vietnam, final assembly in China → Vietnam origin |
+| R35 | **A new site needs a minimum load.** Once open it must build at least a share of its capacity, or it loses its workforce and its qualifications. So a hedge site costs its fixed cost plus the landed-cost gap on the volume it has to carry, even when China is cheaper. | Design choice — to confirm (Q28) |
+| R36 | **Build now or wait.** Waiting means keeping the footprint that is cheapest under today's duties and opening a new site only once a tariff arrives: the old cost runs through the ramp-up and a rush premium is paid. Building now pays the fixed cost and minimum load every year whatever happens. | Design choice — to confirm (Q29) |
+
+| Item | Value | Status |
+|---|---|---|
+| Markets and weekly demand | US 4,000 · EU 2,400 · UK 700 · JP 1,300 · BR 1,500 · AU 550 · SEA (Singapore hub) 800 · IN 900 · ME (UAE) 450 units a week — `data/markets.csv`; separate from the Module 1–4 locale mix | PLACEHOLDER |
+| US duty on laptops (HTS 8471.30) | 0% from every site: MFN free; laptops (8471.30–.90) are exempt from the 60-economy Section 301 action of 24 Jul 2026 (10% ID/MY, 12.5% VN on other goods); China's 2019 list on laptops stays suspended (one commercial tracker shows 25%: conflicting); IEEPA tariffs struck down 20 Feb 2026; Section 122 expired 24 Jul 2026 | WEB — [TechNode Global](https://technode.global/2026/07/24/u-s-section-301-hits-southeast-asia-10-for-three-12-5-for-singapore-vietnam-technology-escapes/) |
+| Section 232 semiconductors, phase 2 | Phase 1 (Jan 2026) covers 8471.50/.80 servers with qualifying chips only; a phase 2 reaching laptops is proposed (25%), not in force as of Oct 2026 | WEB — [TariffLens](https://www.tarifflens.ai/blog/section-232-semiconductor-tariff-july-2026-phase-2-guide) |
+| EU and UK duty on laptops | 0% from every origin (WTO Information Technology Agreement) | ITA — TO VERIFY |
+| Japan and Australia duty on laptops | 0% (MFN free on 8471.30); Australia values imports FOB | WEB — [Treayo](https://treayo.com/en/compare/847130) |
+| Singapore duty on laptops | 0% (not on the dutiable list); GST 9% recoverable | WEB — [Epic Sourcing](https://www.epicsourcing.co/epic-guide/import-duty-gst-from-china-to-singapore-2026) |
+| India duty on laptops | 0% basic customs duty (ITA); laptops need an import authorisation (IMS) | WEB — [A2Z Taxcorp](https://a2ztaxcorp.net/government-notifies-procedure-for-import-management-system-for-restricted-it-hardware-for-calendar-year-2026/) |
+| Brazil duty on laptops | 16% import duty (NCM 8471.30.12, Mercosur TEC) on CIF from every foreign site; a Brazilian-made laptop pays none, but its imported parts do (modelled 8% average) | WEB — [Buscador NCM](https://buscadorncm.com.br/ncm/84713012); parts rate PLACEHOLDER |
+| UAE duty on laptops | 5% GCC tariff on CIF, also on free-zone units entering the mainland unless they qualify as a GCC national product; some sources say computers are free | WEB-CONFLICTING — [Middle East Briefing](https://middleeastbriefing.com/doing-business-guide/uae/taxation-and-accounting/custom-duties-export-import-tax-uae) |
+| Duty scenarios and weights | Current 50% · US 25% on China-made laptops 20% · Section 232 phase 2 at 25% on every origin 15% · Asia Section 301 without the computer exemption 10% · Brazil removes its 16% 5% — `data/duty_scenarios.csv` | PLACEHOLDER (weights); rates WEB |
+| Site conversion cost vs China | ID 1.08× · VN 1.06× · MY 1.12× · BR 1.60× · AE 1.35× of China's $25 per unit | PRACTITIONER (+5–10% for a new SE Asia site) / PLACEHOLDER |
+| Site capacity and fixed cost per year | CN 14,000/wk · ID and VN 5,000/wk, $1.5M · MY 4,000/wk, $1.8M · BR 2,000/wk, $2.5M · AE 1,500/wk, $2.0M — `data/sites.csv` | PLACEHOLDER |
+| Minimum load of a new site | 50% of capacity (China 0%) | PLACEHOLDER (R35) |
+| Main board made on site | +$6 per unit; board line $1.2M a year | PLACEHOLDER (R34) |
+| Board-origin weight | 1.0 (origin follows the board, as in the CBP rulings) | PRACTITIONER (R13) · WEB |
+| Ramp-up to open a site / rush premium / years compared | 12 months / $1.0M / 3 years | PLACEHOLDER (R36) |
+| Ocean freight | $900 + $0.20 per nautical mile per 40-ft; 1,800 laptops or 2,600 part kits per container; $1.50 handling per unit | PLACEHOLDER |
+| Air freight | 3 kg per laptop × ($2.50 + $0.22 per 1,000 km) per kg | PLACEHOLDER |
+| Planning cost of a longer chain | $1.25 per unit per extra week (feed days / 7 + 1) | DERIVED from Module 3 (≈$5 per unit for +4 weeks, US) |
+| Chokepoint premium | $0 per risky passage by default (Red Sea, Hormuz) | PLACEHOLDER |
+| Straits on each ocean lane | Reported by `searoute` (Malacca, Sunda, Hormuz, Suez, Bab-el-Mandeb, Gibraltar, Cape, Panama, Chile) | WEB / open source |
 
 ## Ageing while waiting
 
@@ -142,5 +175,7 @@ Last updated: 2026-10-14 (v0.6: Module 4 finished goods — sales volume lock, p
 | Q25 | When sales locks the volume, is the material for the last builds still unordered, so the lock sets the final material buy? Or is most of it already inside the liability window? | Locked is locked: the material is ordered at the lock. A hedge is possible, but once the lock is a cut, the lower volume is locked (R28). |
 | Q26 | When you hedge at the lock, how much extra material do you usually buy over the locked volume (% or weeks), for which parts, and what happens to hedge material that is not used? | The hedge can also be negative. IBP sets it from historical sell-through, because sales are sometimes too optimistic (R32). |
 | Q27 | What is the BU's fiscal-year shipment target counted in: sell-in units, sell-in revenue, or something else? | Sell-in units (R33). |
+| Q28 | When a second factory is opened as a tariff hedge, does it have to run a minimum share of its capacity? Roughly how much, and what happens below it (staff, ODM contract, customer qualification)? | OPEN — modelled 50% (R35) |
+| Q29 | When a US tariff on China-made laptops is announced, how long does it take to open and qualify a new site and its board line, and is it usual to prepare one before the tariff comes? | OPEN — modelled 12 months, $1M rush premium (R36) |
 | Q12 | From first trial build to full volume, how long does a new factory take; what holds it back most? | OPEN |
 | Q7 | How many weeks before delivery does a PO become non-cancellable, standard vs custom parts? | QUEUED |

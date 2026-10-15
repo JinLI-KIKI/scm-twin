@@ -72,12 +72,50 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   GEOs that habitually lock high.
 - Rework pays for gaming and consumer lines and not for education or convertibles, matching R11.
 
-## Next — Day 3
+## Day 3 — 2026-10-15
 
-- **Ranges instead of single numbers.** Every input gets a low / base / high range on the page,
-  and the model responds when a range moves (pulled forward from Roadmap F1). Needs a decision
-  on how: port the core formulas to JavaScript, or sample the ranges in Python and ship the
-  response surface.
-- **Formula and algorithm review with Jin**, module by module, before Module 5.
+**Built:**
+- **Finished-goods simulator** (`docs/fg-live.html`, Roadmap F1 pulled forward): every Module 4
+  input is a slider, or a low–high range sampled per run (triangular), and the model re-runs in
+  the browser in a Web Worker (6 strategies × 200 runs in about 0.4 s). The JavaScript engine
+  (`src/dash/fg_engine.js`) is a line-by-line port of `src/finished_goods.py` with the same
+  portable random-number generator; `tests/test_fg_parity.py` checks both agree to 1e-15.
+  A week-by-week state view (kits → in transit → MGI → dealers → customers) plays the run.
+- **Six candidate sites and nine markets.** Vietnam (Bac Ninh), Malaysia (Penang), Brazil
+  (Jundiai) and the UAE (Jebel Ali Free Zone) join China and Indonesia; Australia, Singapore,
+  India and the UAE join the US, EU, UK, Japan and Brazil as MGIs. The atlas and the lanes
+  page cover every pair, with the straits each ocean lane passes (`searoute`) and a parts feed
+  from China into every new site. Same-country lanes go by truck.
+- **Real laptop duties, October 2026** (`data/tariffs.csv`, one column per site): zero in the
+  US, EU, UK, Japan, Australia, Singapore and India from every site; Brazil 16% (0% for
+  Brazil-made); the UAE 5%, free-zone units included. Four scenarios: a 25% US tariff on
+  China-made laptops, Section 232 phase 2 on every origin, the July 2026 Asia Section 301 rates
+  without the computer exemption, and Brazil dropping its 16%.
+- **Module 7 — factory footprint** (`src/footprint.py`, `docs/footprint.html`): landed cost per
+  site and market; a minimum-cost flow that allocates demand within site capacity and minimum
+  loads; every feasible footprint scored in every scenario (expected cost, worst-case regret);
+  break-even China duty per site and market; build now or wait, with the scenario weight at
+  which building now wins. **Origin follows the main board** (R13, R34; CBP rulings N350187 and
+  N357691): a site assembling China-made boards pays the China rate, so footprints come in two
+  variants, boards imported or made on site. The page recomputes all of it live
+  (`src/dash/fp_engine.js`, exact parity in `tests/test_fp_parity.py`).
+
+**Key findings (placeholder costs, real duties):**
+- Under today's duties China is the cheapest source for every market except Brazil, where a
+  local site saves the 16%. A UAE free-zone site saves nothing on the UAE's 5%.
+- A second Asian site is no hedge against a US tariff on China-made laptops unless it makes its
+  own main boards: assembling China-made boards, it pays the China rate too. Making boards on
+  site, Vietnam beats China in the US once that tariff passes about 4%.
+- China alone has the lowest expected cost; China + Malaysia or China + Vietnam with boards made
+  on site costs about $0.3M a year more in expectation but cuts the worst-case regret from
+  $18.4M to $4.9M a year.
+- With a 12-month ramp-up and a 20% weight on the China tariff, waiting beats building now.
+  Building the hedge now wins once that weight passes about 43%.
+
+## Next — Day 4
+
+- **Practitioner check of Module 7**: minimum load of a hedge site (Q28), time to open and
+  qualify a site and its board line (Q29), conversion cost by site.
+- **Formula and algorithm review with Jin**, module by module (spec in `docs/models/`).
 - Then Roadmap A2, Module 5: demand and KPI view. Q27 answered: the BU's FY shipment target is
   counted in sell-in units (R33).

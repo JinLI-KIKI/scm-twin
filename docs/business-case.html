@@ -92,7 +92,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-vis
 .canvas { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
 .viz { grid-column: span 6; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
   padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.viz.w3 { grid-column: span 3; } .viz.w4 { grid-column: span 4; } .viz.w5 { grid-column: span 5; }
+.viz.w3 { grid-column: span 3; } .viz.w4 { grid-column: span 4; } .viz.w5 { grid-column: span 5; } .viz.w6 { grid-column: span 6; }
 .viz.w7 { grid-column: span 7; } .viz.w8 { grid-column: span 8; } .viz.w12 { grid-column: span 12; }
 .viz-h { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
 .viz-h h2 { font: 600 15px/1.2 var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
@@ -101,7 +101,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-vis
 .chart.short { height: 230px; } .chart.tall { height: 380px; } .chart.xtall { height: 460px; }
 .chart .nolib { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 13px; text-align: center; padding: 12px; }
 @media (max-width: 1180px) { .viz.w3, .viz.w4, .viz.w5 { grid-column: span 6; } .viz.w7, .viz.w8 { grid-column: span 12; } }
-@media (max-width: 860px) { .viz, .viz.w3, .viz.w4, .viz.w5, .viz.w7, .viz.w8 { grid-column: span 12; } h1 { font-size: 28px; } .asof { text-align: left; } }
+@media (max-width: 860px) { .viz, .viz.w3, .viz.w4, .viz.w5, .viz.w6, .viz.w7, .viz.w8 { grid-column: span 12; } h1 { font-size: 28px; } .asof { text-align: left; } }
 
 /* tables */
 .tbl-wrap { overflow-x: auto; min-width: 0; }
@@ -162,7 +162,7 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
 </style>
 <header class="topbar">
   <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
-  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html">Overview</a><a class="tab" href="atlas.html">Network atlas</a><a class="tab" href="lanes.html">Lanes & lead time</a><a class="tab" href="mwd.html">MWD</a><a class="tab" href="transfer.html">Transfer timing</a><a class="tab" href="business-case.html" aria-current="page">Business case</a><a class="tab" href="finished-goods.html">Finished goods</a><a class="tab" href="rules.html">Rules register</a></nav>
+  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html">Overview</a><a class="tab" href="atlas.html">Network atlas</a><a class="tab" href="lanes.html">Lanes & lead time</a><a class="tab" href="mwd.html">MWD</a><a class="tab" href="transfer.html">Transfer timing</a><a class="tab" href="business-case.html" aria-current="page">Business case</a><a class="tab" href="finished-goods.html">Finished goods</a><a class="tab" href="fg-live.html">FG simulator</a><a class="tab" href="footprint.html">Footprint</a><a class="tab" href="rules.html">Rules register</a></nav>
   <a class="repo" href="https://github.com/jinli-kiki/scm-twin">GitHub</a>
 </header>
 <script>(function(){var a=document.querySelector(".topbar .tab[aria-current]");if(a){var n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.clientWidth)/2;}})();</script>
@@ -174,7 +174,7 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
       <h1>Move US Production to Indonesia?</h1>
       <p class="sub">One year of moving US-bound production from the China factory to the new Indonesian site. The tariff saved has to pay for a longer chain, worse forecasts at end of life, a dearer new line and a slow ramp.</p>
     </div>
-    <div class="asof">Model run 2026-10-14 · 2,000 Monte Carlo runs per cell</div>
+    <div class="asof">Model run 2026-10-15 · 2,000 Monte Carlo runs per cell</div>
   </div>
 
   <section class="slicers" aria-label="Filters">

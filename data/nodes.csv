@@ -21,3 +21,23 @@ M_EU,mgi,"Venlo, Netherlands",MGI-EU,NLD,51.370,6.172,"EU regional DC serving DE
 M_UK,mgi,"Daventry, England",MGI-UK,GBR,52.257,-1.163,"UK regional DC (post-customs)",ILLUSTRATIVE
 M_JP,mgi,"Atsugi, Kanagawa",MGI-JP,JPN,35.443,139.362,"Japan regional DC (post-customs)",ILLUSTRATIVE
 M_BR,mgi,"Campinas, Sao Paulo",MGI-BR,BRA,-22.906,-47.061,"Brazil regional DC (post-customs)",ILLUSTRATIVE
+F_VN,factory,"Bac Ninh, northern Vietnam",BNH,VNM,21.186,106.076,"Candidate ODM site in the northern Vietnam electronics cluster",ILLUSTRATIVE
+F_MY,factory,"Bayan Lepas, Penang",BLP,MYS,5.320,100.280,"Candidate ODM site in the Penang free industrial zone",ILLUSTRATIVE
+F_BR,factory,"Jundiai, Sao Paulo",JDI,BRA,-23.190,-46.890,"Local assembly for Brazil",ILLUSTRATIVE
+F_AE,factory,"Jebel Ali Free Zone, Dubai",JFZ,ARE,24.985,55.080,"Candidate assembly site for the Middle East",ILLUSTRATIVE
+P_HPH,port,"Hai Phong Lach Huyen",VNHPH,VNM,20.800,106.950,"Export seaport for northern Vietnam",WEB-KNOWN
+A_HAN,airport,"Hanoi Noi Bai",HAN,VNM,21.221,105.807,"Air gateway for northern Vietnam",WEB-KNOWN
+P_PEN,port,"Penang North Butterworth",MYPEN,MYS,5.410,100.360,"Export seaport for Penang",WEB-KNOWN
+A_PEN,airport,"Penang Intl",PEN,MYS,5.297,100.277,"Air gateway for Penang",WEB-KNOWN
+P_JEA,port,"Jebel Ali",AEJEA,ARE,25.010,55.060,"Gulf gateway",WEB-KNOWN
+A_DWC,airport,"Dubai World Central",DWC,ARE,24.896,55.161,"UAE air cargo gateway",WEB-KNOWN
+P_SYD,port,"Sydney Port Botany",AUSYD,AUS,-33.970,151.220,"Australia gateway",WEB-KNOWN
+A_SYD,airport,"Sydney Kingsford Smith",SYD,AUS,-33.946,151.177,"Australia air gateway",WEB-KNOWN
+P_SIN,port,"Singapore",SGSIN,SGP,1.265,103.800,"Southeast Asia gateway",WEB-KNOWN
+A_SIN,airport,"Singapore Changi",SIN,SGP,1.364,103.991,"Southeast Asia air gateway",WEB-KNOWN
+P_NSA,port,"Nhava Sheva (JNPA)",INNSA,IND,18.950,72.950,"India west coast gateway",WEB-KNOWN
+A_BOM,airport,"Mumbai",BOM,IND,19.089,72.868,"India air gateway",WEB-KNOWN
+M_AU,mgi,"Eastern Creek, Sydney",MGI-AU,AUS,-33.800,150.850,"Australia regional DC (post-customs)",ILLUSTRATIVE
+M_SG,mgi,"Loyang, Singapore",MGI-SG,SGP,1.375,103.968,"Southeast Asia hub DC (post-customs Singapore)",ILLUSTRATIVE
+M_IN,mgi,"Bhiwandi, Maharashtra",MGI-IN,IND,19.296,73.063,"India regional DC (post-customs)",ILLUSTRATIVE
+M_AE,mgi,"Jebel Ali, Dubai",MGI-AE,ARE,25.030,55.140,"Middle East regional DC (UAE mainland, post-customs)",ILLUSTRATIVE

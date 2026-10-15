@@ -1,0 +1,524 @@
+<title>Factory Footprint Studio</title>
+<!--__HEAD__-->
+<style>/*__CSS__*/
+/*__SIMCSS__*/
+.site-row { display: grid; gap: 6px; padding: 10px 0; border-top: 1px dashed var(--rule); }
+.site-row:first-child { border-top: 0; }
+.site-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.site-h label, .tog { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.site-h label { font: 600 13px var(--f-body); color: var(--ink); }
+.tog { font-size: 12px; color: var(--ink-2); }
+.site-row input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: var(--c1); }
+.site-row.closed .mini, .site-row.closed .tog { opacity: .45; }
+.mini { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; align-items: center; font-size: 12px; color: var(--ink-2); }
+.mini input[type="range"] { grid-column: 1 / -1; width: 100%; margin: 2px 0 0; accent-color: var(--c1); }
+.mini output { font: 12px var(--f-mono); color: var(--ink); }
+.mini.changed output { color: var(--c2); font-weight: 600; }
+.heat td.cell { cursor: pointer; }
+.heat tbody tr { cursor: pointer; }
+.heat td.best { box-shadow: inset 0 0 0 2px var(--ink); font-weight: 600; }
+.heat td.closed { color: var(--muted); }
+.heat tr.selm td.txt { background: var(--hl); }
+.tbl th small, .tbl td.txt small { display: block; color: var(--muted); font: 400 10px/1.3 var(--f-body); text-transform: none; letter-spacing: 0; }
+.duty-in { width: 56px; font: 12px var(--f-mono); color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 4px; text-align: right; }
+.duty-in.edited { border-color: var(--c2); color: var(--c2); font-weight: 600; }
+.fp-open { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.tbl tr.cur td { background: var(--hl); }
+.usebtn { font: 11px var(--f-body); border: 1px solid var(--rule); background: var(--paper); color: var(--ink-2); border-radius: 4px; padding: 1px 8px; cursor: pointer; }
+.usebtn:hover { color: var(--ink); border-color: var(--ink-2); }
+.pos { color: var(--good); } .neg { color: var(--bad); }
+.empty { color: var(--muted); font-size: 13px; padding: 12px 0; }
+.results .kpis { grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); }
+.be td b { font-weight: 600; }
+.be th, .be td { padding-left: 6px; padding-right: 6px; }
+.be td small { display: block; color: var(--ink-2); font: 400 10px/1.3 var(--f-mono); }
+.be td.never b, .be td small.never { color: var(--muted); font-weight: 400; }
+.be td.now b { color: var(--good); }
+@media (max-width: 1180px) { .canvas .viz.w5, .canvas .viz.w6, .canvas .viz.w7 { grid-column: span 12; } }
+</style>
+<!--__NAV__-->
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Module 7 · sites, markets and real duties</p>
+      <h1>Factory Footprint Studio</h1>
+      <p class="sub">Six candidate assembly sites, nine regional distribution centres, laptop duties as they stand in October 2026 and four tariff scenarios. A laptop takes the origin of its main board, so a site that only assembles China-made boards does not escape a China tariff. Move anything on the left: landed costs, the allocation, break-even duties and the ranking of footprints update at once.</p>
+    </div>
+    <div class="asof">Built __TODAY__ · duties checked Oct 2026 · <a href="rules.html">sources</a> · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/footprint.md">formulas</a></div>
+  </div>
+
+  <div class="sim">
+    <aside class="inputs" id="inputs" aria-label="Model inputs">
+      <div class="inputs-h">
+        <h2>Inputs</h2>
+        <span><button type="button" class="btn mobile-toggle" id="fold">Show inputs</button> <button type="button" class="btn" id="reset">Reset all</button></span>
+      </div>
+      <details class="grp" open><summary>Sites<span class="cnt" id="cnt-sites"></span></summary><div id="sites"></div></details>
+      <div id="groups"></div>
+    </aside>
+
+    <div class="results">
+      <section class="ctrl" aria-label="Scenario">
+        <div class="slicer"><span class="s-label" id="l-s">Duty scenario</span><div class="seg" role="group" aria-labelledby="l-s" id="f-s"></div></div>
+        <div class="slicer"><span class="s-label" id="l-r">Red Sea</span><div class="seg" role="group" aria-labelledby="l-r" id="f-r"></div></div>
+        <div class="slicer"><span class="s-label" id="l-m">Grid mode</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
+        <div class="slicer"><span class="s-label" id="l-v">Grid shows</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
+        <span class="status" id="status" aria-live="polite"></span>
+      </section>
+
+      <section class="kpis" id="kpis" aria-live="polite"></section>
+
+      <section class="canvas">
+        <div class="viz w12">
+          <div class="viz-h"><h2>Who supplies whom</h2><span class="hint" id="h-sankey"></span></div>
+          <div id="c-sankey" class="chart tall"></div>
+        </div>
+        <div class="viz w7">
+          <div class="viz-h"><h2 id="h-heat">Landed cost per unit</h2><span class="hint">Outlined: cheapest open site · click a market</span></div>
+          <div class="tbl-wrap"><table class="tbl heat" id="t-heat"></table></div>
+        </div>
+        <div class="viz w5">
+          <div class="viz-h"><h2 id="h-drill">What makes up the cost</h2><span class="hint">Per unit, ocean</span></div>
+          <div id="c-drill" class="chart tall"></div>
+        </div>
+        <div class="viz w6">
+          <div class="viz-h"><h2 id="h-sweep">If a market taxes China-made laptops</h2><span class="hint">Yearly cost of each footprint, $M · dotted: this scenario's rate · click a market in the grid</span></div>
+          <div id="c-sweep" class="chart tall"></div>
+        </div>
+        <div class="viz w6">
+          <div class="viz-h"><h2>Break-even China duty</h2><span class="hint">Duty on China-made units above which a site is cheaper per unit · top: boards made on site, below: China-made boards · ✓ already cheaper</span></div>
+          <div class="tbl-wrap"><table class="tbl be" id="t-be"></table></div>
+        </div>
+        <div class="viz w12">
+          <div class="viz-h"><h2>Which footprint holds up</h2><span class="hint" id="h-fp"></span></div>
+          <div class="tbl-wrap"><table class="tbl" id="t-fp"></table></div>
+        </div>
+        <div class="viz w7">
+          <div class="viz-h"><h2>Duties in this scenario</h2><span class="hint">Percent, by where the unit is assembled · type to change</span></div>
+          <div class="tbl-wrap"><table class="tbl" id="t-duty"></table></div>
+        </div>
+        <div class="viz w5">
+          <div class="viz-h"><h2>Straits and capes</h2><span class="hint">Units per week on the chosen network</span></div>
+          <div id="c-choke" class="chart"></div>
+        </div>
+      </section>
+
+      <section class="insight" id="insight"></section>
+
+      <footer class="notes">
+        <p><b>Landed cost</b> = factory value (China customs value, conversion cost scaled by the site's index and, at other sites, the parts shipped from China: freight, carrying while they sail and import duty on parts; plus the extra cost of making the main board on site) + freight to the market + duty (on CIF where the market values imports that way) + carrying in transit + a planning cost for the longer chain at non-China sites + an optional chokepoint premium. <b>Duty</b> = (1 − w) × the site's own rate + w × the China rate, where w is the board-origin weight for a site that imports China-made boards (1 under the US customs rulings) and 0 for a site that makes its boards or sells in its own country.</p>
+        <p><b>Allocation</b> is a minimum-cost flow from open sites to markets within capacity, with each new site carrying at least its minimum load. <b>Footprints</b> are every set of open sites that can cover demand and whose minimum loads fit, with boards imported or made on site, priced over 52 weeks plus the yearly fixed cost of sites and board lines, in every scenario; regret is the gap to the best footprint for that scenario. <b>Build now or wait</b> compares opening today with keeping the footprint that is cheapest under current duties and opening only once a scenario arrives: the old cost runs through the ramp-up and a rush premium is paid.</p>
+        <p><b>Duties</b> are current rates for laptops (HTS 8471.30). The US exempts computers from the July 2026 Section 301 action and China's 2019 list on laptops stays suspended; the EU, UK, Japan, Australia, Singapore and India charge nothing (WTO ITA); Brazil charges 16%; the UAE 5%, also on free-zone units sold on the mainland unless they qualify as a GCC product. Scenario probabilities, freight rates, conversion indices, capacities, minimum loads and board costs are placeholders. Sources in the <a href="rules.html">Rules register</a>; code in <code>src/footprint.py</code>, mirrored in <code>src/dash/fp_engine.js</code> and checked number for number by <code>tests/test_fp_parity.py</code>.</p>
+      </footer>
+    </div>
+  </div>
+</main>
+<script>/*__JS__*/</script>
+<script>/*__FPENGINE__*/</script>
+<script>
+const D = /*__DATA__*/null;
+const IN = D.input;
+const ORG = IN.origins, MK = IN.markets, NONCN = ORG.filter((o) => o !== 'CN');
+const P0 = { ...IN.P };
+const SITES0 = JSON.parse(JSON.stringify(IN.sites));
+const DEM0 = Object.fromEntries(MK.map((m) => [m.market, m.weekly_units]));
+const PROB0 = Object.fromEntries(IN.scenarios.map((s) => [s.id, s.probability]));
+const SCOL = { CN: 0, ID: 2, VN: 3, MY: 4, BR: 1, AE: 5 };
+const SHORT = { now: 'Current', cn301: 'China 25% in US', s232: '232 on every origin', asia301: 'Asia 301', brcut: 'Brazil 0%' };
+const SHORT2 = { now: 'Current', cn301: 'CN 25% US', s232: '232 all', asia301: 'Asia 301', brcut: 'BR 0%' };
+const saved = R.load();
+const S = {
+  sc: IN.scenarios.some((s) => s.id === saved.sc) ? saved.sc : 'now',
+  rs: saved.rs === 'suez' ? 'suez' : 'cape',
+  mode: saved.mode === 'air' ? 'air' : 'sea',
+  view: ['total', 'duty', 'freight', 'days'].includes(saved.view) ? saved.view : 'total',
+  P: { ...P0 }, sites: JSON.parse(JSON.stringify(SITES0)), dem: { ...DEM0 }, prob: { ...PROB0 },
+  edits: saved.edits && typeof saved.edits === 'object' ? saved.edits : {},
+  selm: MK.some((m) => m.market === saved.selm) ? saved.selm : 'US',
+};
+for (const k in (saved.P || {})) if (k in P0 && typeof saved.P[k] === 'number') S.P[k] = saved.P[k];
+for (const k in (saved.dem || {})) if (k in DEM0) S.dem[k] = saved.dem[k];
+for (const k in (saved.prob || {})) if (k in PROB0) S.prob[k] = saved.prob[k];
+if (saved.sites) for (const o of ORG) if (saved.sites[o]) for (const k of ['open', 'board_local', 'capacity', 'conv_index', 'parts_duty', 'fixed_cost', 'min_load']) if (k in saved.sites[o]) S.sites[o][k] = saved.sites[o][k];
+const persist = () => R.save({ sc: S.sc, rs: S.rs, mode: S.mode, view: S.view, P: S.P, sites: S.sites, dem: S.dem, prob: S.prob, edits: S.edits, selm: S.selm });
+const openSites = () => ORG.filter((o) => S.sites[o].open);
+const fpKey = (open, board) => open.join('+') + (board && open.some((o) => o !== 'CN') ? ' · boards' : '');
+const curBoard = () => { const n = openSites().filter((o) => o !== 'CN'); if (!n.length) return null; const b = n.map((o) => !!S.sites[o].board_local); return b.every((x) => x === b[0]) ? b[0] : 'mixed'; };
+const curKey = () => { const b = curBoard(); return b === 'mixed' ? null : fpKey(openSites(), b); };
+const marketName = (m) => m.market === 'SEA' ? 'Singapore' : m.market === 'ME' ? 'the UAE' : m.market;
+
+// ---------------------------------------------------------------- model input with the viewer's changes
+function currentInput() {
+  const extra = Object.entries(S.edits).flatMap(([k, os]) => Object.entries(os).map(([o, d]) => ({ tkey: k, origin: o, duty: d })));
+  return { ...IN, markets: MK.map((m) => ({ ...m, weekly_units: S.dem[m.market] })),
+    scenarios: IN.scenarios.map((s) => ({ ...s, probability: S.prob[s.id], overrides: s.overrides.concat(extra) })) };
+}
+
+// ---------------------------------------------------------------- inputs panel
+const RANGE = {
+  customs_value_cn_usd: ['China customs value per unit', 300, 900, 5, 'usd', 'Cost base'],
+  conversion_cost_cn_usd: ['China conversion cost per unit', 5, 80, 1, 'usd', 'Cost base'],
+  parts_value_usd: ['Parts shipped to a non-China site', 150, 700, 5, 'usd', 'Cost base'],
+  carrying_rate_annual: ['Carrying rate per year', 0.05, 0.4, 0.01, 'pct', 'Cost base'],
+  board_origin_weight: ['Origin follows the main board (0–1)', 0, 1, 0.05, 'n2', 'Origin and main boards'],
+  board_extra_usd: ['Extra cost per unit to make the board on site', 0, 30, 0.5, 'usd2', 'Origin and main boards'],
+  board_fixed_usd_yr: ['Board line fixed cost per year', 0, 5000000, 100000, 'usdm', 'Origin and main boards'],
+  horizon_years: ['Years compared', 1, 6, 1, 'n', 'Build now or wait'],
+  ramp_months: ['Months to open and qualify a site', 3, 30, 1, 'n', 'Build now or wait'],
+  rush_premium_usd: ['Rush premium for a late opening', 0, 5000000, 100000, 'usdm', 'Build now or wait'],
+  sea_feu_base_usd: ['Ocean rate per 40-ft, fixed part', 0, 4000, 50, 'usd', 'Freight'],
+  sea_feu_per_nm_usd: ['Ocean rate per 40-ft per nautical mile', 0, 1, 0.01, 'usd2', 'Freight'],
+  units_per_feu: ['Laptops per 40-ft container', 800, 3000, 50, 'n', 'Freight'],
+  kits_per_feu: ['Part kits per 40-ft container', 1000, 4000, 50, 'n', 'Freight'],
+  handling_usd_per_unit: ['Terminal handling per unit', 0, 6, 0.1, 'usd2', 'Freight'],
+  truck_usd_per_unit_100km: ['Trucking per unit per 100 km', 0, 1, 0.01, 'usd2', 'Freight'],
+  air_usd_per_kg_base: ['Air freight per kg, fixed part', 0.5, 8, 0.1, 'usd2', 'Freight'],
+  air_usd_per_kg_per_1000km: ['Air freight per kg per 1,000 km', 0, 1, 0.01, 'usd2', 'Freight'],
+  kg_per_unit: ['Chargeable kg per laptop', 1, 6, 0.1, 'n1', 'Freight'],
+  planning_cost_usd_per_unit_week: ['Planning cost per unit per extra week of chain', 0, 5, 0.05, 'usd2', 'Planning and risk'],
+  chokepoint_premium_usd: ['Premium per unit per risky passage', 0, 30, 0.5, 'usd2', 'Planning and risk'],
+};
+const fmtR = (kind, v) => ({ usd: () => '$' + R.num(v), usd2: () => '$' + R.num(v, 2), usdm: () => R.usd(v, 1), pct: () => R.pct(v), n1: () => R.num(v, 1), n2: () => R.num(v, 2) }[kind] || (() => R.num(v)))();
+const SITE_SL = [['cap', 'capacity', 'Capacity, units/week', 0, 15000, 250], ['ml', 'min_load', 'Minimum load', 0, 0.9, 0.05], ['ci', 'conv_index', 'Conversion cost vs China', 0.7, 2, 0.01],
+  ['pd', 'parts_duty', 'Import duty on parts', 0, 0.2, 0.005], ['fc', 'fixed_cost', 'Fixed cost per year if open', 0, 6000000, 100000]];
+const siteFmt = (k, v) => k === 'capacity' ? R.num(v) : k === 'min_load' || k === 'parts_duty' ? R.pct(v, k === 'parts_duty' ? 1 : 0) : k === 'conv_index' ? v.toFixed(2) + '×' : R.usd(v, 1);
+function buildInputs() {
+  R.$('#sites').innerHTML = ORG.map((o) => {
+    const s = S.sites[o];
+    const sl = SITE_SL.filter(([, k]) => o !== 'CN' || ['capacity', 'conv_index'].includes(k)).map(([id, k, lab, mn, mx, st]) =>
+      `<div class="mini" data-k="${k}"><span>${lab}</span><output id="o-${id}-${o}"></output><input type="range" id="${id}-${o}" min="${mn}" max="${mx}" step="${st}" value="${s[k]}" aria-label="${R.esc(s.label)}: ${lab}"></div>`).join('');
+    return `<div class="site-row" data-o="${o}">
+      <div class="site-h"><label><input type="checkbox" id="open-${o}" ${s.open ? 'checked' : ''}>${R.esc(s.label)}</label><span class="chip" style="border-color:var(--c${SCOL[o] + 1});color:var(--c${SCOL[o] + 1})">${o}</span></div>
+      ${o === 'CN' ? '' : `<label class="tog"><input type="checkbox" id="board-${o}" ${s.board_local ? 'checked' : ''}>Main board made here (takes this origin)</label>`}
+      ${sl}</div>`;
+  }).join('');
+  ORG.forEach((o) => {
+    R.$('#open-' + o).addEventListener('change', (e) => { S.sites[o].open = e.target.checked; paint(); schedule(); });
+    const b = R.$('#board-' + o);
+    if (b) b.addEventListener('change', (e) => { S.sites[o].board_local = e.target.checked; paint(); schedule(); });
+    SITE_SL.forEach(([id, k]) => { const el = R.$(`#${id}-${o}`); if (el) el.addEventListener('input', () => { S.sites[o][k] = +el.value; paint(); schedule(); }); });
+  });
+  const groups = {};
+  Object.entries(RANGE).forEach(([k, r]) => { (groups[r[5]] = groups[r[5]] || []).push(k); });
+  let html = Object.entries(groups).map(([g, keys], gi) => `<details class="grp"${gi === 1 ? ' open' : ''}><summary>${g}<span class="cnt"></span></summary>` +
+    keys.map((k) => `<div class="prm" data-key="${k}"><div class="prm-h"><label for="p-${k}">${RANGE[k][0]}</label><output id="o-${k}"></output></div>
+      <input type="range" id="p-${k}" min="${RANGE[k][1]}" max="${RANGE[k][2]}" step="${RANGE[k][3]}" value="${S.P[k]}"></div>`).join('') + '</details>').join('');
+  html += `<details class="grp"><summary>Demand, units per week<span class="cnt"></span></summary>` + MK.map((m) =>
+    `<div class="prm" data-dem="${m.market}"><div class="prm-h"><label for="d-${m.market}">${m.market} · ${R.esc(m.name)}</label><output id="o-d-${m.market}"></output></div>
+      <input type="range" id="d-${m.market}" min="0" max="8000" step="50" value="${S.dem[m.market]}"></div>`).join('') + '</details>';
+  html += `<details class="grp"><summary>Scenario weights<span class="cnt"></span></summary>` + IN.scenarios.map((s) =>
+    `<div class="prm" data-prob="${s.id}"><div class="prm-h"><label for="pr-${s.id}">${R.esc(s.label)}</label><output id="o-pr-${s.id}"></output></div>
+      <input type="range" id="pr-${s.id}" min="0" max="1" step="0.05" value="${S.prob[s.id]}"></div>`).join('') +
+    '<p class="hint" style="margin:6px 0 0">Shown as shares of the total, so they always add up to 100%.</p></details>';
+  R.$('#groups').innerHTML = html;
+  Object.keys(RANGE).forEach((k) => R.$('#p-' + k).addEventListener('input', (e) => { S.P[k] = +e.target.value; paint(); schedule(); }));
+  MK.forEach((m) => R.$('#d-' + m.market).addEventListener('input', (e) => { S.dem[m.market] = +e.target.value; paint(); schedule(); }));
+  IN.scenarios.forEach((s) => R.$('#pr-' + s.id).addEventListener('input', (e) => { S.prob[s.id] = +e.target.value; paint(); schedule(); }));
+  paint();
+}
+function paint() {
+  let nSite = 0;
+  ORG.forEach((o) => {
+    const s = S.sites[o], s0 = SITES0[o];
+    R.$(`.site-row[data-o="${o}"]`).classList.toggle('closed', !s.open);
+    SITE_SL.forEach(([id, k]) => {
+      const out = R.$(`#o-${id}-${o}`); if (!out) return;
+      out.textContent = siteFmt(k, s[k]);
+      const ch = Math.abs(s[k] - s0[k]) > 1e-12; out.parentElement.classList.toggle('changed', ch); nSite += ch;
+    });
+    nSite += (s.open !== s0.open) + (!!s.board_local !== !!s0.board_local);
+  });
+  R.$('#cnt-sites').textContent = (openSites().join('+') || 'none open') + (nSite ? ` · ${nSite} changed` : '');
+  Object.keys(RANGE).forEach((k) => {
+    R.$('#o-' + k).textContent = fmtR(RANGE[k][4], S.P[k]);
+    R.$(`.prm[data-key="${k}"]`).classList.toggle('changed', Math.abs(S.P[k] - P0[k]) > 1e-12);
+  });
+  MK.forEach((m) => { R.$('#o-d-' + m.market).textContent = R.num(S.dem[m.market]); R.$(`.prm[data-dem="${m.market}"]`).classList.toggle('changed', S.dem[m.market] !== DEM0[m.market]); });
+  const ws = Object.values(S.prob).reduce((a, b) => a + b, 0) || 1;
+  IN.scenarios.forEach((s) => { R.$('#o-pr-' + s.id).textContent = R.pct(S.prob[s.id] / ws); R.$(`.prm[data-prob="${s.id}"]`).classList.toggle('changed', S.prob[s.id] !== PROB0[s.id]); });
+  document.querySelectorAll('#groups details.grp').forEach((d) => { const n = d.querySelectorAll('.prm.changed').length; d.querySelector('.cnt').textContent = n ? n + ' changed' : ''; });
+}
+R.$('#reset').addEventListener('click', () => {
+  S.P = { ...P0 }; S.sites = JSON.parse(JSON.stringify(SITES0)); S.dem = { ...DEM0 }; S.prob = { ...PROB0 }; S.edits = {};
+  buildInputs(); schedule();
+});
+R.$('#fold').addEventListener('click', () => { const f = R.$('#inputs').classList.toggle('folded'); R.$('#fold').textContent = f ? 'Show inputs' : 'Hide inputs'; });
+if (matchMedia('(max-width: 980px)').matches) R.$('#inputs').classList.add('folded');
+
+// ---------------------------------------------------------------- controls
+R.seg(R.$('#f-s'), IN.scenarios.map((s) => [s.id, SHORT[s.id] || s.id]), S.sc, (v) => { S.sc = v; schedule(); });
+R.seg(R.$('#f-r'), [['cape', 'Avoid (Cape)'], ['suez', 'Through Suez']], S.rs, (v) => { S.rs = v; schedule(); });
+R.seg(R.$('#f-m'), [['sea', 'Ocean'], ['air', 'Air']], S.mode, (v) => { S.mode = v; persist(); draw(); });
+R.seg(R.$('#f-v'), [['total', 'Landed $'], ['duty', 'Duty $'], ['freight', 'Freight $'], ['days', 'Days']], S.view, (v) => { S.view = v; persist(); draw(); });
+
+// ---------------------------------------------------------------- compute
+let RES = null, timer = null;
+function compute() {
+  const t0 = performance.now();
+  const inp = currentInput(), P = S.P, sites = S.sites, open = openSites();
+  const si = inp.scenarios.findIndex((s) => s.id === S.sc);
+  const mats = inp.scenarios.map((s) => FPE.dutyMatrix(inp, s));
+  const duties = mats[si];
+  const ev = open.length ? FPE.evaluate(inp, P, sites, open, S.rs, duties) : null;
+  const cn = FPE.evaluate(inp, P, sites, ['CN'], S.rs, duties);
+  const fps = FPE.footprints(inp, P, sites, S.rs, inp.scenarios);
+  const [fixed, curCosts] = open.length ? FPE.yearlyCosts(inp, P, sites, open, S.rs, mats) : [0, mats.map(() => 1e12)];
+  const wsum = inp.scenarios.reduce((a, s) => a + s.probability, 0) || 1;
+  const best = mats.map((_, k) => Math.min(...fps.map((r) => r.costs[k]), curCosts[k]));
+  const base = fps.find((r) => r.is_base);
+  const H = P.horizon_years, lag = Math.min(P.ramp_months / 12, H);
+  const cur = { costs: curCosts, fixed,
+    expected: inp.scenarios.reduce((a, s, k) => a + s.probability * curCosts[k], 0) / wsum,
+    regret: Math.max(...curCosts.map((c, k) => c - best[k])) };
+  const same = base && fpKey(base.open, base.board) === curKey();
+  cur.wait = !base || same ? H * cur.expected : inp.scenarios.reduce((a, s, k) => { const cb = base.costs[k]; return a + s.probability * Math.min(H * cb, lag * cb + (H - lag) * curCosts[k] + P.rush_premium_usd); }, 0) / wsum;
+  cur.build_now_value = cur.wait - H * cur.expected;
+  RES = { inp, mats, duties, si, ev, cn, fps, cur, base, ms: performance.now() - t0 };
+  R.$('#status').textContent = `${fps.length} footprints × ${inp.scenarios.length} scenarios in ${RES.ms.toFixed(0)} ms`;
+  draw();
+}
+function schedule() { persist(); clearTimeout(timer); timer = setTimeout(compute, 60); }
+
+// ---------------------------------------------------------------- KPIs
+function kpis() {
+  const { ev, cn, cur } = RES;
+  const card = (label, value, sub, cls) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value${cls ? ' ' + cls : ''}">${value}</span><span class="k-sub">${sub}</span></div>`;
+  if (!ev) { R.$('#kpis').innerHTML = card('Open sites', 'None', 'tick at least one site on the left'); return; }
+  const year = 52 * ev.weekly_cost + cur.fixed, yearCN = 52 * cn.weekly_cost;
+  const served = MK.reduce((a, m) => a + S.dem[m.market], 0) - ev.unmet;
+  const d = year - yearCN;
+  const warn = ev.unmet > 1e-6 ? `<b class="neg">${R.num(ev.unmet)} units/week not covered</b>` : ev.underload > 1e-6 ? `<b class="neg">${R.num(ev.underload)} units/week short of minimum loads</b>` : `$${R.num(year / Math.max(1, 52 * served), 2)} per unit · fixed ${R.usd(cur.fixed, 1)}`;
+  const bn = cur.build_now_value, H = S.P.horizon_years, small = Math.abs(bn) < 5e4;
+  R.$('#kpis').innerHTML = [
+    card('Yearly cost, this footprint', R.usd(year), warn),
+    card('Against China only', (d <= 0 ? '−' : '+') + R.usd(Math.abs(d)), d <= 0 ? 'cheaper per year in this scenario' : 'dearer per year in this scenario'),
+    card('Duty per year', R.usd(52 * ev.weekly_duty), `${R.pct(ev.weekly_duty / Math.max(1, ev.weekly_cost), 1)} of landed cost`),
+    card('Expected across scenarios', cur.expected > 1e11 ? '–' : R.usd(cur.expected), cur.expected > 1e11 ? 'not feasible in some scenario' : `worst regret ${R.usd(cur.regret, 1)}`),
+    card('Build now or wait', small ? '–' : (bn > 0 ? 'Build, ' : 'Wait, ') + R.usd(Math.abs(bn), 1), small ? 'this is the cheapest footprint for today’s duties' : `${bn > 0 ? 'saved by building now' : 'saved by waiting'} over ${H} years`, bn > 5e4 ? 'pos' : ''),
+    card('Red Sea or Hormuz', R.kunits((ev.exposure['Red Sea'] || 0) + (ev.exposure['Hormuz'] || 0)) + '/wk', `average ${R.num(ev.avg_days, 1)} days to the MGI`),
+  ].join('');
+}
+
+// ---------------------------------------------------------------- sankey
+const cSankey = R.chart('c-sankey', (t) => {
+  const o = R.base(t);
+  if (!RES || !RES.ev) return { ...o };
+  const nodes = [], links = [], usedS = new Set(), usedM = new Set();
+  Object.entries(RES.ev.alloc).forEach(([k, q]) => { const [s, m] = k.split('|'); usedS.add(s); usedM.add(m); links.push({ source: S.sites[s].label, target: m + ' · ' + MK.find((x) => x.market === m).code, value: Math.round(q) }); });
+  ORG.filter((s) => usedS.has(s)).forEach((s) => nodes.push({ name: S.sites[s].label, itemStyle: { color: t.c[SCOL[s]] } }));
+  MK.filter((m) => usedM.has(m.market)).forEach((m) => nodes.push({ name: m.market + ' · ' + m.code, itemStyle: { color: t.muted } }));
+  return {
+    ...o, legend: { show: false },
+    tooltip: { ...o.tooltip, trigger: 'item', formatter: (p) => p.dataType === 'edge' ? `${R.esc(p.data.source)} → ${R.esc(p.data.target)}<br><b>${R.num(p.data.value)}</b> units/week` : `${R.esc(p.name)}<br><b>${R.num(p.value)}</b> units/week` },
+    series: [{ type: 'sankey', left: 4, right: 92, top: 8, bottom: 8, nodeWidth: 12, nodeGap: 9, layoutIterations: 0, draggable: false, emphasis: { focus: 'adjacency' },
+      label: { color: t.ink, fontFamily: t.fBody, fontSize: 12 }, lineStyle: { color: 'source', opacity: 0.32, curveness: 0.5 },
+      data: nodes, links }],
+  };
+});
+
+// ---------------------------------------------------------------- heat grid
+function heat() {
+  const tab = FPE.landedTable(RES.inp, S.P, S.sites, S.mode, S.rs, RES.duties), view = S.view;
+  const val = (c) => view === 'total' ? c.total : view === 'duty' ? c.duty : view === 'freight' ? c.freight : c.days;
+  const fmt = (v) => view === 'days' ? R.num(v, 1) : '$' + R.num(v, view === 'total' ? 0 : 1);
+  const open = openSites();
+  const all = ORG.flatMap((o) => MK.map((_, j) => val(tab[o][j])));
+  const lo = Math.min(...all), hi = Math.max(...all);
+  R.$('#h-heat').textContent = { total: 'Landed cost per unit', duty: 'Duty per unit', freight: 'Freight per unit', days: 'Days to the MGI' }[view] + (S.mode === 'air' ? ' · air' : ' · ocean');
+  R.$('#t-heat').innerHTML = '<thead><tr><th class="txt">Market</th>' + ORG.map((o) => `<th>${o}<small>${o === 'CN' ? '&nbsp;' : S.sites[o].board_local ? 'own boards' : 'CN boards'}</small></th>`).join('') + '</tr></thead><tbody>' +
+    MK.map((m, j) => {
+      const best = open.length ? open.reduce((a, o) => (tab[o][j].total < tab[a][j].total ? o : a), open[0]) : null;
+      return `<tr class="${m.market === S.selm ? 'selm' : ''}" data-m="${m.market}" tabindex="0"><td class="txt"><b>${m.market}</b><small>${R.esc(m.name)}</small></td>` +
+        ORG.map((o) => {
+          const c = tab[o][j], v = val(c), w = hi > lo ? (v - lo) / (hi - lo) : 0;
+          const cls = ['cell', o === best ? 'best' : '', S.sites[o].open ? '' : 'closed'].join(' ');
+          return `<td class="${cls}" style="background:color-mix(in srgb, var(--c4) ${(w * 40).toFixed(0)}%, transparent)" title="${R.esc(S.sites[o].label)} → ${m.market}: landed $${R.num(c.total, 1)} · duty ${R.pct(c.duty_rate, 1)}${c.origin_weight > 0 && Math.abs(c.own_rate - c.duty_rate) > 1e-9 ? ' (China-made board)' : ''} · ${R.num(c.days, 1)} days${c.risky.length ? ' · via ' + c.risky.join(', ') : ''}">${fmt(v)}</td>`;
+        }).join('') + '</tr>';
+    }).join('') + '</tbody>';
+  R.$('#t-heat').querySelectorAll('tbody tr').forEach((tr) => {
+    const pick = () => { S.selm = tr.dataset.m; persist(); heat(); R.update(cDrill); R.update(cSweep); };
+    tr.addEventListener('click', pick);
+    tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+  });
+}
+
+// ---------------------------------------------------------------- cost drill-down
+const PARTS = [['factory', 'Factory value', 6], ['freight', 'Freight', 0], ['duty', 'Duty', 4], ['carry', 'Carrying in transit', 2], ['plan', 'Planning (longer chain)', 3], ['risk', 'Chokepoint premium', 5]];
+const cDrill = R.chart('c-drill', (t) => {
+  const o = R.base(t);
+  if (!RES) return { ...o };
+  const j = MK.findIndex((m) => m.market === S.selm);
+  const tab = FPE.landedTable(RES.inp, S.P, S.sites, 'sea', S.rs, RES.duties);
+  const minF = Math.min(...ORG.map((x) => tab[x][j].factory));
+  R.$('#h-drill').textContent = `What makes up the cost · ${S.selm}`;
+  return {
+    ...o,
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const s = ORG[ps[0].dataIndex], c = tab[s][j]; return R.tip(t, PARTS.map(([k, n, ci]) => [t.c[ci], n, '$' + R.num(c[k], 2)]).concat([[t.ink, 'Landed', '$' + R.num(c.total, 2)]]), S.sites[s].label + ' → ' + S.selm); } },
+    legend: { ...o.legend, type: 'plain', data: PARTS.map((p) => p[1]) },
+    grid: { ...o.grid, top: 62 },
+    xAxis: R.axis(t, { type: 'category', data: ORG, splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 12 } }),
+    yAxis: R.axis(t, { type: 'value', min: Math.max(0, Math.floor((minF - 40) / 50) * 50), axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + v } }),
+    series: PARTS.map(([k, n, ci]) => ({ type: 'bar', stack: 'c', name: n, barWidth: '58%', itemStyle: { color: t.c[ci] },
+      data: ORG.map((s) => ({ value: +tab[s][j][k].toFixed(4), itemStyle: { opacity: S.sites[s].open ? 1 : 0.4 } })) })),
+  };
+});
+
+// ---------------------------------------------------------------- tariff sweep
+const cSweep = R.chart('c-sweep', (t) => {
+  const o = R.base(t);
+  if (!RES || !RES.fps.length) return { ...o };
+  const inp = RES.inp, m = MK.find((x) => x.market === S.selm), xs = [];
+  for (let k = 0; k <= 24; k++) xs.push(k * 0.025);
+  const lines = [], seen = new Set();
+  const addLine = (name, open, sites, key) => { key = key || name; if (seen.has(key) || !open.length) return; seen.add(key); lines.push({ name, open, sites }); };
+  const rows = RES.fps, rob = rows.reduce((a, r) => (r.regret < a.regret ? r : a), rows[0]);
+  addLine('China only', ['CN'], S.sites, 'CN');
+  const ck = curKey();
+  if (ck) addLine(ck + ' (now open)', openSites(), S.sites, ck);
+  [rows[0], rob].concat(rows.filter((r) => r.board && r.open.length === 2).slice(0, 2))
+    .forEach((r) => addLine(fpKey(r.open, r.board), r.open, FPE.withBoards(S.sites, r.open, r.open.some((x) => x !== 'CN') ? r.board : null), fpKey(r.open, r.board)));
+  const pal = [t.c[0], t.c[3], t.c[2], t.c[4], t.c[5]];
+  const series = lines.map((L, i) => ({
+    type: 'line', name: L.name, showSymbol: false, lineStyle: { width: L.name.endsWith('(now open)') ? 3 : 2, type: L.name === 'China only' ? [6, 4] : 'solid' },
+    itemStyle: { color: L.name === 'China only' ? t.ink2 : pal[i % pal.length] },
+    data: xs.map((x) => {
+      const d = JSON.parse(JSON.stringify(RES.duties)); d[m.tkey].CN = x;
+      const c = FPE.yearlyCosts(inp, S.P, L.sites, L.open, S.rs, [d])[1][0];
+      return c > 1e11 ? null : +(c / 1e6).toFixed(3);
+    }),
+  }));
+  const cur = RES.duties[m.tkey].CN, snap = Math.min(24, Math.round(cur / 0.025));
+  series.push({ type: 'line', name: '_now', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: t.muted, type: [3, 3] },
+    label: { show: false }, data: [{ xAxis: R.pct(xs[snap], 1) }] } });
+  R.$('#h-sweep').textContent = `If ${marketName(m)} taxes China-made laptops`;
+  return {
+    ...o,
+    legend: { ...o.legend, data: lines.map((L) => L.name) },
+    grid: { ...o.grid, top: 64, bottom: 24 },
+    tooltip: { ...o.tooltip, valueFormatter: (v) => v == null ? '–' : '$' + R.num(v, 2) + 'M' },
+    xAxis: R.axis(t, { type: 'category', boundaryGap: false, data: xs.map((x) => R.pct(x, 1)), name: `duty in ${m.market} on China-made units`, nameLocation: 'middle', nameGap: 26, splitLine: { show: false } }),
+    yAxis: R.axis(t, { type: 'value', scale: true, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + v + 'M' } }),
+    series,
+  };
+});
+
+// ---------------------------------------------------------------- break-even table
+function beTable() {
+  const own = FPE.breakEven(RES.inp, S.P, FPE.withBoards(S.sites, ORG, true), S.rs, RES.duties);
+  const imp = FPE.breakEven(RES.inp, S.P, FPE.withBoards(S.sites, ORG, false), S.rs, RES.duties);
+  const fmt = (v, now) => v === null ? 'never' : v <= now + 1e-12 ? (v === 0 ? 'now' : R.pct(v, 1) + ' ✓') : R.pct(v, 1);
+  R.$('#t-be').innerHTML = '<thead><tr><th class="txt">Market</th>' + NONCN.map((o) => `<th>${o}<small>own / CN</small></th>`).join('') + '</tr></thead><tbody>' +
+    MK.map((m, j) => {
+      const now = RES.duties[m.tkey].CN;
+      return `<tr><td class="txt"><b>${m.market}</b><small>now ${R.pct(now, 1)}</small></td>` + NONCN.map((o) => {
+        const a = own[o][j], b = imp[o][j];
+        const cls = a === null ? 'never' : a <= now + 1e-12 ? 'now' : '';
+        return `<td class="${cls}" title="${R.esc(S.sites[o].label)} in ${m.market}: making its own boards it is cheaper per unit than China once China-made units pay ${a === null ? '(never)' : R.pct(a, 1)}; assembling China-made boards ${b === null ? 'never, its units pay the China rate too' : 'from ' + R.pct(b, 1)}"><b>${fmt(a, now)}</b><small class="${b === null ? 'never' : ''}">${fmt(b, now)}</small></td>`;
+      }).join('') + '</tr>';
+    }).join('') + '</tbody>';
+}
+
+// ---------------------------------------------------------------- footprints
+const tip = (r) => RES.inp.scenarios.some((s) => s.id === 'cn301') ? FPE.tippingWeight(r, RES.inp.scenarios, 'cn301', S.P.horizon_years) : null;
+const tipTxt = (r) => { const w = tip(r); return w === null ? 'never' : w === 0 ? 'any' : R.pct(w); };
+function fpTable() {
+  const rows = RES.fps, scen = RES.inp.scenarios, ck = curKey();
+  if (!rows.length) { R.$('#t-fp').innerHTML = '<tbody><tr><td class="empty">No set of sites can cover demand within capacity and minimum loads. Raise capacities or lower minimum loads on the left.</td></tr></tbody>'; R.$('#h-fp').textContent = ''; return; }
+  const rob = rows.reduce((a, r) => (r.regret < a.regret ? r : a), rows[0]);
+  const bnow = rows.reduce((a, r) => (r.build_now_value > a.build_now_value ? r : a), rows[0]);
+  const top = rows.slice(0, 10);
+  [rows.find((r) => fpKey(r.open, r.board) === ck), rob, bnow, RES.base].forEach((r) => { if (r && !top.includes(r)) top.push(r); });
+  const wsum = scen.reduce((a, s) => a + s.probability, 0) || 1;
+  const best = scen.map((_, k) => Math.min(...rows.map((r) => r.costs[k])));
+  R.$('#h-fp').textContent = `${rows.length} feasible footprints · yearly cost per scenario, $M · sorted by expected cost`;
+  R.$('#t-fp').innerHTML = '<thead><tr><th class="txt">Open sites</th>' + scen.map((s) => `<th title="${R.esc(s.label)}">${SHORT2[s.id] || s.id}<small>weight ${R.pct(s.probability / wsum)}</small></th>`).join('') +
+    `<th>Expected</th><th>Worst regret</th><th title="Expected cost of waiting minus building now, over ${S.P.horizon_years} years; positive means build now">Build now<small>vs wait, ${S.P.horizon_years} yrs, $M</small></th><th title="Weight on the scenario of a 25% US tariff on China-made laptops above which building this footprint now beats waiting; other scenarios keep their relative weights">Build now if<small>CN 25% weight &gt;</small></th><th></th></tr></thead><tbody>` +
+    top.map((r) => {
+      const key = fpKey(r.open, r.board);
+      const tags = [r === rows[0] ? '<span class="chip good">lowest expected</span>' : '', r === rob ? '<span class="chip warn">lowest regret</span>' : '', r.is_base ? '<span class="chip">best today</span>' : ''].join('');
+      return `<tr class="${key === ck ? 'cur' : ''}"><td class="txt"><div class="fp-open">${r.open.map((o) => `<span class="chip" style="border-color:var(--c${SCOL[o] + 1});color:var(--c${SCOL[o] + 1})">${o}</span>`).join('')}${r.board ? '<span class="chip prac">own boards</span>' : ''}${tags}</div></td>` +
+        r.costs.map((c, k) => `<td${c - best[k] < 1 ? ' style="font-weight:700"' : ''}>${c > 1e11 ? '–' : R.num(c / 1e6, 2)}</td>`).join('') +
+        `<td><b>${R.num(r.expected / 1e6, 2)}</b></td><td>${R.num(r.regret / 1e6, 2)}</td><td class="${r.build_now_value > 5e4 ? 'pos' : r.build_now_value < -5e4 ? 'neg' : ''}">${r.is_base ? '–' : (r.build_now_value >= 0 ? '+' : '−') + R.num(Math.abs(r.build_now_value) / 1e6, 2)}</td>` +
+        `<td>${r.is_base ? '–' : tipTxt(r)}</td>` +
+        `<td><button type="button" class="usebtn" data-i="${rows.indexOf(r)}" aria-label="Use ${R.esc(key)}">Use</button></td></tr>`;
+    }).join('') + '</tbody>';
+  R.$('#t-fp').querySelectorAll('.usebtn').forEach((b) => b.addEventListener('click', () => {
+    const r = rows[+b.dataset.i];
+    ORG.forEach((o) => {
+      S.sites[o].open = r.open.includes(o); R.$('#open-' + o).checked = S.sites[o].open;
+      if (o !== 'CN' && r.open.includes(o)) { S.sites[o].board_local = r.board; R.$('#board-' + o).checked = r.board; }
+    });
+    paint(); schedule();
+  }));
+}
+
+// ---------------------------------------------------------------- duty matrix
+function dutyTable() {
+  const base = FPE.dutyMatrix(IN, IN.scenarios[RES.si]), d = RES.duties;
+  R.$('#t-duty').innerHTML = '<thead><tr><th class="txt">Market</th>' + ORG.map((o) => `<th>${o}</th>`).join('') + '</tr></thead><tbody>' +
+    MK.map((m) => `<tr><td class="txt">${m.market}<small>${R.esc(m.tkey)}</small></td>` + ORG.map((o) => {
+      const v = d[m.tkey][o], ed = S.edits[m.tkey] && o in S.edits[m.tkey];
+      return `<td><input class="duty-in${ed ? ' edited' : ''}" type="number" min="0" max="100" step="0.5" value="${+(v * 100).toFixed(2)}" data-k="${m.tkey}" data-o="${o}" aria-label="Duty in ${m.market} on units from ${o}" title="${ed ? 'Edited; scenario value ' + R.pct(base[m.tkey][o], 1) + '. Clear the cell to restore it.' : 'Scenario value'}"></td>`;
+    }).join('') + '</tr>').join('') + '</tbody>';
+  R.$('#t-duty').querySelectorAll('.duty-in').forEach((el) => el.addEventListener('change', () => {
+    const k = el.dataset.k, o = el.dataset.o;
+    if (el.value === '') { if (S.edits[k]) { delete S.edits[k][o]; if (!Object.keys(S.edits[k]).length) delete S.edits[k]; } }
+    else (S.edits[k] = S.edits[k] || {})[o] = Math.max(0, +el.value) / 100;
+    schedule();
+  }));
+}
+
+// ---------------------------------------------------------------- chokepoints
+const PNAME = { malacca: 'Malacca Strait', sunda: 'Sunda Strait', ormuz: 'Strait of Hormuz', suez: 'Suez Canal', babalmandab: 'Bab-el-Mandeb', gibraltar: 'Gibraltar', south_africa: 'Cape of Good Hope', panama: 'Panama Canal', chili: 'Chile / Cape Horn' };
+const cChoke = R.chart('c-choke', (t) => {
+  const o = R.base(t);
+  if (!RES || !RES.ev) return { ...o };
+  const tab = RES.ev.table, exp = {};
+  Object.entries(RES.ev.alloc).forEach(([k, q]) => { const [s, m] = k.split('|'); const j = MK.findIndex((x) => x.market === m); tab[s][j].passages.forEach((p) => { exp[p] = (exp[p] || 0) + q; }); });
+  const keys = Object.keys(exp).sort((a, b) => exp[b] - exp[a]);
+  const risky = new Set(['ormuz', 'suez', 'babalmandab']);
+  return {
+    ...o, legend: { show: false }, tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.num(v) + ' units/week' },
+    grid: { ...o.grid, top: 6, right: 44 },
+    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.kunits } }),
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: keys.map((k) => PNAME[k] || k), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12 } }),
+    series: [{ type: 'bar', barWidth: '55%', data: keys.map((k) => ({ value: exp[k], itemStyle: { color: risky.has(k) ? t.bad : t.c[0] } })),
+      label: { show: true, position: 'right', color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => R.kunits(p.value) } }],
+  };
+});
+
+// ---------------------------------------------------------------- findings
+function insight() {
+  const inp = RES.inp, rows = RES.fps;
+  if (!rows.length) { R.$('#insight').innerHTML = ''; return; }
+  const nowD = RES.mats[0];
+  const tab = FPE.landedTable(inp, S.P, S.sites, 'sea', S.rs, nowD);
+  const cheapest = MK.map((m, j) => [m.market, ORG.reduce((a, o) => (tab[o][j].total < tab[a][j].total ? o : a), 'CN')]);
+  const notCN = cheapest.filter(([, o]) => o !== 'CN');
+  const rob = rows.reduce((a, r) => (r.regret < a.regret ? r : a), rows[0]);
+  const usJ = MK.findIndex((m) => m.market === 'US');
+  const beOwn = FPE.breakEven(inp, S.P, FPE.withBoards(S.sites, ORG, true), S.rs, nowD);
+  const beImp = FPE.breakEven(inp, S.P, FPE.withBoards(S.sites, ORG, false), S.rs, nowD);
+  const asia = ['ID', 'VN', 'MY'];
+  const cand = asia.filter((o) => beOwn[o][usJ] !== null);
+  const usBest = cand.length ? cand.reduce((a, o) => (beOwn[o][usJ] < beOwn[a][usJ] ? o : a), cand[0]) : null;
+  const impNever = asia.filter((o) => beImp[o][usJ] === null).length;
+  const bn = rows.reduce((a, r) => (r.build_now_value > a.build_now_value ? r : a), rows[0]);
+  const wsum = inp.scenarios.reduce((a, s) => a + s.probability, 0) || 1;
+  const hedges = rows.filter((r) => !r.is_base).map((r) => [r, tip(r)]).filter(([, w]) => w !== null && w > 0);
+  const easiest = hedges.length ? hedges.reduce((a, b) => (b[1] < a[1] ? b : a)) : null;
+  R.$('#insight').innerHTML = `
+    <p><b>Under today's duties China is the cheapest source for ${cheapest.length - notCN.length} of ${cheapest.length} markets${notCN.length ? `; the exception${notCN.length > 1 ? 's are' : ' is'} ${notCN.map(([m, o]) => `${m} (from ${o})`).join(', ')}` : ''}.</b> Laptops pay no duty in the US, EU, UK, Japan, Australia, Singapore or India from any site, so only freight, the longer chain and conversion cost separate the sites. A site in Brazil avoids Brazil's 16%; a UAE free-zone site does not avoid the UAE's 5%.</p>
+    <p><b>A second site only hedges a China tariff if it makes its own main boards.</b> US customs gives a laptop the origin of its main board, so with the board-origin weight at ${R.num(S.P.board_origin_weight, 2)}, ${impNever} of the 3 Asian sites would never beat China in the US while they assemble China-made boards. ${usBest ? `Making the boards on site, ${usBest} beats China in the US once the duty on China-made laptops passes ${R.pct(beOwn[usBest][usJ], 1)}.` : ''}</p>
+    <p><b>Lowest expected cost: ${fpKey(rows[0].open, rows[0].board)}</b> (${R.usd(rows[0].expected)} a year). <b>Lowest worst-case regret: ${fpKey(rob.open, rob.board)}</b>, never more than ${R.usd(rob.regret, 1)} a year above the best choice for any scenario. ${bn.build_now_value > 5e4 ? `Building ${fpKey(bn.open, bn.board)} now rather than waiting is worth ${R.usd(bn.build_now_value, 1)} over ${S.P.horizon_years} years.` : `With a ${R.num(S.P.ramp_months)}-month ramp-up and a ${R.pct(S.prob.cn301 / wsum)} weight on a China tariff, waiting beats building now for every footprint: a hedge site pays its fixed cost and runs its minimum load every year, and pays back only if the tariff comes.${easiest ? ` Building ${fpKey(easiest[0].open, easiest[0].board)} now becomes the better bet once that weight passes ${R.pct(easiest[1])}.` : ''}`}</p>`;
+}
+
+function draw() {
+  if (!RES) return;
+  kpis(); heat(); beTable(); fpTable(); dutyTable(); insight();
+  R.$('#h-sankey').textContent = `${IN.scenarios[RES.si].label} · ocean · units per week`;
+  [cSankey, cDrill, cSweep, cChoke].forEach(R.update);
+}
+buildInputs();
+compute();
+</script>

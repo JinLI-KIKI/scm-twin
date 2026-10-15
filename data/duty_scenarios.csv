@@ -1,0 +1,9 @@
+scenario,label,probability,market,origin,duty_pct,note
+now,Current duties (Oct 2026),0.50,,,,"Duties as in data/tariffs.csv"
+cn301,US tariffs China-made laptops (25%),0.20,USA,CN,25,"For example China's suspended 2019 list on laptops is brought back"
+s232,"Section 232 phase 2 on laptops (25%, every origin)",0.15,USA,*,25,"Proposed scope; rate assumed 25% as for phase 1"
+asia301,Asia Section 301 without the computer exemption,0.10,USA,CN,12.5,"Rates of the 24 Jul 2026 action applied to laptops"
+asia301,,,USA,VN,12.5,
+asia301,,,USA,ID,10,
+asia301,,,USA,MY,10,
+brcut,Brazil removes the 16% on laptops,0.05,BRA,*,0,"For example a wider Ex-tarifario"

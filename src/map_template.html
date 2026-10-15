@@ -121,19 +121,17 @@ ul.plain { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 13px; 
   <aside class="panel">
     <header>
       <h1>Laptop Network Atlas</h1>
-      <p class="sub">Finished laptops from an Asian ODM site to five regional distribution centres (MGI). Sea lanes follow real shipping routes; times are first estimates.</p>
+      <p class="sub">Finished laptops from six candidate assembly sites to nine regional distribution centres (MGI). Sea lanes follow real shipping routes and record the chokepoints they pass; duties are current laptop rates (Oct 2026); times are first estimates.</p>
     </header>
 
     <section class="controls" aria-label="Map controls">
       <div>
         <span class="ctl-label" id="lbl-origin">Ship from</span>
         <div class="seg" role="group" aria-labelledby="lbl-origin" id="seg-origin">
-          <button type="button" id="o-CN" data-v="CN" aria-pressed="true">China · Kunshan</button>
-          <button type="button" id="o-ID" data-v="ID" aria-pressed="false">Indonesia · Cikarang</button>
         </div>
       </div>
       <div>
-        <span class="ctl-label" id="lbl-var">Asia–Europe ocean routing</span>
+        <span class="ctl-label" id="lbl-var">Red Sea routing to Europe</span>
         <div class="seg" role="group" aria-labelledby="lbl-var" id="seg-var">
           <button type="button" id="v-cape" data-v="cape" aria-pressed="true">Cape of Good Hope</button>
           <button type="button" id="v-suez" data-v="suez" aria-pressed="false">Suez Canal</button>
@@ -211,11 +209,15 @@ const NET = /*__DATA__*/null;
 (function () {
   if (!NET || !window.L) { document.getElementById('map').textContent = 'Map data or Leaflet failed to load.'; return; }
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  document.getElementById('seg-origin').innerHTML = Object.entries(NET.origins).map(([k, o]) =>
+    `<button type="button" id="o-${k}" data-v="${k}" aria-pressed="false">${o.label}</button>`).join('');
   const state = { origin: 'CN', variant: 'cape', modes: { sea: true, air: false, inland: true },
                   duty: true, roads: true, sel: 'M_US', bdMode: 'sea', feedSel: null };
   try { const s = JSON.parse(localStorage.getItem('atlas-state') || '{}');
         ['origin', 'variant', 'sel', 'bdMode'].forEach(k => { if (s[k]) state[k] = s[k]; }); } catch (e) {}
-  if (!['CN', 'ID'].includes(state.origin)) state.origin = 'CN';
+  if (!(state.origin in NET.origins)) state.origin = 'CN';
+  const FEED = () => (state.origin !== 'CN' && NET.feeds && NET.feeds[state.origin]) || [];
+  const originCountry = () => NET.origins[state.origin].label.split(' · ')[0];
   const save = () => { try { localStorage.setItem('atlas-state', JSON.stringify(
     { origin: state.origin, variant: state.variant, sel: state.sel, bdMode: state.bdMode })); } catch (e) {} };
 
@@ -233,7 +235,7 @@ const NET = /*__DATA__*/null;
   // ---- countries (three copies so lanes that cross the Pacific stay over land)
   const dutyOf = (tkey) => {
     if (!tkey || !T[tkey]) return null;
-    return Number(state.origin === 'CN' ? T[tkey].duty_cn_origin_pct : T[tkey].duty_id_origin_pct);
+    return Number(T[tkey]['duty_' + state.origin.toLowerCase() + '_origin_pct']);
   };
   const dutyColor = (d) => d === null ? css('--land') : d >= 10 ? css('--d16') : d > 0 ? css('--d5') : css('--d0');
   const countryLayers = [L.geoJSON(NET.countries, {
@@ -246,7 +248,7 @@ const NET = /*__DATA__*/null;
       layer.bindTooltip(() => {
         const t = T[k];
         const d = dutyOf(k);
-        return `<b>${f.properties.name}</b><br>Duty on ${state.origin === 'CN' ? 'China' : 'Indonesia'}-made laptops: <b>${d}%</b>` +
+        return `<b>${f.properties.name}</b><br>Duty on ${originCountry()}-made laptops: <b>${d}%</b>` +
           (t.other_barrier ? `<br>${t.other_barrier}` : '') + `<br><span style="color:${css('--muted')}">${t.note}</span>`;
       }, { sticky: true });
     }
@@ -289,7 +291,7 @@ const NET = /*__DATA__*/null;
       if (state.modes[l.mode]) used.add(id);
       nodesUsed.add(l.from); nodesUsed.add(l.to);
     }));
-    if (state.origin === 'ID') NET.feed.forEach(f => f.lanes.forEach(id => {  // parts feed: always shown
+    FEED().forEach(f => f.lanes.forEach(id => {  // parts feed: always shown
       const l = LANES[id]; used.add(id); nodesUsed.add(l.from); nodesUsed.add(l.to);
     }));
     used.forEach(id => {
@@ -309,11 +311,11 @@ const NET = /*__DATA__*/null;
       const ll = [n.lat, n.dlon];
       let m;
       if (n.kind === 'factory') {
-        const src = state.origin === 'ID' && id === 'F_CN';
+        const src = state.origin !== 'CN' && id === 'F_CN';
         m = L.marker(ll, { icon: L.divIcon({ className: '', html: `<div class="node-sq${src ? ' node-off' : ''}"></div>`, iconSize: [12, 12] }), keyboard: false });
         m.bindTooltip(`${n.code} · ${n.name}${src ? ' (parts source)' : ''}`, { permanent: true, direction: 'right', className: 'lbl', offset: [6, 0] });
       } else if (n.kind === 'mgi') {
-        const left = id === 'M_US' || id === 'M_UK' || id === 'M_BR';
+        const left = ['M_US', 'M_UK', 'M_BR', 'M_AE', 'M_SG'].includes(id);
         m = L.marker(ll, { icon: L.divIcon({ className: '', html: '<div class="node-mgi"></div>', iconSize: [14, 14] }), keyboard: false });
         m.bindTooltip(n.code, { permanent: true, direction: left ? 'left' : 'right', className: 'lbl', offset: [left ? -7 : 7, 0] });
         m.on('click', () => select(id));
@@ -328,7 +330,7 @@ const NET = /*__DATA__*/null;
   }
   function highlight() {
     let focus = null;
-    if (state.feedSel !== null) focus = new Set(NET.feed[state.feedSel].lanes);
+    if (state.feedSel !== null && FEED()[state.feedSel]) focus = new Set(FEED()[state.feedSel].lanes);
     else if (state.sel) {
       const r = activeRoutes().find(r => r.mgi === state.sel && r.mode === state.bdMode);
       if (r) focus = new Set(r.lanes);
@@ -359,7 +361,7 @@ const NET = /*__DATA__*/null;
       tr.className = 'row' + (state.sel === m ? ' sel' : '');
       tr.tabIndex = 0;
       tr.innerHTML = `<td><span class="mgi-code">${N[m].code}</span><span class="mgi-city">${N[m].name}</span></td>` +
-        `<td>${fmt(sea.days)}</td><td>${fmt(air.days)}</td><td>${sea.nm.toLocaleString()}</td>` +
+        `<td>${fmt(sea.days)}</td><td>${sea.domestic ? '–' : fmt(air.days)}</td><td>${sea.domestic ? 'truck' : sea.nm.toLocaleString()}</td>` +
         `<td><span class="duty-pill" style="background:${dutyColor(d)};color:${textOn(dutyColor(d))}">${d}%</span></td>`;
       tr.addEventListener('click', () => select(m, true));
       tr.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(m, true); } });
@@ -382,11 +384,12 @@ const NET = /*__DATA__*/null;
   }
   function renderFeed() {
     const sec = document.getElementById('feed-sec');
-    sec.hidden = state.origin !== 'ID';
+    sec.hidden = !FEED().length;
     if (sec.hidden) return;
+    document.getElementById('h-feed').textContent = 'Parts feed into ' + originCountry();
     const box = document.getElementById('feed');
     box.innerHTML = '';
-    NET.feed.forEach((f, i) => {
+    FEED().forEach((f, i) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.innerHTML = `<span>${f.name}</span><span class="d">${fmt(f.days)} days</span>`;
@@ -399,7 +402,7 @@ const NET = /*__DATA__*/null;
 
   function fitFocus() {
     let ids;
-    if (state.feedSel !== null) ids = NET.feed[state.feedSel].lanes;
+    if (state.feedSel !== null && FEED()[state.feedSel]) ids = FEED()[state.feedSel].lanes;
     else {
       const r = activeRoutes().find(r => r.mgi === state.sel && r.mode === state.bdMode);
       ids = r ? r.lanes : [];

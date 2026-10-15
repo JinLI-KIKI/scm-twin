@@ -19,6 +19,8 @@ PAGES = [
     ("transfer.html", "transfer", "Transfer timing", "transfer.html"),
     ("business-case.html", "business", "Business case", "business-case.html"),
     ("finished-goods.html", "fg", "Finished goods", "finished-goods.html"),
+    ("fg-live.html", "fglive", "FG simulator", "fg-live.html"),
+    ("footprint.html", "footprint", "Footprint", "footprint.html"),
     ("rules.html", "rules", "Rules register", "rules.html"),
 ]
 

@@ -1,0 +1,66 @@
+== Landed cost per unit by ocean, current duties, Red Sea avoided ($)
+  site        US      EU      UK      JP      BR      AU     SEA      IN      ME
+  CN       491.2   498.1   498.2   486.9   574.3   489.9   487.5   490.7   514.9
+  ID       506.7   509.7   509.7   502.3   587.1   502.8   499.6   502.7   527.3
+  VN       503.8   509.1   509.1   499.3   586.3   501.7   498.3   501.5   526.0
+  MY       507.1   510.2   510.2   502.7   587.6   503.7   499.8   502.5   527.0
+  BR       560.6   558.9   558.9   564.0   548.2   560.6   561.3   561.6   587.9
+  AE       519.2   519.2   519.2   514.7   597.9   515.3   511.8   510.9   529.9
+  cheapest: US=CN, EU=CN, UK=CN, JP=CN, BR=BR, AU=CN, SEA=CN, IN=CN, ME=CN
+
+== Current duties (Oct 2026) (p=0.50) · all six sites open
+  weekly cost $6,393,720 vs China only $6,336,263  · duty $11,178/wk · avg 27.6 days
+   {'CN|US': 3350, 'ID|EU': 2400, 'ID|UK': 100, 'VN|US': 650, 'VN|JP': 1300, 'VN|AU': 550, 'MY|UK': 600, 'MY|SEA': 800, 'MY|IN': 600, 'BR|BR': 1500, 'AE|IN': 300, 'AE|ME': 450}
+
+== US tariffs China-made laptops (25%) (p=0.20) · all six sites open
+  weekly cost $6,874,858 vs China only $6,816,263  · duty $492,317/wk · avg 27.6 days
+   {'CN|US': 3350, 'ID|EU': 2400, 'ID|UK': 100, 'VN|US': 650, 'VN|JP': 1300, 'VN|AU': 550, 'MY|UK': 600, 'MY|SEA': 800, 'MY|IN': 600, 'BR|BR': 1500, 'AE|IN': 300, 'AE|ME': 450}
+
+== Section 232 phase 2 on laptops (25%, every origin) (p=0.15) · all six sites open
+  weekly cost $6,874,858 vs China only $6,816,263  · duty $492,317/wk · avg 27.6 days
+   {'CN|US': 3350, 'ID|EU': 2400, 'ID|UK': 100, 'VN|US': 650, 'VN|JP': 1300, 'VN|AU': 550, 'MY|UK': 600, 'MY|SEA': 800, 'MY|IN': 600, 'BR|BR': 1500, 'AE|IN': 300, 'AE|ME': 450}
+
+== Asia Section 301 without the computer exemption (p=0.10) · all six sites open
+  weekly cost $6,634,289 vs China only $6,576,263  · duty $251,747/wk · avg 27.6 days
+   {'CN|US': 3350, 'ID|EU': 2400, 'ID|UK': 100, 'VN|US': 650, 'VN|JP': 1300, 'VN|AU': 550, 'MY|UK': 600, 'MY|SEA': 800, 'MY|IN': 600, 'BR|BR': 1500, 'AE|IN': 300, 'AE|ME': 450}
+
+== Brazil removes the 16% on laptops (p=0.05) · all six sites open
+  weekly cost $6,366,995 vs China only $6,220,147  · duty $11,178/wk · avg 29.2 days
+   {'CN|US': 3850, 'ID|EU': 2400, 'ID|UK': 100, 'VN|US': 150, 'VN|JP': 1300, 'VN|AU': 550, 'VN|SEA': 500, 'MY|UK': 600, 'MY|BR': 500, 'MY|SEA': 300, 'MY|IN': 600, 'BR|BR': 1000, 'AE|IN': 300, 'AE|ME': 450}
+
+== Duty on China-made units above which a site beats China (current duties, boards as in sites.csv)
+  site        US      EU      UK      JP      BR      AU     SEA      IN      ME
+  ID       never   never   never   never   never   never   never   never   never
+  VN       never   never   never   never   never   never   never   never   never
+  MY       never   never   never   never   never   never   never   never   never
+  BR       never   never   never   never   10.6%   never   never   never   never
+  AE       never   never   never   never   never   never   never   never    8.1%
+  same, every site making its own boards:
+  ID        4.5%    3.7%    3.7%    4.5%   20.1%    4.0%    3.8%    3.7%    8.9%
+  VN        3.9%    3.5%    3.5%    3.8%   19.9%    3.7%    3.5%    3.5%    8.6%
+  MY        4.6%    3.8%    3.7%    4.5%   20.2%    4.2%    3.8%    3.7%    8.8%
+  BR       15.7%   13.8%   13.8%   17.3%   11.8%   16.0%   16.6%   15.9%   21.4%
+  AE        7.1%    5.6%    5.6%    7.0%   22.3%    6.6%    6.3%    5.4%    9.4%
+
+== Footprints ranked by expected yearly cost (fixed cost of new sites and board lines included)
+  open sites                  expected   regret        now    cn301     s232  asia301    brcut  build now
+  CN                           339.17M   18.38M     329.49   354.45   354.45   341.97   323.45      0.00M
+  CN+VN (boards)               339.41M    4.90M     334.39   336.07   359.35   346.87   328.35     -7.89M
+  CN+MY (boards)               339.52M    4.87M     334.36   337.08   359.32   346.17   328.32     -7.82M
+  CN+ID (boards)               339.53M    5.00M     334.49   336.68   359.45   346.10   328.45     -8.00M
+  CN+BR                        339.87M   18.84M     329.95   354.91   354.91   342.43   328.62     -2.10M
+  CN+BR (boards)               340.92M   17.45M     331.62   353.52   356.58   344.10   330.13     -5.42M
+  CN+AE (boards)               341.46M   14.88M     333.59   350.95   358.55   343.15   327.56     -8.08M
+  CN+VN+BR (boards)            341.77M   11.58M     336.52   338.20   361.48   349.00   335.03    -14.11M
+  CN+AE                        341.83M   21.04M     332.15   357.11   357.11   344.63   326.11     -8.00M
+  CN+MY+BR (boards)            341.88M   11.55M     336.49   339.21   361.45   348.30   335.00    -14.05M
+  CN+ID+BR (boards)            341.89M   11.68M     336.62   338.82   361.58   348.24   335.13    -14.23M
+  CN+VN                        342.07M   21.28M     332.39   357.35   357.35   344.87   326.35     -8.72M
+  lowest worst-case regret: CN+MY (boards) ($4.87M)
+  most worth building now: CN ($0.00M over 3 years vs waiting)
+  weight on 'US 25% on China-made laptops' above which building now beats waiting:
+    CN+VN (boards)           43%
+    CN+MY (boards)           44%
+    CN+ID (boards)           44%
+    CN+BR                    never
+    CN+BR (boards)           79%

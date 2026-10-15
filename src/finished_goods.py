@@ -46,6 +46,7 @@ import random
 from collections import defaultdict
 
 import mwd_engine as E
+from prng import PortableRandom
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
@@ -78,6 +79,14 @@ def load_fg():
 def unit_cost(model, mats, bom, P):
     sku = next(s for s in bom if s.startswith(model + "_"))
     return sum(mats[m]["unit_cost"] * q for m, q in bom[sku].items()) + P["conversion_cost_usd"]
+
+
+def ssum(values):
+    """Plain left-to-right sum, so results match the JavaScript port to the last digits."""
+    t = 0.0
+    for x in values:
+        t += x
+    return t
 
 
 # ----------------------------------------------------------------------------- disposition
@@ -158,7 +167,7 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs, lock_b
         return fc[i] if i < n else 0.0
 
     def fwd(w, weeks):                          # forecast for weeks w+1 .. w+weeks
-        return sum(fc[w + 1:w + 1 + weeks])
+        return ssum(fc[w + 1:w + 1 + weeks])
 
     mgi = P["mgi_wos_weeks"] * fc[0]
     chan = P["channel_wos_weeks"] * fc[0]
@@ -172,34 +181,34 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs, lock_b
     plan = None                                 # frozen build plan after the lock
     backlog = 0.0
     c = dict(lost=0.0, sold_pre=0.0, sold_post=0.0, sell_in_pre=0.0, sell_in_post=0.0,
-             chan_launch=0.0, builds=0.0, kits=sum(kit[:L]), fc_peak=bias, final_buy=0.0,
+             chan_launch=0.0, builds=0.0, kits=ssum(kit[:L]), fc_peak=bias, final_buy=0.0,
              cut_at_lock=0.0, hedge_units=0.0)
     sell_in = [0.0] * n
     for w in range(n):
         seen = range(max(0, w - 4), w)
-        r = sum(A[i] for i in seen) / max(1e-9, sum(S[i] for i in seen)) if w >= 4 else 1.0
+        r = ssum(A[i] for i in seen) / max(1e-9, ssum(S[i] for i in seen)) if w >= 4 else 1.0
         if cfg["lock"] and w == t_lock:         # R28: sales locks from recent sell-through
             locked = True
             hist = range(max(0, w - int(P["lock_window_weeks"])), w)
-            r_d = sum(A[i] for i in hist) / max(1e-9, sum(S[i] for i in hist)) if w > 0 else 1.0
+            r_d = ssum(A[i] for i in hist) / max(1e-9, ssum(S[i] for i in hist)) if w > 0 else 1.0
             mult = r_d * (1 + lock_bias)              # each GEO's sales style (Q24)
             for i in range(w, n):
                 fc[i] = S[i] * mult
             # Q25: locked is locked. Builds still needed to deliver the locked volume are
             # frozen, and all their material is ordered now (final buy). Kits already
             # committed beyond that need stay unused: a cut at the lock becomes MWD.
-            in_flight = sum(pipe[w:w + T + 1])
-            need = max(0.0, sum(fc[w:]) - mgi - chan - in_flight)
+            in_flight = ssum(pipe[w:w + T + 1])
+            need = max(0.0, ssum(fc[w:]) - mgi - chan - in_flight)
             if cfg.get("ibp"):                  # R32: IBP sizes supply off sales history
                 need *= max(0.0, 1 + ibp_hedge)
                 c["hedge_units"] = need * ibp_hedge / max(1e-9, 1 + ibp_hedge)
             weeks = list(range(w, eol))
             if weeks:
                 wt = [f(b + T + C) for b in weeks[:-1]]
-                wt.append(sum(fc[min(n, weeks[-1] + T + C):]))   # last build covers the rest
-                tot_w = sum(wt) or 1.0
+                wt.append(ssum(fc[min(n, weeks[-1] + T + C):]))   # last build covers the rest
+                tot_w = ssum(wt) or 1.0
                 plan = {b: need * x / tot_w for b, x in zip(weeks, wt)}
-            committed = bank + sum(kit[b] for b in range(w, min(eol, w + L)))
+            committed = bank + ssum(kit[b] for b in range(w, min(eol, w + L)))
             buy = max(0.0, need - committed)
             later = [b for b in weeks if b >= w + L] or weeks[-1:]
             for b in later:
@@ -215,14 +224,14 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs, lock_b
         # 1) material: order kits for build week w+L, netting projected surplus (MRP)
         b = w + L
         if b < eol and not locked:
-            proj = bank + sum(kit[j] - f(j + T + C) for j in range(w, b))
+            proj = bank + ssum(kit[j] - f(j + T + C) for j in range(w, b))
             kit[b] = max(0.0, f(b + T + C) - max(0.0, proj))
             c["kits"] += kit[b]
         # 2) build release: order-up-to on total position, limited by kits on hand
         build = 0.0
         if w < eol:
             bank += kit[w]
-            position = mgi + chan + sum(pipe[w:w + T + 1])
+            position = mgi + chan + ssum(pipe[w:w + T + 1])
             if plan is not None:                # after the lock builds follow the frozen plan;
                 backlog += plan.get(w, 0.0)     # anything short of kits is built later
                 build = min(bank, backlog)
@@ -258,11 +267,12 @@ def _region_run(S, A, P, cfg, launch, eol, liability, t_lock, traj, runs, lock_b
                          ("builds", build), ("arrivals", pipe[w]), ("sell_in", ship),
                          ("mgi", mgi), ("channel", chan), ("kits", bank)):
             traj[key][w] += val / runs
-    c["rotation_base"] = sum(sell_in[max(0, n - int(P["stock_rotation_window_weeks"])):])
-    return mgi + sum(pipe[n:]), chan, bank, c
+    c["rotation_base"] = ssum(sell_in[max(0, n - int(P["stock_rotation_window_weeks"])):])
+    return mgi + ssum(pipe[n:]), chan, bank, c
 
 
-def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, runs=600, seed=11):
+def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, runs=600, seed=11,
+             rng_kind="portable"):
     """Monte Carlo of one strategy. Returns mean / P10 / P90 of each metric, mean weekly
     trajectories, and means by region and by model."""
     cfg = STRATEGIES[strategy]
@@ -273,7 +283,7 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
         P.update(overrides)
     liability = params["liability_window_weeks"]
     T = int(P["build_to_mgi_weeks"])
-    rng = random.Random(seed)
+    rng = PortableRandom(seed) if rng_kind == "portable" else random.Random(seed)
     sigma_w = P["weekly_error_mape"] * math.sqrt(math.pi / 2)
     share = defaultdict(float)
     for loc, s in locales.items():
@@ -292,7 +302,7 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
     for m, info in fgm.items():
         sku = next(s for s in bom if s.startswith(m + "_"))
         plat = models[m]["platform"]
-        dies = sum(mats[x]["unit_cost"] * q for x, q in bom[sku].items()
+        dies = ssum(mats[x]["unit_cost"] * q for x, q in bom[sku].items()
                    if all(models[s.split("_")[0]]["platform"] == plat for s in used_by[x]))
         info_m[m] = dict(price=float(info["channel_net_price_usd"]),
                          cost=models[m]["customs_value"] + P["inbound_freight_usd"],
@@ -337,7 +347,7 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
                 mwd = kits_left * im["kit_mwd"]
                 lost_margin = c["lost"] * (price - cost) * (1 - P["lost_to_successor_share"])
                 row = {
-                    "demand_units": sum(A), "sold_units": c["sold_pre"] + c["sold_post"],
+                    "demand_units": ssum(A), "sold_units": c["sold_pre"] + c["sold_post"],
                     "builds_units": c["builds"], "kits_ordered": c["kits"],
                     "sell_in_pre_launch_units": c["sell_in_pre"],
                     "channel_at_launch_units": c["chan_launch"],
@@ -361,7 +371,7 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
 
     def stat(key):
         v = sorted(r[key] for r in runs_out)
-        return {"mean": sum(v) / len(v), "p10": v[int(.1 * (len(v) - 1))],
+        return {"mean": ssum(v) / len(v), "p10": v[int(.1 * (len(v) - 1))],
                 "p90": v[int(.9 * (len(v) - 1))]}
 
     return {"strategy": strategy, "label": cfg["label"], "ftz": ftz, "duty_override": duty_override,
@@ -372,6 +382,35 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
             "lock_week": eol - P["lock_lead_weeks"], "liability_weeks": liability,
             "landed_cost": {m: im["cost"] for m, im in info_m.items()},
             "kit_mwd_value": {m: im["kit_mwd"] for m, im in info_m.items()}}
+
+
+def engine_input(duty_override=None):
+    """Everything the browser engine (src/dash/fg_engine.js) needs to run the same simulation."""
+    mats, models, locales, bom, used_by, params = E.load()
+    P, fgm, _, duty_cn = load_fg()
+    P["carrying_rate_annual"] = params["carrying_rate_annual"]
+    share = defaultdict(float)
+    for loc, s in locales.items():
+        share[MGI_OF[loc]] += s
+    regions = sorted(share)
+    out_models = []
+    for m, info in fgm.items():
+        sku = next(s for s in bom if s.startswith(m + "_"))
+        plat = models[m]["platform"]
+        dies = ssum(mats[x]["unit_cost"] * q for x, q in bom[sku].items()
+                    if all(models[s.split("_")[0]]["platform"] == plat for s in used_by[x]))
+        out_models.append({"name": m, "price": float(info["channel_net_price_usd"]),
+                           "cv": models[m]["customs_value"], "kit_mwd": dies, "eol": models[m]["eol"],
+                           "peak": models[m]["peak"], "rw": float(info["rework_cost_pct"]),
+                           "td": float(info["teardown_recovery_pct"]),
+                           "lq": float(info["liquidation_recovery_pct"])})
+    first = next(iter(fgm))
+    return {"P": P, "liability": params["liability_window_weeks"],
+            "npi_successor": models[fgm[first]["successor"]]["npi"],
+            "regions": regions, "share": {g: share[g] for g in regions},
+            "duty": {g: (duty_override or {}).get(g, duty_cn[DUTY_COUNTRY[g]]) for g in regions},
+            "models": out_models, "paths": PATHS,
+            "strategies": {k: {kk: vv for kk, vv in v.items()} for k, v in STRATEGIES.items()}}
 
 
 # ----------------------------------------------------------------------------- product lines

@@ -1,0 +1,10 @@
+market,mgi,tkey,weekly_units,valuation,note,status
+US,M_US,USA,4000,FOB,"Duty on transaction value (FOB)",PLACEHOLDER
+EU,M_EU,EU,2400,CIF,"Germany, France and the rest of the EU, served from Venlo",PLACEHOLDER
+UK,M_UK,GBR,700,CIF,,PLACEHOLDER
+JP,M_JP,JPN,1300,CIF,,PLACEHOLDER
+BR,M_BR,BRA,1500,CIF,,PLACEHOLDER
+AU,M_AU,AUS,550,FOB,"Australia values imports FOB",PLACEHOLDER
+SEA,M_SG,SGP,800,CIF,"Singapore hub for Southeast Asia; onward duties in each SEA country not modelled",PLACEHOLDER
+IN,M_IN,IND,900,CIF,"Import licence needed (IMS); IGST not modelled",PLACEHOLDER
+ME,M_AE,ARE,450,CIF,"UAE mainland and GCC",PLACEHOLDER
