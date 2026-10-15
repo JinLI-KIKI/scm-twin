@@ -100,6 +100,17 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   variants, boards imported or made on site. The page recomputes all of it live
   (`src/dash/fp_engine.js`, exact parity in `tests/test_fp_parity.py`).
 
+- **Duty ranges up to the April 2025 peak** (`data/duty_ranges.csv`): every duty can be
+  stretched by hand into a range (0–150%); by default the US runs from today's rate to its
+  April 2025 peak (China 145%, Vietnam 46%, Indonesia 32%, Malaysia 24%, Brazil and UAE 10%).
+  A Monte Carlo prices every footprint across the draws (mean, P10–P90, how often it is
+  cheapest, regret), in a Web Worker on the page and in Python with the same random numbers.
+- **Footprint page redesigned**: a decision summary on top, one card per site with its load
+  against capacity and minimum load, then five numbered sections (allocation, one-tariff sweep
+  to the ceiling with break-even duties, duty-range Monte Carlo with a fan chart and a duty
+  sensitivity chart, named scenarios, duty matrix and chokepoints). Site colours were checked
+  for colour-blind separation; dark-mode chart colours were darkened on every page to pass.
+
 **Key findings (placeholder costs, real duties):**
 - Under today's duties China is the cheapest source for every market except Brazil, where a
   local site saves the 16%. A UAE free-zone site saves nothing on the UAE's 5%.
@@ -111,6 +122,11 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   $18.4M to $4.9M a year.
 - With a 12-month ramp-up and a 20% weight on the China tariff, waiting beats building now.
   Building the hedge now wins once that weight passes about 43%.
+- With US duties free to move up to the April 2025 peak (20% chance of a change), China +
+  Malaysia with boards made on site has the lowest mean cost: a repeat of April 2025 hits every
+  Asian site at once, scaled to its own peak, and Malaysia's peak (24%) is the lowest. China
+  alone stays the cheapest in about 80% of the draws but has a P90 of about $396M a year
+  against $348M.
 
 ## Next — Day 4
 

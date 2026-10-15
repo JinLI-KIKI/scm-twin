@@ -20,3 +20,4 @@ board_fixed_usd_yr,1200000,PLACEHOLDER,"Yearly fixed cost of a board line (SMT a
 horizon_years,3,PLACEHOLDER,"Years over which build-now and wait are compared"
 ramp_months,12,PLACEHOLDER,"Months from deciding to open a site to qualified volume"
 rush_premium_usd,1000000,PLACEHOLDER,"One-off extra cost of opening a site in a hurry after a tariff is announced"
+duty_change_prob,0.2,PLACEHOLDER,"Chance that a market changes its laptop duties within the horizon, drawn per market and Monte Carlo run; a change moves every origin to the same point of its range"

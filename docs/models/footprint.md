@@ -103,3 +103,30 @@ r*      = (L_o0 + (1 − w) × own × base_o − L_CN0) / (base_CN − w × base
 `L_CN0` and `L_o0` are the landed costs without duty. If `base_CN − w × base_o ≤ 0` the site
 never wins (a China tariff raises its cost as fast as China's); `r* ≤ 0` means it already wins.
 Per-unit only: fixed costs of a site are not in the break-even.
+
+## 6. Duty ranges (Monte Carlo)
+
+Every duty `d[m][o]` has a range `[low, high]` (default: US from today's rate to its April 2025
+peak; every other market fixed). For each draw and each market `m`:
+
+```
+u, s ~ U(0, 1)
+d[m][o] = low + s × (high − low)        if u < duty_change_prob   (the market changes its duties)
+        = today's rate (kept inside the range)   otherwise
+```
+
+One `s` per market moves all of that market's origins together, as the US did in April 2025.
+Each feasible footprint `F` is priced in every draw `k` (`C(F, k)`, yearly), then
+
+```
+mean, P10, P50, P90 of C(F, ·)
+cheapest in  = share of draws where F has the lowest cost (first in order on ties)
+regret(F, k) = C(F, k) − min_F' C(F', k)          reported as mean and P90
+```
+
+The page draws with the same generator as Python (mulberry32, seed 7), so a given range set and
+number of draws gives the same numbers in both.
+
+**Which duty moves the cost** (page only): for one footprint, each stretched duty is set to the
+low and to the high end of its range with every other duty at today's rate; the bars are the
+change in yearly cost.

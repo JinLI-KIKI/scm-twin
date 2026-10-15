@@ -44,7 +44,7 @@ const R = (() => {
     return Object.assign({
       axisLine: { lineStyle: { color: t.rule } }, axisTick: { show: false },
       axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true },
-      splitLine: { lineStyle: { color: t.rule, type: [3, 3] } },
+      splitLine: { lineStyle: { color: t.rule, width: 1 } },
       nameTextStyle: { color: t.muted, fontSize: 11, fontFamily: t.fBody },
     }, o);
   }

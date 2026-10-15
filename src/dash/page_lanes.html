@@ -60,7 +60,7 @@
 <script>
 const D = /*__DATA__*/null;
 const MG = Object.keys(D.mgis), ORG = Object.keys(D.origins);
-const COL = { CN: 0, ID: 2, VN: 3, MY: 4, BR: 1, AE: 5 };
+const COL = { CN: 0, ID: 2, VN: 1, MY: 3, BR: 4, AE: 5 };   // validated order: adjacent sites stay apart under colour-blindness
 const saved = R.load();
 const S = { o: ORG.includes(saved.o) ? saved.o : 'CN', m: ['sea', 'air'].includes(saved.m) ? saved.m : 'sea', v: ['cape', 'suez'].includes(saved.v) ? saved.v : 'cape' };
 R.seg(R.$('#f-o'), ORG.map((o) => [o, D.origins[o].split(' · ')[0]]), S.o, (v) => { S.o = v; draw(); });
@@ -125,7 +125,7 @@ const cCmp = R.chart('c-cmp', (t) => {
     grid: { ...o.grid, top: 54, bottom: 20 },
     legend: { ...o.legend, data: ORG.map(site) },
     xAxis: R.axis(t, { type: 'value', name: 'days', nameLocation: 'middle', nameGap: 24, min: 0 }),
-    yAxis: R.axis(t, { type: 'category', inverse: true, data: MG.map(mgiLabel), splitLine: { show: true, lineStyle: { color: t.rule, type: [2, 4] } }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 12 } }),
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: MG.map(mgiLabel), splitLine: { show: true, lineStyle: { color: t.rule, width: 1 } }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 12 } }),
     series: ORG.map((og) => ({ type: 'scatter', name: site(og), symbolSize: og === S.o ? 14 : 9, z: og === S.o ? 5 : 2,
       itemStyle: { color: t.c[COL[og]], opacity: og === S.o ? 1 : 0.65, borderColor: t.panel, borderWidth: 1 },
       data: MG.map((m, j) => [route(og, m, S.m).days, j]) })),

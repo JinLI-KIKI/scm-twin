@@ -57,7 +57,20 @@
   CN+ID+BR (boards)            341.89M   11.68M     336.62   338.82   361.58   348.24   335.13    -14.23M
   CN+VN                        342.07M   21.28M     332.39   357.35   357.35   344.87   326.35     -8.72M
   lowest worst-case regret: CN+MY (boards) ($4.87M)
-  most worth building now: CN ($0.00M over 3 years vs waiting)
+  waiting beats building now for every footprint over 3 years (ramp-up 12 months)
+
+== Duty ranges, 200 Monte Carlo draws (US up to its April 2025 peak, change probability 20% per market)
+  open sites                     mean      P10      P90  cheapest   regret  P90 reg
+  CN+MY (boards)              337.23M  334.36M  348.35M       15%    3.97M    4.87M
+  CN+ID (boards)              338.04M  334.49M  351.70M        0%    4.77M    5.00M
+  CN+VN (boards)              339.18M  334.39M  357.60M        0%    5.92M    9.24M
+  CN+MY+BR (boards)           339.36M  336.49M  350.49M        0%    6.09M    7.01M
+  CN+ID+BR (boards)           340.08M  336.62M  353.83M        0%    6.81M    7.14M
+  CN+BR+AE (boards)           340.44M  335.73M  359.53M        0%    7.17M   11.18M
+  CN+BR (boards)              340.75M  331.62M  376.65M        0%    7.48M   28.30M
+  CN+VN+BR (boards)           340.84M  336.52M  359.07M        0%    7.58M   10.72M
+  mean drawn US duty: CN 13.7%, VN 4.4%, ID 3.0%, MY 2.3%, BR 0.9%, AE 0.9%
+
   weight on 'US 25% on China-made laptops' above which building now beats waiting:
     CN+VN (boards)           43%
     CN+MY (boards)           44%

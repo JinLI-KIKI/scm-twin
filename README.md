@@ -43,7 +43,9 @@ Japan, Brazil, Australia, Singapore, India, UAE). Landed cost per site and marke
 laptop duties in force in October 2026, carrying, a planning cost for longer chains and an
 optional chokepoint premium; a minimum-cost flow allocates demand within capacity and minimum
 loads; every feasible footprint is scored in every tariff scenario by expected cost and
-worst-case regret, with break-even duties and a build-now-or-wait comparison. Origin follows the
+worst-case regret, with break-even duties and a build-now-or-wait comparison. Each duty can
+also be stretched into a range, up to the April 2025 US peak by default, and a Monte Carlo
+prices every footprint across the draws. Origin follows the
 main board (US customs rulings), so a site that assembles China-made boards does not escape a
 China tariff.
 

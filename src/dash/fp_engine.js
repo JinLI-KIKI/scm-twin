@@ -197,6 +197,77 @@ const FPE = (() => {
     if (dC <= 0) return null;
     return -dO / (dC - dO);
   }
+  // ---------------------------------------------------------------- duty ranges (Monte Carlo)
+  function makeRng(seed) {                     // mulberry32, identical to src/prng.py
+    let s = seed >>> 0;
+    return { random() {
+      s = (s + 0x6D2B79F5) >>> 0;
+      let t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1) >>> 0;
+      t = ((((t + (Math.imul(t ^ (t >>> 7), t | 61) >>> 0)) >>> 0)) ^ t) >>> 0;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    } };
+  }
+  function candidates(inp, sites) {
+    const orgs = inp.origins, demand = ssum(inp.markets.map((m) => m.weekly_units)), out = [];
+    for (let mask = 1; mask < (1 << orgs.length); mask++) {
+      const open = orgs.filter((_, k) => (mask >> k) & 1);
+      if (ssum(open.map((o) => sites[o].capacity)) < demand - 1e-9
+        || ssum(open.map((o) => sites[o].min_load * sites[o].capacity)) > demand + 1e-9) continue;
+      for (const board of (open.some((o) => o !== 'CN') ? [false, true] : [null])) {
+        out.push({ open, board: !!board, sites: withBoards(sites, open, board) });
+      }
+    }
+    return out;
+  }
+  function drawDuties(inp, base, ranges, pChange, rng) {
+    const d = {}, seen = [];
+    for (const k of Object.keys(base)) d[k] = { ...base[k] };
+    for (const m of inp.markets) {
+      const t = m.tkey;
+      if (seen.includes(t)) continue;
+      seen.push(t);
+      const u = rng.random(), s = rng.random();
+      for (const o of inp.origins) {
+        const b = base[t][o];
+        let [lo, hi] = ranges[`${t}|${o}`] || [b, b];
+        if (lo > hi) [lo, hi] = [hi, lo];
+        d[t][o] = u < pChange ? lo + s * (hi - lo) : Math.min(Math.max(b, lo), hi);
+      }
+    }
+    return d;
+  }
+  function dutyMonteCarlo(inp, P, sites, redSea, ranges, runs, seed, onProgress) {
+    ranges = ranges || inp.ranges; runs = runs || 200; seed = seed === undefined ? 7 : seed;
+    const base = dutyMatrix(inp, inp.scenarios[0]);
+    const cands = candidates(inp, sites), rng = makeRng(seed);
+    const cost = [], meanDuty = {};
+    for (let k = 0; k < runs; k++) {
+      const d = drawDuties(inp, base, ranges, P.duty_change_prob, rng);
+      for (const key of Object.keys(ranges)) {
+        const [t, o] = key.split('|');
+        meanDuty[key] = (meanDuty[key] || 0) + d[t][o] / runs;
+      }
+      cost.push(cands.map((c) => yearlyCosts(inp, P, c.sites, c.open, redSea, [d])[1][0]));
+      if (onProgress && k % 10 === 9) onProgress((k + 1) / runs);
+    }
+    const best = cost.map((row) => Math.min(...row));
+    const win = new Array(cands.length).fill(0);
+    for (const row of cost) {
+      let j = 0, b = row[0];
+      row.forEach((v, i) => { if (v < b) { j = i; b = v; } });
+      win[j] += 1;
+    }
+    const pick = (v, q) => v[Math.floor(q * (v.length - 1))];
+    const rows = cands.map((c, i) => {
+      const col = cost.map((row) => row[i]), reg = cost.map((row, k) => row[i] - best[k]);
+      const sc = col.slice().sort((a, b) => a - b), sr = reg.slice().sort((a, b) => a - b);
+      return { open: c.open, board: c.board, mean: ssum(col) / runs, p10: pick(sc, 0.1), p50: pick(sc, 0.5), p90: pick(sc, 0.9),
+        win: win[i] / runs, regret_mean: ssum(reg) / runs, regret_p90: pick(sr, 0.9) };
+    });
+    rows.sort((a, b) => (a.mean - b.mean) || (a.open.length - b.open.length) || (a.board - b.board));
+    return { rows, runs, mean_duty: meanDuty };
+  }
   function breakEven(inp, P, sites, redSea, duties) {
     const tab = landedTable(inp, P, sites, 'sea', redSea, duties), out = {};
     for (const o of inp.origins) {
@@ -212,6 +283,6 @@ const FPE = (() => {
     }
     return out;
   }
-  return { dutyMatrix, landed, landedTable, transport, evaluate, withBoards, yearlyCosts, footprints, tippingWeight, breakEven };
+  return { dutyMatrix, landed, landedTable, transport, evaluate, withBoards, yearlyCosts, footprints, tippingWeight, breakEven, makeRng, candidates, drawDuties, dutyMonteCarlo };
 })();
 if (typeof module !== 'undefined') module.exports = FPE;

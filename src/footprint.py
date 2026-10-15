@@ -46,6 +46,13 @@ The value of building now is the probability-weighted wait cost minus the build-
 Break-even: for each market and site, the duty on China-made units above which the site beats
 China (None when the site's units would pay the China rate too).
 
+Duty ranges (Monte Carlo): each duty can move inside a range [low, high]; the default ceiling
+for the US is the April 2025 peak (China 145%, Vietnam 46%, Indonesia 32%, Malaysia 24%,
+Brazil and UAE 10%). In every run and market, with probability duty_change_prob the market
+changes its duties: one strength s ~ U(0, 1) moves every origin to low + s x (high - low);
+otherwise today's rate stays. Every feasible footprint is priced in every run: mean, P10,
+P90, how often it is the cheapest, and its regret against the cheapest in the same run.
+
 src/dash/fp_engine.js is the same model for the browser; tests/test_fp_parity.py checks both
 give identical numbers.
 
@@ -54,6 +61,8 @@ Run:  python3 src/footprint.py
 import csv
 import json
 import os
+
+from prng import PortableRandom
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
@@ -120,8 +129,15 @@ def fp_input():
                             "open": r["open_default"] == "1", "board_local": r["board_local"] == "1",
                             "status": r["status"], "note": r["note"]}
     P = {r["key"]: float(r["value"]) for r in _csv("footprint_params.csv")}
+    ranges, peaks = {}, {}
+    for r in _csv("duty_ranges.csv"):
+        k = f"{r['market']}|{r['origin']}"
+        ranges[k] = [float(r["low_pct"]) / 100, float(r["high_pct"]) / 100]
+        if r["peak_2025_pct"]:
+            peaks[k] = float(r["peak_2025_pct"]) / 100
     return {"origins": origins, "markets": markets, "routes": routes, "feeds": feeds,
-            "duties": duties, "scenarios": [scen[s] for s in order], "sites": sites, "P": P}
+            "duties": duties, "scenarios": [scen[s] for s in order], "sites": sites, "P": P,
+            "ranges": ranges, "peaks_2025": peaks}
 
 
 def duty_matrix(inp, scenario):
@@ -363,6 +379,76 @@ def tipping_weight(row, scen_list, sid, H):
     return -d_o / (d_c - d_o)
 
 
+def candidates(inp, sites):
+    """Every feasible footprint with its board variant, in the order footprints() enumerates them."""
+    orgs = inp["origins"]
+    demand = ssum(m["weekly_units"] for m in inp["markets"])
+    out = []
+    for mask in range(1, 2 ** len(orgs)):
+        open_sites = [o for k, o in enumerate(orgs) if mask >> k & 1]
+        if ssum(sites[o]["capacity"] for o in open_sites) < demand - 1e-9 \
+                or ssum(sites[o]["min_load"] * sites[o]["capacity"] for o in open_sites) > demand + 1e-9:
+            continue
+        for board in ((False, True) if any(o != "CN" for o in open_sites) else (None,)):
+            out.append({"open": open_sites, "board": bool(board), "sites": with_boards(sites, open_sites, board)})
+    return out
+
+
+def draw_duties(inp, base, ranges, p_change, rng):
+    """One Monte Carlo draw of every market's duties (see the module docstring)."""
+    d = {t: dict(v) for t, v in base.items()}
+    seen = []
+    for m in inp["markets"]:
+        t = m["tkey"]
+        if t in seen:
+            continue
+        seen.append(t)
+        u, s = rng.random(), rng.random()
+        for o in inp["origins"]:
+            b = base[t][o]
+            lo, hi = ranges.get(f"{t}|{o}", (b, b))
+            if lo > hi:
+                lo, hi = hi, lo
+            d[t][o] = lo + s * (hi - lo) if u < p_change else min(max(b, lo), hi)
+    return d
+
+
+def duty_monte_carlo(inp, P, sites, red_sea, ranges=None, runs=200, seed=7):
+    """Price every feasible footprint under random duty draws inside the ranges."""
+    ranges = inp["ranges"] if ranges is None else ranges
+    base = duty_matrix(inp, inp["scenarios"][0])
+    cands = candidates(inp, sites)
+    rng = PortableRandom(seed)
+    cost = [[0.0] * len(cands) for _ in range(runs)]
+    mean_duty = {}
+    for k in range(runs):
+        d = draw_duties(inp, base, ranges, P["duty_change_prob"], rng)
+        for key in ranges:
+            t, o = key.split("|")
+            mean_duty[key] = mean_duty.get(key, 0.0) + d[t][o] / runs
+        for i, c in enumerate(cands):
+            cost[k][i] = yearly_costs(inp, P, c["sites"], c["open"], red_sea, [d])[1][0]
+    best = [min(row) for row in cost]
+    win = [0] * len(cands)
+    for row in cost:
+        j, b = 0, row[0]
+        for i, v in enumerate(row):
+            if v < b:
+                j, b = i, v
+        win[j] += 1
+    pick = lambda v, q: v[int(q * (len(v) - 1))]
+    rows = []
+    for i, c in enumerate(cands):
+        col = [cost[k][i] for k in range(runs)]
+        reg = [cost[k][i] - best[k] for k in range(runs)]
+        sc, sr = sorted(col), sorted(reg)
+        rows.append({"open": c["open"], "board": c["board"], "mean": ssum(col) / runs,
+                     "p10": pick(sc, .1), "p50": pick(sc, .5), "p90": pick(sc, .9),
+                     "win": win[i] / runs, "regret_mean": ssum(reg) / runs, "regret_p90": pick(sr, .9)})
+    rows.sort(key=lambda r: (r["mean"], len(r["open"]), r["board"]))
+    return {"rows": rows, "runs": runs, "mean_duty": mean_duty}
+
+
 def break_even(inp, P, sites, red_sea, duties):
     """Duty on China-made units (share of the duty base) above which each site beats China,
     per market; 0 = already cheaper, None = never (its units pay the China rate as well)."""
@@ -433,7 +519,16 @@ def main():
     else:
         print(f"  waiting beats building now for every footprint over {P['horizon_years']:.0f} years"
               f" (ramp-up {P['ramp_months']:.0f} months)")
-    print("  weight on 'US 25% on China-made laptops' above which building now beats waiting:")
+    mc = duty_monte_carlo(inp, P, sites, "cape", runs=200)
+    print(f"\n== Duty ranges, {mc['runs']} Monte Carlo draws (US up to its April 2025 peak,"
+          f" change probability {P['duty_change_prob']:.0%} per market)")
+    print(f"  {'open sites':<26}{'mean':>9}{'P10':>9}{'P90':>9}{'cheapest':>10}{'regret':>9}{'P90 reg':>9}")
+    for r in mc["rows"][:8]:
+        name = "+".join(r["open"]) + (" (boards)" if r["board"] else "")
+        print(f"  {name:<26}{r['mean'] / 1e6:>8.2f}M{r['p10'] / 1e6:>8.2f}M{r['p90'] / 1e6:>8.2f}M"
+              f"{r['win']:>10.0%}{r['regret_mean'] / 1e6:>8.2f}M{r['regret_p90'] / 1e6:>8.2f}M")
+    print("  mean drawn US duty: " + ", ".join(f"{k.split('|')[1]} {v:.1%}" for k, v in mc["mean_duty"].items()))
+    print("\n  weight on 'US 25% on China-made laptops' above which building now beats waiting:")
     for r in rows[:6]:
         if r["is_base"]:
             continue

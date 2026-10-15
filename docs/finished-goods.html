@@ -33,7 +33,7 @@
     --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
     --sea: #3987e5; --air: #d95926; --inland: #199e70;
     --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
-    --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+    --c1: #4a93ea; --c2: #de6d35; --c3: #00ad79; --c4: #8d83e2; --c5: #b88a00; --c6: #d96496; --c7: #858e95;
     --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
     --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
   }
@@ -43,7 +43,7 @@
   --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
   --sea: #3987e5; --air: #d95926; --inland: #199e70;
   --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
-  --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+  --c1: #4a93ea; --c2: #de6d35; --c3: #00ad79; --c4: #8d83e2; --c5: #b88a00; --c6: #d96496; --c7: #858e95;
   --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
   --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
 }
@@ -281,7 +281,7 @@ const R = (() => {
     return Object.assign({
       axisLine: { lineStyle: { color: t.rule } }, axisTick: { show: false },
       axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true },
-      splitLine: { lineStyle: { color: t.rule, type: [3, 3] } },
+      splitLine: { lineStyle: { color: t.rule, width: 1 } },
       nameTextStyle: { color: t.muted, fontSize: 11, fontFamily: t.fBody },
     }, o);
   }

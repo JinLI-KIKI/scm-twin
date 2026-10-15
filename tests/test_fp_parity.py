@@ -43,6 +43,14 @@ const fpRows = (P) => FPE.footprints(inp, P, inp.sites, 'cape').slice(0, 20).map
   return [r.open.join('+') + (r.board ? '/b' : ''), r.expected, r.regret, r.wait, r.build_now_value, tw === null ? -1 : tw];
 });
 out.fps = fpRows(inp.P).concat(fpRows({ ...inp.P, board_origin_weight: 0.5, ramp_months: 18 }));
+const stress = {};
+for (const m of inp.markets) for (const o of inp.origins) stress[`${m.tkey}|${o}`] = [0, inp.ranges[`USA|${o}`][1]];
+out.mc = [];
+for (const [rg, p, seed] of [[inp.ranges, 0.2, 7], [stress, 0.5, 3]]) {
+  const r = FPE.dutyMonteCarlo(inp, { ...inp.P, duty_change_prob: p }, inp.sites, 'cape', rg, 24, seed);
+  out.mc.push(r.rows.map((x) => [x.open.join('+') + (x.board ? '/b' : ''), x.mean, x.p10, x.p90, x.win, x.regret_mean, x.regret_p90])
+    .concat([Object.values(r.mean_duty)]));
+}
 process.stdout.write(JSON.stringify(out));
 """
 
@@ -85,6 +93,12 @@ def main(tol=1e-9):
                         r["build_now_value"], -1 if tw is None else tw])
         return out
     py["fps"] = fp_rows(inp["P"]) + fp_rows({**inp["P"], "board_origin_weight": 0.5, "ramp_months": 18})
+    stress = {f"{m['tkey']}|{o}": [0.0, inp["ranges"][f"USA|{o}"][1]] for m in inp["markets"] for o in inp["origins"]}
+    py["mc"] = []
+    for rg, p, seed in ((inp["ranges"], 0.2, 7), (stress, 0.5, 3)):
+        r = FP.duty_monte_carlo(inp, {**inp["P"], "duty_change_prob": p}, inp["sites"], "cape", rg, 24, seed)
+        py["mc"].append([["+".join(x["open"]) + ("/b" if x["board"] else ""), x["mean"], x["p10"], x["p90"], x["win"],
+                          x["regret_mean"], x["regret_p90"]] for x in r["rows"]] + [list(r["mean_duty"].values())])
     worst, bad = 0.0, 0
 
     def cmp(a, b, label):
@@ -114,11 +128,20 @@ def main(tol=1e-9):
     for k, (A, B) in enumerate(zip(py["fps"], js["fps"])):
         for a, b in zip(A, B):
             cmp(a, b, f"footprint[{k}]")
+    nmc = 0
+    for k, (A, B) in enumerate(zip(py["mc"], js["mc"])):
+        if len(A) != len(B):
+            bad += 1
+            print("MISMATCH mc lengths", k)
+        for i, (ra, rb) in enumerate(zip(A, B)):
+            for a, b in zip(ra, rb):
+                cmp(a, b, f"mc[{k}][{i}]")
+                nmc += 1
     if len(py["fps"]) != len(js["fps"]) or len(py["evals"]) != len(js["evals"]):
         bad += 1
         print("MISMATCH lengths")
     n = sum(len(r) * len(r[0]) for r in py["landed"]) + len(py["evals"]) * 5 + len(py["fps"]) * 6 \
-        + sum(len(r) * len(r[0]) for r in py["be"])
+        + sum(len(r) * len(r[0]) for r in py["be"]) + nmc
     print(f"{n} numbers compared: worst relative difference {worst:.2e} -> {'OK' if not bad else str(bad) + ' mismatches'}")
     return 1 if bad else 0
 

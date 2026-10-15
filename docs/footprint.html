@@ -33,7 +33,7 @@
     --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
     --sea: #3987e5; --air: #d95926; --inland: #199e70;
     --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
-    --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+    --c1: #4a93ea; --c2: #de6d35; --c3: #00ad79; --c4: #8d83e2; --c5: #b88a00; --c6: #d96496; --c7: #858e95;
     --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
     --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
   }
@@ -43,7 +43,7 @@
   --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
   --sea: #3987e5; --air: #d95926; --inland: #199e70;
   --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
-  --c1: #4a93ea; --c2: #e8763f; --c3: #2bbd88; --c4: #968cec; --c5: #e0b13a; --c6: #e06a9c; --c7: #858e95;
+  --c1: #4a93ea; --c2: #de6d35; --c3: #00ad79; --c4: #8d83e2; --c5: #b88a00; --c6: #d96496; --c7: #858e95;
   --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
   --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
 }
@@ -210,39 +210,129 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
   .mobile-toggle { display: inline-block; }
 }
 
+/* ---------- section dividers */
+.sec { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; margin: 8px 0 -4px; min-width: 0; }
+.sec .n { font: 500 12px var(--f-mono); color: var(--muted); }
+.sec h3 { font: 600 21px/1.1 var(--f-display); letter-spacing: .02em; margin: 0; white-space: nowrap; }
+@media (max-width: 860px) { .sec h3 { white-space: normal; } }
+.sec .rule { flex: 1 1 40px; border-bottom: 1px solid var(--rule); transform: translateY(-5px); min-width: 24px; }
+.sec .note { font-size: 12px; color: var(--muted); text-align: right; max-width: 52ch; }
+@media (max-width: 860px) { .sec { flex-wrap: wrap; } .sec .rule { display: none; } .sec .note { text-align: left; flex-basis: 100%; } }
+
+/* ---------- decision hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; position: relative; }
+.hero-main { padding: 16px 20px 16px 24px; display: grid; gap: 10px; align-content: start; border-right: 1px solid var(--rule); position: relative; transition: opacity .2s; }
+.hero-main::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--ink); }
+.hero.busy .hero-main, .hero.busy .ladder { opacity: .55; }
+.hero-eye { font: 500 11px var(--f-mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.hero-fig { font: 600 40px/1.05 var(--f-body); letter-spacing: -.01em; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.hero-fig .st { display: inline-flex; align-items: center; gap: 9px; }
+.hero-fig .dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 2px var(--panel); }
+.hero-fig .plus { color: var(--muted); font-weight: 400; }
+.hero-why { font-size: 13.5px; color: var(--ink-2); margin: 0; max-width: 70ch; }
+.hero-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; border-top: 1px solid var(--rule); padding-top: 10px; }
+.hs .l { display: block; font-size: 11.5px; color: var(--muted); }
+.hs .v { display: block; font: 600 20px/1.2 var(--f-body); }
+.hs .s { display: block; font: 11.5px var(--f-mono); color: var(--ink-2); }
+.ladder { display: grid; align-content: start; transition: opacity .2s; }
+.lr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 12px; padding: 10px 16px; border-bottom: 1px solid var(--rule); align-items: baseline; }
+.lr:last-child { border-bottom: 0; }
+.lr .l { font-size: 12px; color: var(--muted); }
+.lr .v { font: 600 14.5px var(--f-body); text-align: right; display: flex; gap: 6px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.lr .s { grid-column: 1 / -1; font: 11.5px var(--f-mono); color: var(--ink-2); }
+.prog { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--c1); width: 0; transition: width .15s; }
+.mini-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+@media (max-width: 1100px) { .hero { grid-template-columns: 1fr; } .hero-main { border-right: 0; border-bottom: 1px solid var(--rule); } }
+@media (max-width: 560px) { .hero-fig { font-size: 30px; } .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------- site strip */
+.strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1320px) { .strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } }
+.sc { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 12px 11px; display: grid; gap: 7px; position: relative; overflow: hidden; align-content: start; min-width: 0; }
+.sc::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--sc); }
+.sc.closed { background: transparent; border-style: dashed; }
+.sc.closed::before { opacity: .3; }
+.sc-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+.sc-name { font: 600 14px/1.2 var(--f-body); min-width: 0; }
+.sc-name small { display: block; font: 400 11.5px var(--f-body); color: var(--muted); }
+.tgl { font: 500 11px var(--f-body); border: 1px solid var(--rule); border-radius: 10px; padding: 1px 9px; background: var(--paper); color: var(--ink-2); cursor: pointer; white-space: nowrap; }
+.tgl[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.meter { position: relative; height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--sc) 16%, transparent); }
+.meter i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--sc); }
+.meter b { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; }
+.sc-load { display: flex; justify-content: space-between; gap: 6px; font: 11.5px var(--f-mono); color: var(--ink-2); }
+.sc-kv { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; font-size: 11.5px; color: var(--muted); }
+.sc-kv span:nth-child(even) { font: 11.5px var(--f-mono); color: var(--ink); text-align: right; }
+.sc-serves { font-size: 11.5px; color: var(--ink-2); min-height: 1.4em; }
+.sc.closed .meter, .sc.closed .sc-load { opacity: .4; }
+
+/* ---------- inputs: sites and ranges */
 .site-row { display: grid; gap: 6px; padding: 10px 0; border-top: 1px dashed var(--rule); }
 .site-row:first-child { border-top: 0; }
-.site-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.site-h label, .tog { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.site-h label { font: 600 13px var(--f-body); color: var(--ink); }
+.site-hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.site-hd label, .tog { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.site-hd label { font: 600 13px var(--f-body); color: var(--ink); }
 .tog { font-size: 12px; color: var(--ink-2); }
-.site-row input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: var(--c1); }
+.site-row input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: var(--ink); }
 .site-row.closed .mini, .site-row.closed .tog { opacity: .45; }
 .mini { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; align-items: center; font-size: 12px; color: var(--ink-2); }
-.mini input[type="range"] { grid-column: 1 / -1; width: 100%; margin: 2px 0 0; accent-color: var(--c1); }
+.mini input[type="range"] { grid-column: 1 / -1; width: 100%; margin: 2px 0 0; accent-color: var(--sea); }
 .mini output { font: 12px var(--f-mono); color: var(--ink); }
 .mini.changed output { color: var(--c2); font-weight: 600; }
+.sw { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.rng-mk { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 2px; }
+.rng-mk button { font: 500 11.5px var(--f-mono); border: 1px solid var(--rule); background: var(--paper); color: var(--ink-2); border-radius: 4px; padding: 2px 7px; cursor: pointer; position: relative; }
+.rng-mk button[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.rng-mk button.has::after { content: ''; position: absolute; top: -3px; right: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--c2); box-shadow: 0 0 0 2px var(--panel); }
+.rrow { display: grid; gap: 0; padding: 6px 0 4px; }
+.rrow + .rrow { border-top: 1px dashed var(--rule); }
+.rrow-h { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); }
+.rrow-h b { font: 600 12px var(--f-mono); color: var(--ink); }
+.rrow-h output { margin-left: auto; font: 12px var(--f-mono); color: var(--ink); }
+.rrow.wide .rrow-h output { color: var(--c2); font-weight: 600; }
+.dual { position: relative; height: 26px; --lo: 0%; --hi: 0%; }
+.dual .trk, .dual .band { position: absolute; top: 11px; height: 4px; border-radius: 2px; }
+.dual .trk { left: 7px; right: 7px; background: var(--rule); }
+.dual .band { left: calc(7px + (100% - 14px) * var(--lo)); width: calc((100% - 14px) * (var(--hi) - var(--lo))); background: var(--rc); min-width: 2px; }
+.dual .tk { position: absolute; top: 6px; width: 2px; height: 14px; margin-left: -1px; border-radius: 1px; left: calc(7px + (100% - 14px) * var(--p)); }
+.dual .tk.today { background: var(--ink); }
+.dual .tk.peak { background: var(--bad); height: 6px; top: 20px; }
+.dual input[type="range"] { position: absolute; left: 0; right: 0; top: 4px; width: 100%; height: 18px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+.dual input[type="range"]::-webkit-slider-runnable-track { background: transparent; border: 0; height: 18px; }
+.dual input[type="range"]::-moz-range-track { background: transparent; border: 0; }
+.dual input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 14px; height: 14px; margin-top: 2px; border-radius: 50%; background: var(--panel); border: 2px solid var(--ink); cursor: ew-resize; box-shadow: 0 0 0 2px var(--panel); }
+.dual input[type="range"]::-moz-range-thumb { pointer-events: auto; width: 10px; height: 10px; border-radius: 50%; background: var(--panel); border: 2px solid var(--ink); cursor: ew-resize; }
+.dual input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--sea); outline-offset: 2px; }
+.dual-scale { display: flex; justify-content: space-between; font: 10px var(--f-mono); color: var(--muted); padding: 0 2px; }
+.rng-key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: var(--muted); margin: 4px 0; }
+.rng-key i { display: inline-block; width: 2px; height: 10px; vertical-align: -1px; margin-right: 4px; }
+
+/* ---------- tables and small things */
 .heat td.cell { cursor: pointer; }
 .heat tbody tr { cursor: pointer; }
 .heat td.best { box-shadow: inset 0 0 0 2px var(--ink); font-weight: 600; }
 .heat td.closed { color: var(--muted); }
 .heat tr.selm td.txt { background: var(--hl); }
 .tbl th small, .tbl td.txt small { display: block; color: var(--muted); font: 400 10px/1.3 var(--f-body); text-transform: none; letter-spacing: 0; }
-.duty-in { width: 56px; font: 12px var(--f-mono); color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 4px; text-align: right; }
+.duty-in { width: 58px; font: 12px var(--f-mono); color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 4px; text-align: right; }
 .duty-in.edited { border-color: var(--c2); color: var(--c2); font-weight: 600; }
-.fp-open { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.fp-open { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; white-space: nowrap; }
+.sitechip { display: inline-flex; align-items: center; gap: 5px; font: 500 11px/1.6 var(--f-mono); padding: 0 7px 0 6px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); color: var(--ink); }
+.sitechip i { width: 7px; height: 7px; border-radius: 50%; }
 .tbl tr.cur td { background: var(--hl); }
 .usebtn { font: 11px var(--f-body); border: 1px solid var(--rule); background: var(--paper); color: var(--ink-2); border-radius: 4px; padding: 1px 8px; cursor: pointer; }
 .usebtn:hover { color: var(--ink); border-color: var(--ink-2); }
-.pos { color: var(--good); } .neg { color: var(--bad); }
-.empty { color: var(--muted); font-size: 13px; padding: 12px 0; }
-.results .kpis { grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); }
-.be td b { font-weight: 600; }
 .be th, .be td { padding-left: 6px; padding-right: 6px; }
+.be td b { font-weight: 600; }
 .be td small { display: block; color: var(--ink-2); font: 400 10px/1.3 var(--f-mono); }
 .be td.never b, .be td small.never { color: var(--muted); font-weight: 400; }
 .be td.now b { color: var(--good); }
-@media (max-width: 1180px) { .canvas .viz.w5, .canvas .viz.w6, .canvas .viz.w7 { grid-column: span 12; } }
+.pos { color: var(--good); } .neg { color: var(--bad); }
+.empty { color: var(--muted); font-size: 13px; padding: 12px 0; }
+.winbar { display: inline-block; height: 6px; border-radius: 3px; background: var(--c1); vertical-align: 1px; margin-right: 6px; }
+.results .kpis { grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); }
+@media (max-width: 1180px) { .canvas .viz.w5, .canvas .viz.w6, .canvas .viz.w7, .canvas .viz.w8, .canvas .viz.w4 { grid-column: span 12; } }
 </style>
 <header class="topbar">
   <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
@@ -256,7 +346,7 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
     <div>
       <p class="eyebrow">Module 7 · sites, markets and real duties</p>
       <h1>Factory Footprint Studio</h1>
-      <p class="sub">Six candidate assembly sites, nine regional distribution centres, laptop duties as they stand in October 2026 and four tariff scenarios. A laptop takes the origin of its main board, so a site that only assembles China-made boards does not escape a China tariff. Move anything on the left: landed costs, the allocation, break-even duties and the ranking of footprints update at once.</p>
+      <p class="sub">Six candidate assembly sites, nine regional distribution centres and the laptop duties in force in October 2026, with four tariff scenarios and duty ranges you stretch by hand up to the April 2025 peak. A laptop takes the origin of its main board, so a site that only assembles China-made boards does not escape a China tariff. Everything below recomputes as you move an input.</p>
     </div>
     <div class="asof">Built 2026-10-15 · duties checked Oct 2026 · <a href="rules.html">sources</a> · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/footprint.md">formulas</a></div>
   </div>
@@ -267,7 +357,19 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
         <h2>Inputs</h2>
         <span><button type="button" class="btn mobile-toggle" id="fold">Show inputs</button> <button type="button" class="btn" id="reset">Reset all</button></span>
       </div>
-      <details class="grp" open><summary>Sites<span class="cnt" id="cnt-sites"></span></summary><div id="sites"></div></details>
+      <details class="grp" open><summary>Duty ranges · drag to stretch<span class="cnt" id="cnt-rng"></span></summary>
+        <div class="rng-mk" id="rng-mk" role="group" aria-label="Market whose duties you edit"></div>
+        <div class="rng-key"><span><i style="background:var(--ink)"></i>today</span><span><i style="background:var(--bad);height:6px"></i>US peak, Apr 2025</span><span>scale 0–150%</span></div>
+        <div id="rng-rows"></div>
+        <div class="dual-scale"><span>0%</span><span>50%</span><span>100%</span><span>150%</span></div>
+        <div class="chips" style="margin:8px 0 2px" id="rng-presets">
+          <button type="button" data-p="today">Today only</button>
+          <button type="button" data-p="us2025">US up to its Apr 2025 peak</button>
+          <button type="button" data-p="all2025">Every market up to the US peak</button>
+        </div>
+        <div id="rng-prob"></div>
+      </details>
+      <details class="grp"><summary>Sites<span class="cnt" id="cnt-sites"></span></summary><div id="sites"></div></details>
       <div id="groups"></div>
     </aside>
 
@@ -277,12 +379,22 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
         <div class="slicer"><span class="s-label" id="l-r">Red Sea</span><div class="seg" role="group" aria-labelledby="l-r" id="f-r"></div></div>
         <div class="slicer"><span class="s-label" id="l-m">Grid mode</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
         <div class="slicer"><span class="s-label" id="l-v">Grid shows</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
+        <div class="slicer"><span class="s-label" id="l-n">Duty draws</span><div class="seg" role="group" aria-labelledby="l-n" id="f-n"></div></div>
         <span class="status" id="status" aria-live="polite"></span>
       </section>
+
+      <section class="hero" id="hero" aria-live="polite">
+        <div class="hero-main" id="hero-main"></div>
+        <div class="ladder" id="ladder"></div>
+        <div class="prog" id="prog"></div>
+      </section>
+
+      <section class="strip" id="strip" aria-label="Sites"></section>
 
       <section class="kpis" id="kpis" aria-live="polite"></section>
 
       <section class="canvas">
+        <div class="sec"><span class="n">01</span><h3>Where each market buys</h3><span class="rule"></span><span class="note" id="n-01"></span></div>
         <div class="viz w12">
           <div class="viz-h"><h2>Who supplies whom</h2><span class="hint" id="h-sankey"></span></div>
           <div id="c-sankey" class="chart tall"></div>
@@ -295,18 +407,39 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
           <div class="viz-h"><h2 id="h-drill">What makes up the cost</h2><span class="hint">Per unit, ocean</span></div>
           <div id="c-drill" class="chart tall"></div>
         </div>
-        <div class="viz w6">
-          <div class="viz-h"><h2 id="h-sweep">If a market taxes China-made laptops</h2><span class="hint">Yearly cost of each footprint, $M · dotted: this scenario's rate · click a market in the grid</span></div>
-          <div id="c-sweep" class="chart tall"></div>
+
+        <div class="sec"><span class="n">02</span><h3>If one tariff moves</h3><span class="rule"></span><span class="note">One duty swept from 0 to the 2025 ceiling, everything else held</span></div>
+        <div class="viz w7">
+          <div class="viz-h"><h2 id="h-sweep">If a market taxes China-made laptops</h2><span class="hint">Yearly cost, $M · dotted: this scenario's rate · red: April 2025 peak</span></div>
+          <div id="c-sweep" class="chart xtall"></div>
         </div>
-        <div class="viz w6">
-          <div class="viz-h"><h2>Break-even China duty</h2><span class="hint">Duty on China-made units above which a site is cheaper per unit · top: boards made on site, below: China-made boards · ✓ already cheaper</span></div>
+        <div class="viz w5">
+          <div class="viz-h"><h2>Break-even China duty</h2><span class="hint">Top: boards made on site · below: China-made boards · ✓ already cheaper</span></div>
           <div class="tbl-wrap"><table class="tbl be" id="t-be"></table></div>
         </div>
+
+        <div class="sec"><span class="n">03</span><h3>If duties move inside their ranges</h3><span class="rule"></span><span class="note" id="n-03"></span></div>
+        <div class="viz w7">
+          <div class="viz-h"><h2>Yearly cost across the draws</h2><span class="hint">P10–P90 band, mean and the cost at today's duties · $M</span></div>
+          <div id="c-fan" class="chart xtall"></div>
+        </div>
+        <div class="viz w5">
+          <div class="viz-h"><h2 id="h-tor">Which duty moves the cost</h2><div class="seg" role="group" aria-label="Footprint for this chart" id="f-tor"></div></div>
+          <span class="hint" id="hh-tor" style="margin-top:-4px"></span>
+          <div id="c-tor" class="chart xtall"></div>
+        </div>
         <div class="viz w12">
-          <div class="viz-h"><h2>Which footprint holds up</h2><span class="hint" id="h-fp"></span></div>
+          <div class="viz-h"><h2>Footprints under the duty ranges</h2><span class="hint" id="h-mc"></span></div>
+          <div class="tbl-wrap"><table class="tbl" id="t-mc"></table></div>
+        </div>
+
+        <div class="sec"><span class="n">04</span><h3>Which footprint holds up in each scenario</h3><span class="rule"></span><span class="note">Named scenarios, weighted · build now or wait</span></div>
+        <div class="viz w12">
+          <div class="viz-h"><h2>Footprints across the scenarios</h2><span class="hint" id="h-fp"></span></div>
           <div class="tbl-wrap"><table class="tbl" id="t-fp"></table></div>
         </div>
+
+        <div class="sec"><span class="n">05</span><h3>Duties and chokepoints</h3><span class="rule"></span><span class="note">Edits here apply to every scenario and to the centre of every range</span></div>
         <div class="viz w7">
           <div class="viz-h"><h2>Duties in this scenario</h2><span class="hint">Percent, by where the unit is assembled · type to change</span></div>
           <div class="tbl-wrap"><table class="tbl" id="t-duty"></table></div>
@@ -321,8 +454,8 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
 
       <footer class="notes">
         <p><b>Landed cost</b> = factory value (China customs value, conversion cost scaled by the site's index and, at other sites, the parts shipped from China: freight, carrying while they sail and import duty on parts; plus the extra cost of making the main board on site) + freight to the market + duty (on CIF where the market values imports that way) + carrying in transit + a planning cost for the longer chain at non-China sites + an optional chokepoint premium. <b>Duty</b> = (1 − w) × the site's own rate + w × the China rate, where w is the board-origin weight for a site that imports China-made boards (1 under the US customs rulings) and 0 for a site that makes its boards or sells in its own country.</p>
-        <p><b>Allocation</b> is a minimum-cost flow from open sites to markets within capacity, with each new site carrying at least its minimum load. <b>Footprints</b> are every set of open sites that can cover demand and whose minimum loads fit, with boards imported or made on site, priced over 52 weeks plus the yearly fixed cost of sites and board lines, in every scenario; regret is the gap to the best footprint for that scenario. <b>Build now or wait</b> compares opening today with keeping the footprint that is cheapest under current duties and opening only once a scenario arrives: the old cost runs through the ramp-up and a rush premium is paid.</p>
-        <p><b>Duties</b> are current rates for laptops (HTS 8471.30). The US exempts computers from the July 2026 Section 301 action and China's 2019 list on laptops stays suspended; the EU, UK, Japan, Australia, Singapore and India charge nothing (WTO ITA); Brazil charges 16%; the UAE 5%, also on free-zone units sold on the mainland unless they qualify as a GCC product. Scenario probabilities, freight rates, conversion indices, capacities, minimum loads and board costs are placeholders. Sources in the <a href="rules.html">Rules register</a>; code in <code>src/footprint.py</code>, mirrored in <code>src/dash/fp_engine.js</code> and checked number for number by <code>tests/test_fp_parity.py</code>.</p>
+        <p><b>Allocation</b> is a minimum-cost flow from open sites to markets within capacity, with each new site carrying at least its minimum load. <b>Footprints</b> are every set of open sites that can cover demand and whose minimum loads fit, with boards imported or made on site, priced over 52 weeks plus the yearly fixed cost of sites and board lines. <b>Duty ranges</b>: in each draw and market, with the change probability set on the left, the market moves all its duties to the same point of their ranges (as the US did in April 2025); otherwise today's rates stay. Regret is the gap to the cheapest footprint in the same draw or scenario. <b>Build now or wait</b> compares opening today with keeping the footprint that is cheapest under current duties and opening only once a scenario arrives: the old cost runs through the ramp-up and a rush premium is paid.</p>
+        <p><b>Duties</b> are current rates for laptops (HTS 8471.30): the US exempts computers from the July 2026 Section 301 action and China's 2019 list on laptops stays suspended; the EU, UK, Japan, Australia, Singapore and India charge nothing; Brazil charges 16%; the UAE 5%. <b>Ceilings</b> follow the April 2025 peak in the US: China 145% (125% reciprocal + 20% fentanyl; laptops were exempted from the reciprocal part on 11 April and paid 20%), Vietnam 46%, Indonesia 32%, Malaysia 24%, Brazil and the UAE 10% (Brazil later 50%). Scenario weights, the change probability, freight rates, conversion indices, capacities, minimum loads and board costs are placeholders. Sources in the <a href="rules.html">Rules register</a>; code in <code>src/footprint.py</code>, mirrored in <code>src/dash/fp_engine.js</code> and checked number for number by <code>tests/test_fp_parity.py</code>.</p>
       </footer>
     </div>
   </div>
@@ -373,7 +506,7 @@ const R = (() => {
     return Object.assign({
       axisLine: { lineStyle: { color: t.rule } }, axisTick: { show: false },
       axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true },
-      splitLine: { lineStyle: { color: t.rule, type: [3, 3] } },
+      splitLine: { lineStyle: { color: t.rule, width: 1 } },
       nameTextStyle: { color: t.muted, fontSize: 11, fontFamily: t.fBody },
     }, o);
   }
@@ -424,7 +557,7 @@ const R = (() => {
   return { theme, usd, num, kunits, pct, axUsd, base, axis, chart, update, refreshAll, load, save, seg, $, esc, tip, hasLib };
 })();
 </script>
-<script>/* Module 7 engine for the browser: a line-by-line port of src/footprint.py.
+<script id="fpe">/* Module 7 engine for the browser: a line-by-line port of src/footprint.py.
    tests/test_fp_parity.py checks both give identical numbers. Keep the two files in step. */
 const FPE = (() => {
   const RISKY = { suez: 'Red Sea', babalmandab: 'Red Sea', ormuz: 'Hormuz' };
@@ -623,6 +756,77 @@ const FPE = (() => {
     if (dC <= 0) return null;
     return -dO / (dC - dO);
   }
+  // ---------------------------------------------------------------- duty ranges (Monte Carlo)
+  function makeRng(seed) {                     // mulberry32, identical to src/prng.py
+    let s = seed >>> 0;
+    return { random() {
+      s = (s + 0x6D2B79F5) >>> 0;
+      let t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1) >>> 0;
+      t = ((((t + (Math.imul(t ^ (t >>> 7), t | 61) >>> 0)) >>> 0)) ^ t) >>> 0;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    } };
+  }
+  function candidates(inp, sites) {
+    const orgs = inp.origins, demand = ssum(inp.markets.map((m) => m.weekly_units)), out = [];
+    for (let mask = 1; mask < (1 << orgs.length); mask++) {
+      const open = orgs.filter((_, k) => (mask >> k) & 1);
+      if (ssum(open.map((o) => sites[o].capacity)) < demand - 1e-9
+        || ssum(open.map((o) => sites[o].min_load * sites[o].capacity)) > demand + 1e-9) continue;
+      for (const board of (open.some((o) => o !== 'CN') ? [false, true] : [null])) {
+        out.push({ open, board: !!board, sites: withBoards(sites, open, board) });
+      }
+    }
+    return out;
+  }
+  function drawDuties(inp, base, ranges, pChange, rng) {
+    const d = {}, seen = [];
+    for (const k of Object.keys(base)) d[k] = { ...base[k] };
+    for (const m of inp.markets) {
+      const t = m.tkey;
+      if (seen.includes(t)) continue;
+      seen.push(t);
+      const u = rng.random(), s = rng.random();
+      for (const o of inp.origins) {
+        const b = base[t][o];
+        let [lo, hi] = ranges[`${t}|${o}`] || [b, b];
+        if (lo > hi) [lo, hi] = [hi, lo];
+        d[t][o] = u < pChange ? lo + s * (hi - lo) : Math.min(Math.max(b, lo), hi);
+      }
+    }
+    return d;
+  }
+  function dutyMonteCarlo(inp, P, sites, redSea, ranges, runs, seed, onProgress) {
+    ranges = ranges || inp.ranges; runs = runs || 200; seed = seed === undefined ? 7 : seed;
+    const base = dutyMatrix(inp, inp.scenarios[0]);
+    const cands = candidates(inp, sites), rng = makeRng(seed);
+    const cost = [], meanDuty = {};
+    for (let k = 0; k < runs; k++) {
+      const d = drawDuties(inp, base, ranges, P.duty_change_prob, rng);
+      for (const key of Object.keys(ranges)) {
+        const [t, o] = key.split('|');
+        meanDuty[key] = (meanDuty[key] || 0) + d[t][o] / runs;
+      }
+      cost.push(cands.map((c) => yearlyCosts(inp, P, c.sites, c.open, redSea, [d])[1][0]));
+      if (onProgress && k % 10 === 9) onProgress((k + 1) / runs);
+    }
+    const best = cost.map((row) => Math.min(...row));
+    const win = new Array(cands.length).fill(0);
+    for (const row of cost) {
+      let j = 0, b = row[0];
+      row.forEach((v, i) => { if (v < b) { j = i; b = v; } });
+      win[j] += 1;
+    }
+    const pick = (v, q) => v[Math.floor(q * (v.length - 1))];
+    const rows = cands.map((c, i) => {
+      const col = cost.map((row) => row[i]), reg = cost.map((row, k) => row[i] - best[k]);
+      const sc = col.slice().sort((a, b) => a - b), sr = reg.slice().sort((a, b) => a - b);
+      return { open: c.open, board: c.board, mean: ssum(col) / runs, p10: pick(sc, 0.1), p50: pick(sc, 0.5), p90: pick(sc, 0.9),
+        win: win[i] / runs, regret_mean: ssum(reg) / runs, regret_p90: pick(sr, 0.9) };
+    });
+    rows.sort((a, b) => (a.mean - b.mean) || (a.open.length - b.open.length) || (a.board - b.board));
+    return { rows, runs, mean_duty: meanDuty };
+  }
   function breakEven(inp, P, sites, redSea, duties) {
     const tab = landedTable(inp, P, sites, 'sea', redSea, duties), out = {};
     for (const o of inp.origins) {
@@ -638,41 +842,54 @@ const FPE = (() => {
     }
     return out;
   }
-  return { dutyMatrix, landed, landedTable, transport, evaluate, withBoards, yearlyCosts, footprints, tippingWeight, breakEven };
+  return { dutyMatrix, landed, landedTable, transport, evaluate, withBoards, yearlyCosts, footprints, tippingWeight, breakEven, makeRng, candidates, drawDuties, dutyMonteCarlo };
 })();
 if (typeof module !== 'undefined') module.exports = FPE;
 </script>
 <script>
-const D = {"input":{"origins":["CN","ID","VN","MY","BR","AE"],"markets":[{"market":"US","mgi":"M_US","tkey":"USA","weekly_units":4000.0,"valuation":"FOB","name":"Inland Empire, California","code":"MGI-US"},{"market":"EU","mgi":"M_EU","tkey":"EU","weekly_units":2400.0,"valuation":"CIF","name":"Venlo, Netherlands","code":"MGI-EU"},{"market":"UK","mgi":"M_UK","tkey":"GBR","weekly_units":700.0,"valuation":"CIF","name":"Daventry, England","code":"MGI-UK"},{"market":"JP","mgi":"M_JP","tkey":"JPN","weekly_units":1300.0,"valuation":"CIF","name":"Atsugi, Kanagawa","code":"MGI-JP"},{"market":"BR","mgi":"M_BR","tkey":"BRA","weekly_units":1500.0,"valuation":"CIF","name":"Campinas, Sao Paulo","code":"MGI-BR"},{"market":"AU","mgi":"M_AU","tkey":"AUS","weekly_units":550.0,"valuation":"FOB","name":"Eastern Creek, Sydney","code":"MGI-AU"},{"market":"SEA","mgi":"M_SG","tkey":"SGP","weekly_units":800.0,"valuation":"CIF","name":"Loyang, Singapore","code":"MGI-SG"},{"market":"IN","mgi":"M_IN","tkey":"IND","weekly_units":900.0,"valuation":"CIF","name":"Bhiwandi, Maharashtra","code":"MGI-IN"},{"market":"ME","mgi":"M_AE","tkey":"ARE","weekly_units":450.0,"valuation":"CIF","name":"Jebel Ali, Dubai","code":"MGI-AE"}],"routes":{"CN|M_US|sea|any":{"days":31.0,"nm":5750,"truck_km":269.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_US|air|any":{"days":8.0,"nm":5624,"truck_km":202.0,"air_km":10415.0,"passages":[],"domestic":false},"CN|M_EU|sea|cape":{"days":53.4,"nm":13834,"truck_km":373.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"CN|M_EU|sea|suez":{"days":44.2,"nm":10514,"truck_km":373.0,"air_km":0.0,"passages":["malacca","gibraltar","suez","babalmandab"],"domestic":false},"CN|M_EU|air|any":{"days":7.5,"nm":4811,"truck_km":304.0,"air_km":8910.0,"passages":[],"domestic":false},"CN|M_UK|sea|cape":{"days":53.3,"nm":13778,"truck_km":416.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"CN|M_UK|sea|suez":{"days":44.1,"nm":10458,"truck_km":416.0,"air_km":0.0,"passages":["malacca","gibraltar","suez","babalmandab"],"domestic":false},"CN|M_UK|air|any":{"days":7.5,"nm":4990,"truck_km":254.0,"air_km":9241.0,"passages":[],"domestic":false},"CN|M_JP|sea|any":{"days":16.8,"nm":1017,"truck_km":242.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_JP|air|any":{"days":7.5,"nm":970,"truck_km":224.0,"air_km":1796.0,"passages":[],"domestic":false},"CN|M_BR|sea|any":{"days":49.7,"nm":11041,"truck_km":393.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"CN|M_BR|air|any":{"days":11.0,"nm":10071,"truck_km":140.0,"air_km":18651.0,"passages":[],"domestic":false},"CN|M_AU|sea|any":{"days":26.8,"nm":4609,"truck_km":217.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_AU|air|any":{"days":7.5,"nm":4247,"truck_km":158.0,"air_km":7865.0,"passages":[],"domestic":false},"CN|M_SG|sea|any":{"days":19.0,"nm":2155,"truck_km":197.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_SG|air|any":{"days":7.5,"nm":2055,"truck_km":139.0,"air_km":3805.0,"passages":[],"domestic":false},"CN|M_IN|sea|any":{"days":29.9,"nm":4660,"truck_km":233.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"CN|M_IN|air|any":{"days":7.5,"nm":2734,"truck_km":153.0,"air_km":5064.0,"passages":[],"domestic":false},"CN|M_AE|sea|any":{"days":29.7,"nm":5651,"truck_km":182.0,"air_km":0.0,"passages":["ormuz","malacca"],"domestic":false},"CN|M_AE|air|any":{"days":7.5,"nm":3501,"truck_km":132.0,"air_km":6483.0,"passages":[],"domestic":false},"ID|M_US|sea|any":{"days":37.3,"nm":8029,"truck_km":144.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_US|air|any":{"days":8.0,"nm":7802,"truck_km":158.0,"air_km":14450.0,"passages":[],"domestic":false},"ID|M_EU|sea|cape":{"days":46.6,"nm":11392,"truck_km":248.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"ID|M_EU|sea|suez":{"days":39.0,"nm":8642,"truck_km":248.0,"air_km":0.0,"passages":["sunda","gibraltar","suez","babalmandab"],"domestic":false},"ID|M_EU|air|any":{"days":8.0,"nm":6130,"truck_km":260.0,"air_km":11353.0,"passages":[],"domestic":false},"ID|M_UK|sea|cape":{"days":46.5,"nm":11337,"truck_km":291.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"ID|M_UK|sea|suez":{"days":38.8,"nm":8586,"truck_km":291.0,"air_km":0.0,"passages":["sunda","gibraltar","suez","babalmandab"],"domestic":false},"ID|M_UK|air|any":{"days":8.0,"nm":6329,"truck_km":210.0,"air_km":11721.0,"passages":[],"domestic":false},"ID|M_JP|sea|any":{"days":23.0,"nm":3253,"truck_km":117.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_JP|air|any":{"days":7.5,"nm":3153,"truck_km":180.0,"air_km":5840.0,"passages":[],"domestic":false},"ID|M_BR|sea|any":{"days":42.9,"nm":8600,"truck_km":268.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"ID|M_BR|air|any":{"days":11.5,"nm":11285,"truck_km":96.0,"air_km":20900.0,"passages":[],"domestic":false},"ID|M_AU|sea|any":{"days":24.9,"nm":3932,"truck_km":92.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_AU|air|any":{"days":7.5,"nm":2980,"truck_km":114.0,"air_km":5519.0,"passages":[],"domestic":false},"ID|M_SG|sea|any":{"days":14.4,"nm":514,"truck_km":72.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_SG|air|any":{"days":7.5,"nm":477,"truck_km":95.0,"air_km":884.0,"passages":[],"domestic":false},"ID|M_IN|sea|any":{"days":24.9,"nm":2844,"truck_km":108.0,"air_km":0.0,"passages":["sunda"],"domestic":false},"ID|M_IN|air|any":{"days":7.5,"nm":2507,"truck_km":109.0,"air_km":4643.0,"passages":[],"domestic":false},"ID|M_AE|sea|any":{"days":24.7,"nm":3835,"truck_km":57.0,"air_km":0.0,"passages":["ormuz","sunda"],"domestic":false},"ID|M_AE|air|any":{"days":7.5,"nm":3536,"truck_km":88.0,"air_km":6549.0,"passages":[],"domestic":false},"VN|M_US|sea|any":{"days":34.4,"nm":6973,"truck_km":256.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_US|air|any":{"days":8.0,"nm":6641,"truck_km":139.0,"air_km":12300.0,"passages":[],"domestic":false},"VN|M_EU|sea|cape":{"days":51.2,"nm":13022,"truck_km":360.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"VN|M_EU|sea|suez":{"days":41.9,"nm":9678,"truck_km":360.0,"air_km":0.0,"passages":["malacca","gibraltar","suez","babalmandab"],"domestic":false},"VN|M_EU|air|any":{"days":7.5,"nm":4790,"truck_km":241.0,"air_km":8872.0,"passages":[],"domestic":false},"VN|M_UK|sea|cape":{"days":51.0,"nm":12966,"truck_km":403.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"VN|M_UK|sea|suez":{"days":41.7,"nm":9622,"truck_km":403.0,"air_km":0.0,"passages":["malacca","gibraltar","suez","babalmandab"],"domestic":false},"VN|M_UK|air|any":{"days":7.5,"nm":4988,"truck_km":191.0,"air_km":9238.0,"passages":[],"domestic":false},"VN|M_JP|sea|any":{"days":19.9,"nm":2123,"truck_km":229.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_JP|air|any":{"days":7.5,"nm":2009,"truck_km":161.0,"air_km":3721.0,"passages":[],"domestic":false},"VN|M_BR|sea|any":{"days":47.4,"nm":10229,"truck_km":380.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"VN|M_BR|air|any":{"days":11.0,"nm":9992,"truck_km":77.0,"air_km":18505.0,"passages":[],"domestic":false},"VN|M_AU|sea|any":{"days":27.7,"nm":4927,"truck_km":204.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_AU|air|any":{"days":7.5,"nm":4206,"truck_km":95.0,"air_km":7790.0,"passages":[],"domestic":false},"VN|M_SG|sea|any":{"days":16.7,"nm":1319,"truck_km":184.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_SG|air|any":{"days":7.5,"nm":1197,"truck_km":76.0,"air_km":2217.0,"passages":[],"domestic":false},"VN|M_IN|sea|any":{"days":27.6,"nm":3824,"truck_km":220.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"VN|M_IN|air|any":{"days":7.5,"nm":1857,"truck_km":90.0,"air_km":3440.0,"passages":[],"domestic":false},"VN|M_AE|sea|any":{"days":27.4,"nm":4815,"truck_km":169.0,"air_km":0.0,"passages":["ormuz","malacca"],"domestic":false},"VN|M_AE|air|any":{"days":7.5,"nm":2791,"truck_km":69.0,"air_km":5169.0,"passages":[],"domestic":false},"MY|M_US|sea|any":{"days":37.8,"nm":8202,"truck_km":113.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_US|air|any":{"days":8.0,"nm":7589,"truck_km":102.0,"air_km":14054.0,"passages":[],"domestic":false},"MY|M_EU|sea|cape":{"days":47.1,"nm":11546,"truck_km":217.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"MY|M_EU|sea|suez":{"days":37.4,"nm":8050,"truck_km":217.0,"air_km":0.0,"passages":["gibraltar","suez","babalmandab"],"domestic":false},"MY|M_EU|air|any":{"days":8.0,"nm":5353,"truck_km":204.0,"air_km":9914.0,"passages":[],"domestic":false},"MY|M_UK|sea|cape":{"days":46.9,"nm":11491,"truck_km":260.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"MY|M_UK|sea|suez":{"days":37.2,"nm":7994,"truck_km":260.0,"air_km":0.0,"passages":["gibraltar","suez","babalmandab"],"domestic":false},"MY|M_UK|air|any":{"days":8.0,"nm":5552,"truck_km":154.0,"air_km":10283.0,"passages":[],"domestic":false},"MY|M_JP|sea|any":{"days":23.3,"nm":3351,"truck_km":86.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_JP|air|any":{"days":7.5,"nm":2870,"truck_km":124.0,"air_km":5315.0,"passages":[],"domestic":false},"MY|M_BR|sea|any":{"days":43.3,"nm":8754,"truck_km":237.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"MY|M_BR|air|any":{"days":11.5,"nm":10514,"truck_km":40.0,"air_km":19472.0,"passages":[],"domestic":false},"MY|M_AU|sea|any":{"days":26.9,"nm":4633,"truck_km":61.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_AU|air|any":{"days":7.5,"nm":3723,"truck_km":58.0,"air_km":6895.0,"passages":[],"domestic":false},"MY|M_SG|sea|any":{"days":14.2,"nm":416,"truck_km":41.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_SG|air|any":{"days":7.5,"nm":325,"truck_km":39.0,"air_km":601.0,"passages":[],"domestic":false},"MY|M_IN|sea|any":{"days":23.1,"nm":2196,"truck_km":77.0,"air_km":0.0,"passages":[],"domestic":false},"MY|M_IN|air|any":{"days":7.5,"nm":1805,"truck_km":53.0,"air_km":3342.0,"passages":[],"domestic":false},"MY|M_AE|sea|any":{"days":22.9,"nm":3187,"truck_km":26.0,"air_km":0.0,"passages":["ormuz"],"domestic":false},"MY|M_AE|air|any":{"days":7.5,"nm":2849,"truck_km":32.0,"air_km":5276.0,"passages":[],"domestic":false},"BR|M_US|sea|any":{"days":36.0,"nm":7565,"truck_km":275.0,"air_km":0.0,"passages":["panama"],"domestic":false},"BR|M_US|air|any":{"days":8.0,"nm":5311,"truck_km":142.0,"air_km":9836.0,"passages":[],"domestic":false},"BR|M_EU|sea|any":{"days":30.2,"nm":5481,"truck_km":379.0,"air_km":0.0,"passages":[],"domestic":false},"BR|M_EU|air|any":{"days":8.0,"nm":5273,"truck_km":244.0,"air_km":9766.0,"passages":[],"domestic":false},"BR|M_UK|sea|any":{"days":30.1,"nm":5425,"truck_km":422.0,"air_km":0.0,"passages":[],"domestic":false},"BR|M_UK|air|any":{"days":7.5,"nm":5102,"truck_km":194.0,"air_km":9449.0,"passages":[],"domestic":false},"BR|M_JP|sea|any":{"days":46.2,"nm":11596,"truck_km":248.0,"air_km":0.0,"passages":["chili"],"domestic":false},"BR|M_JP|air|any":{"days":8.0,"nm":9947,"truck_km":164.0,"air_km":18421.0,"passages":[],"domestic":false},"BR|M_BR|sea|any":{"days":2.0,"nm":0,"truck_km":47.0,"air_km":0.0,"passages":[],"domestic":true},"BR|M_BR|air|any":{"days":2.0,"nm":0,"truck_km":47.0,"air_km":0.0,"passages":[],"domestic":true},"BR|M_AU|sea|any":{"days":36.0,"nm":7917,"truck_km":223.0,"air_km":0.0,"passages":["chili"],"domestic":false},"BR|M_AU|air|any":{"days":8.0,"nm":7232,"truck_km":98.0,"air_km":13393.0,"passages":[],"domestic":false},"BR|M_SG|sea|any":{"days":38.2,"nm":9060,"truck_km":203.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"BR|M_SG|air|any":{"days":8.0,"nm":8681,"truck_km":79.0,"air_km":16078.0,"passages":[],"domestic":false},"BR|M_IN|sea|any":{"days":39.3,"nm":8037,"truck_km":239.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"BR|M_IN|air|any":{"days":8.0,"nm":7460,"truck_km":93.0,"air_km":13816.0,"passages":[],"domestic":false},"BR|M_AE|sea|any":{"days":36.9,"nm":8253,"truck_km":188.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false},"BR|M_AE|air|any":{"days":8.0,"nm":6606,"truck_km":72.0,"air_km":12234.0,"passages":[],"domestic":false},"AE|M_US|sea|any":{"days":46.4,"nm":11287,"truck_km":105.0,"air_km":0.0,"passages":["ormuz","malacca"],"domestic":false},"AE|M_US|air|any":{"days":8.0,"nm":7255,"truck_km":111.0,"air_km":13437.0,"passages":[],"domestic":false},"AE|M_EU|sea|cape":{"days":45.7,"nm":11045,"truck_km":209.0,"air_km":0.0,"passages":["ormuz","south_africa"],"domestic":false},"AE|M_EU|sea|suez":{"days":32.4,"nm":6262,"truck_km":209.0,"air_km":0.0,"passages":["ormuz","gibraltar","suez","babalmandab"],"domestic":false},"AE|M_EU|air|any":{"days":7.5,"nm":2800,"truck_km":213.0,"air_km":5185.0,"passages":[],"domestic":false},"AE|M_UK|sea|cape":{"days":45.5,"nm":10990,"truck_km":252.0,"air_km":0.0,"passages":["ormuz","south_africa"],"domestic":false},"AE|M_UK|sea|suez":{"days":32.2,"nm":6207,"truck_km":252.0,"air_km":0.0,"passages":["ormuz","gibraltar","suez","babalmandab"],"domestic":false},"AE|M_UK|air|any":{"days":7.5,"nm":2977,"truck_km":163.0,"air_km":5513.0,"passages":[],"domestic":false},"AE|M_JP|sea|any":{"days":31.9,"nm":6437,"truck_km":78.0,"air_km":0.0,"passages":["ormuz","malacca"],"domestic":false},"AE|M_JP|air|any":{"days":7.5,"nm":4329,"truck_km":133.0,"air_km":8018.0,"passages":[],"domestic":false},"AE|M_BR|sea|any":{"days":41.9,"nm":8253,"truck_km":229.0,"air_km":0.0,"passages":["ormuz","south_africa"],"domestic":false},"AE|M_BR|air|any":{"days":10.0,"nm":6606,"truck_km":49.0,"air_km":12234.0,"passages":[],"domestic":false},"AE|M_AU|sea|any":{"days":33.9,"nm":7161,"truck_km":53.0,"air_km":0.0,"passages":["ormuz"],"domestic":false},"AE|M_AU|air|any":{"days":8.0,"nm":6502,"truck_km":67.0,"air_km":12042.0,"passages":[],"domestic":false},"AE|M_SG|sea|any":{"days":22.7,"nm":3502,"truck_km":33.0,"air_km":0.0,"passages":["ormuz","malacca"],"domestic":false},"AE|M_SG|air|any":{"days":7.5,"nm":3160,"truck_km":48.0,"air_km":5852.0,"passages":[],"domestic":false},"AE|M_IN|sea|any":{"days":20.2,"nm":1169,"truck_km":69.0,"air_km":0.0,"passages":["ormuz"],"domestic":false},"AE|M_IN|air|any":{"days":7.5,"nm":1044,"truck_km":62.0,"air_km":1934.0,"passages":[],"domestic":false},"AE|M_AE|sea|any":{"days":4.0,"nm":0,"truck_km":11.0,"air_km":0.0,"passages":[],"domestic":true},"AE|M_AE|air|any":{"days":4.0,"nm":0,"truck_km":11.0,"air_km":0.0,"passages":[],"domestic":true}},"feeds":{"ID":{"days":21.9,"nm":2495.0,"passages":[],"air_days":7.0},"VN":{"days":17.7,"nm":1318.0,"passages":[],"air_days":7.0},"MY":{"days":20.1,"nm":2565.0,"passages":["malacca"],"air_days":7.0},"BR":{"days":48.7,"nm":11041.0,"passages":["south_africa","sunda"],"air_days":9.0},"AE":{"days":28.7,"nm":5651.0,"passages":["ormuz","malacca"],"air_days":7.0}},"duties":{"USA":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"EU":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"GBR":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"JPN":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"AUS":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"SGP":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"IND":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"BRA":{"CN":0.16,"ID":0.16,"VN":0.16,"MY":0.16,"BR":0.0,"AE":0.16},"ARE":{"CN":0.05,"ID":0.05,"VN":0.05,"MY":0.05,"BR":0.05,"AE":0.05},"MEX":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0}},"scenarios":[{"id":"now","label":"Current duties (Oct 2026)","probability":0.5,"overrides":[],"note":"Duties as in data/tariffs.csv"},{"id":"cn301","label":"US tariffs China-made laptops (25%)","probability":0.2,"overrides":[{"tkey":"USA","origin":"CN","duty":0.25}],"note":"For example China's suspended 2019 list on laptops is brought back"},{"id":"s232","label":"Section 232 phase 2 on laptops (25%, every origin)","probability":0.15,"overrides":[{"tkey":"USA","origin":"*","duty":0.25}],"note":"Proposed scope; rate assumed 25% as for phase 1"},{"id":"asia301","label":"Asia Section 301 without the computer exemption","probability":0.1,"overrides":[{"tkey":"USA","origin":"CN","duty":0.125},{"tkey":"USA","origin":"VN","duty":0.125},{"tkey":"USA","origin":"ID","duty":0.1},{"tkey":"USA","origin":"MY","duty":0.1}],"note":"Rates of the 24 Jul 2026 action applied to laptops"},{"id":"brcut","label":"Brazil removes the 16% on laptops","probability":0.05,"overrides":[{"tkey":"BRA","origin":"*","duty":0.0}],"note":"For example a wider Ex-tarifario"}],"sites":{"CN":{"label":"China · Kunshan","conv_index":1.0,"parts_duty":0.0,"capacity":14000.0,"fixed_cost":0.0,"min_load":0.0,"open":true,"board_local":false,"status":"PLACEHOLDER","note":"Current site; capacity covers all demand"},"ID":{"label":"Indonesia · Cikarang","conv_index":1.08,"parts_duty":0.0,"capacity":5000.0,"fixed_cost":1500000.0,"min_load":0.5,"open":true,"board_local":false,"status":"PRACTITIONER (+5-10% new-site conversion) / PLACEHOLDER","note":"Parts enter a bonded zone duty-free"},"VN":{"label":"Vietnam · Bac Ninh","conv_index":1.06,"parts_duty":0.0,"capacity":5000.0,"fixed_cost":1500000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Parts enter an export processing zone duty-free"},"MY":{"label":"Malaysia · Penang","conv_index":1.12,"parts_duty":0.0,"capacity":4000.0,"fixed_cost":1800000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Free industrial zone; higher wages than VN and ID"},"BR":{"label":"Brazil · Jundiai","conv_index":1.6,"parts_duty":0.08,"capacity":2000.0,"fixed_cost":2500000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Parts pay import duty (average across the BOM); local assembly saves Brazil's 16% on the finished unit"},"AE":{"label":"UAE · Jebel Ali","conv_index":1.35,"parts_duty":0.0,"capacity":1500.0,"fixed_cost":2000000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Free zone; mainland sales still pay the GCC 5% unless the unit qualifies as a GCC product"}},"P":{"customs_value_cn_usd":480.0,"conversion_cost_cn_usd":25.0,"parts_value_usd":367.0,"carrying_rate_annual":0.2,"units_per_feu":1800.0,"kits_per_feu":2600.0,"sea_feu_base_usd":900.0,"sea_feu_per_nm_usd":0.2,"handling_usd_per_unit":1.5,"truck_usd_per_unit_100km":0.15,"air_usd_per_kg_base":2.5,"air_usd_per_kg_per_1000km":0.22,"kg_per_unit":3.0,"planning_cost_usd_per_unit_week":1.25,"chokepoint_premium_usd":0.0,"board_origin_weight":1.0,"board_extra_usd":6.0,"board_fixed_usd_yr":1200000.0,"horizon_years":3.0,"ramp_months":12.0,"rush_premium_usd":1000000.0}}};
+const D = {"input":{"origins":["CN","ID","VN","MY","BR","AE"],"markets":[{"market":"US","mgi":"M_US","tkey":"USA","weekly_units":4000.0,"valuation":"FOB","name":"Inland Empire, California","code":"MGI-US"},{"market":"EU","mgi":"M_EU","tkey":"EU","weekly_units":2400.0,"valuation":"CIF","name":"Venlo, Netherlands","code":"MGI-EU"},{"market":"UK","mgi":"M_UK","tkey":"GBR","weekly_units":700.0,"valuation":"CIF","name":"Daventry, England","code":"MGI-UK"},{"market":"JP","mgi":"M_JP","tkey":"JPN","weekly_units":1300.0,"valuation":"CIF","name":"Atsugi, Kanagawa","code":"MGI-JP"},{"market":"BR","mgi":"M_BR","tkey":"BRA","weekly_units":1500.0,"valuation":"CIF","name":"Campinas, Sao Paulo","code":"MGI-BR"},{"market":"AU","mgi":"M_AU","tkey":"AUS","weekly_units":550.0,"valuation":"FOB","name":"Eastern Creek, Sydney","code":"MGI-AU"},{"market":"SEA","mgi":"M_SG","tkey":"SGP","weekly_units":800.0,"valuation":"CIF","name":"Loyang, Singapore","code":"MGI-SG"},{"market":"IN","mgi":"M_IN","tkey":"IND","weekly_units":900.0,"valuation":"CIF","name":"Bhiwandi, Maharashtra","code":"MGI-IN"},{"market":"ME","mgi":"M_AE","tkey":"ARE","weekly_units":450.0,"valuation":"CIF","name":"Jebel Ali, Dubai","code":"MGI-AE"}],"routes":{"CN|M_US|sea|any":{"days":31.0,"nm":5750,"truck_km":269.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_US|air|any":{"days":8.0,"nm":5624,"truck_km":202.0,"air_km":10415.0,"passages":[],"domestic":false},"CN|M_EU|sea|cape":{"days":53.4,"nm":13834,"truck_km":373.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"CN|M_EU|sea|suez":{"days":44.2,"nm":10514,"truck_km":373.0,"air_km":0.0,"passages":["malacca","babalmandab","suez","gibraltar"],"domestic":false},"CN|M_EU|air|any":{"days":7.5,"nm":4811,"truck_km":304.0,"air_km":8910.0,"passages":[],"domestic":false},"CN|M_UK|sea|cape":{"days":53.3,"nm":13778,"truck_km":416.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"CN|M_UK|sea|suez":{"days":44.1,"nm":10458,"truck_km":416.0,"air_km":0.0,"passages":["malacca","babalmandab","suez","gibraltar"],"domestic":false},"CN|M_UK|air|any":{"days":7.5,"nm":4990,"truck_km":254.0,"air_km":9241.0,"passages":[],"domestic":false},"CN|M_JP|sea|any":{"days":16.8,"nm":1017,"truck_km":242.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_JP|air|any":{"days":7.5,"nm":970,"truck_km":224.0,"air_km":1796.0,"passages":[],"domestic":false},"CN|M_BR|sea|any":{"days":49.7,"nm":11041,"truck_km":393.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"CN|M_BR|air|any":{"days":11.0,"nm":10071,"truck_km":140.0,"air_km":18651.0,"passages":[],"domestic":false},"CN|M_AU|sea|any":{"days":26.8,"nm":4609,"truck_km":217.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_AU|air|any":{"days":7.5,"nm":4247,"truck_km":158.0,"air_km":7865.0,"passages":[],"domestic":false},"CN|M_SG|sea|any":{"days":19.0,"nm":2155,"truck_km":197.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_SG|air|any":{"days":7.5,"nm":2055,"truck_km":139.0,"air_km":3805.0,"passages":[],"domestic":false},"CN|M_IN|sea|any":{"days":29.9,"nm":4660,"truck_km":233.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"CN|M_IN|air|any":{"days":7.5,"nm":2734,"truck_km":153.0,"air_km":5064.0,"passages":[],"domestic":false},"CN|M_AE|sea|any":{"days":29.7,"nm":5651,"truck_km":182.0,"air_km":0.0,"passages":["malacca","ormuz"],"domestic":false},"CN|M_AE|air|any":{"days":7.5,"nm":3501,"truck_km":132.0,"air_km":6483.0,"passages":[],"domestic":false},"ID|M_US|sea|any":{"days":37.3,"nm":8029,"truck_km":144.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_US|air|any":{"days":8.0,"nm":7802,"truck_km":158.0,"air_km":14450.0,"passages":[],"domestic":false},"ID|M_EU|sea|cape":{"days":46.6,"nm":11392,"truck_km":248.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"ID|M_EU|sea|suez":{"days":39.0,"nm":8642,"truck_km":248.0,"air_km":0.0,"passages":["sunda","suez","gibraltar","babalmandab"],"domestic":false},"ID|M_EU|air|any":{"days":8.0,"nm":6130,"truck_km":260.0,"air_km":11353.0,"passages":[],"domestic":false},"ID|M_UK|sea|cape":{"days":46.5,"nm":11337,"truck_km":291.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"ID|M_UK|sea|suez":{"days":38.8,"nm":8586,"truck_km":291.0,"air_km":0.0,"passages":["sunda","suez","gibraltar","babalmandab"],"domestic":false},"ID|M_UK|air|any":{"days":8.0,"nm":6329,"truck_km":210.0,"air_km":11721.0,"passages":[],"domestic":false},"ID|M_JP|sea|any":{"days":23.0,"nm":3253,"truck_km":117.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_JP|air|any":{"days":7.5,"nm":3153,"truck_km":180.0,"air_km":5840.0,"passages":[],"domestic":false},"ID|M_BR|sea|any":{"days":42.9,"nm":8600,"truck_km":268.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"ID|M_BR|air|any":{"days":11.5,"nm":11285,"truck_km":96.0,"air_km":20900.0,"passages":[],"domestic":false},"ID|M_AU|sea|any":{"days":24.9,"nm":3932,"truck_km":92.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_AU|air|any":{"days":7.5,"nm":2980,"truck_km":114.0,"air_km":5519.0,"passages":[],"domestic":false},"ID|M_SG|sea|any":{"days":14.4,"nm":514,"truck_km":72.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_SG|air|any":{"days":7.5,"nm":477,"truck_km":95.0,"air_km":884.0,"passages":[],"domestic":false},"ID|M_IN|sea|any":{"days":24.9,"nm":2844,"truck_km":108.0,"air_km":0.0,"passages":["sunda"],"domestic":false},"ID|M_IN|air|any":{"days":7.5,"nm":2507,"truck_km":109.0,"air_km":4643.0,"passages":[],"domestic":false},"ID|M_AE|sea|any":{"days":24.7,"nm":3835,"truck_km":57.0,"air_km":0.0,"passages":["sunda","ormuz"],"domestic":false},"ID|M_AE|air|any":{"days":7.5,"nm":3536,"truck_km":88.0,"air_km":6549.0,"passages":[],"domestic":false},"VN|M_US|sea|any":{"days":34.4,"nm":6973,"truck_km":256.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_US|air|any":{"days":8.0,"nm":6641,"truck_km":139.0,"air_km":12300.0,"passages":[],"domestic":false},"VN|M_EU|sea|cape":{"days":51.2,"nm":13022,"truck_km":360.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"VN|M_EU|sea|suez":{"days":41.9,"nm":9678,"truck_km":360.0,"air_km":0.0,"passages":["malacca","babalmandab","suez","gibraltar"],"domestic":false},"VN|M_EU|air|any":{"days":7.5,"nm":4790,"truck_km":241.0,"air_km":8872.0,"passages":[],"domestic":false},"VN|M_UK|sea|cape":{"days":51.0,"nm":12966,"truck_km":403.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"VN|M_UK|sea|suez":{"days":41.7,"nm":9622,"truck_km":403.0,"air_km":0.0,"passages":["malacca","babalmandab","suez","gibraltar"],"domestic":false},"VN|M_UK|air|any":{"days":7.5,"nm":4988,"truck_km":191.0,"air_km":9238.0,"passages":[],"domestic":false},"VN|M_JP|sea|any":{"days":19.9,"nm":2123,"truck_km":229.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_JP|air|any":{"days":7.5,"nm":2009,"truck_km":161.0,"air_km":3721.0,"passages":[],"domestic":false},"VN|M_BR|sea|any":{"days":47.4,"nm":10229,"truck_km":380.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"VN|M_BR|air|any":{"days":11.0,"nm":9992,"truck_km":77.0,"air_km":18505.0,"passages":[],"domestic":false},"VN|M_AU|sea|any":{"days":27.7,"nm":4927,"truck_km":204.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_AU|air|any":{"days":7.5,"nm":4206,"truck_km":95.0,"air_km":7790.0,"passages":[],"domestic":false},"VN|M_SG|sea|any":{"days":16.7,"nm":1319,"truck_km":184.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_SG|air|any":{"days":7.5,"nm":1197,"truck_km":76.0,"air_km":2217.0,"passages":[],"domestic":false},"VN|M_IN|sea|any":{"days":27.6,"nm":3824,"truck_km":220.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"VN|M_IN|air|any":{"days":7.5,"nm":1857,"truck_km":90.0,"air_km":3440.0,"passages":[],"domestic":false},"VN|M_AE|sea|any":{"days":27.4,"nm":4815,"truck_km":169.0,"air_km":0.0,"passages":["malacca","ormuz"],"domestic":false},"VN|M_AE|air|any":{"days":7.5,"nm":2791,"truck_km":69.0,"air_km":5169.0,"passages":[],"domestic":false},"MY|M_US|sea|any":{"days":37.8,"nm":8202,"truck_km":113.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_US|air|any":{"days":8.0,"nm":7589,"truck_km":102.0,"air_km":14054.0,"passages":[],"domestic":false},"MY|M_EU|sea|cape":{"days":47.1,"nm":11546,"truck_km":217.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"MY|M_EU|sea|suez":{"days":37.4,"nm":8050,"truck_km":217.0,"air_km":0.0,"passages":["babalmandab","suez","gibraltar"],"domestic":false},"MY|M_EU|air|any":{"days":8.0,"nm":5353,"truck_km":204.0,"air_km":9914.0,"passages":[],"domestic":false},"MY|M_UK|sea|cape":{"days":46.9,"nm":11491,"truck_km":260.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"MY|M_UK|sea|suez":{"days":37.2,"nm":7994,"truck_km":260.0,"air_km":0.0,"passages":["babalmandab","suez","gibraltar"],"domestic":false},"MY|M_UK|air|any":{"days":8.0,"nm":5552,"truck_km":154.0,"air_km":10283.0,"passages":[],"domestic":false},"MY|M_JP|sea|any":{"days":23.3,"nm":3351,"truck_km":86.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_JP|air|any":{"days":7.5,"nm":2870,"truck_km":124.0,"air_km":5315.0,"passages":[],"domestic":false},"MY|M_BR|sea|any":{"days":43.3,"nm":8754,"truck_km":237.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"MY|M_BR|air|any":{"days":11.5,"nm":10514,"truck_km":40.0,"air_km":19472.0,"passages":[],"domestic":false},"MY|M_AU|sea|any":{"days":26.9,"nm":4633,"truck_km":61.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_AU|air|any":{"days":7.5,"nm":3723,"truck_km":58.0,"air_km":6895.0,"passages":[],"domestic":false},"MY|M_SG|sea|any":{"days":14.2,"nm":416,"truck_km":41.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_SG|air|any":{"days":7.5,"nm":325,"truck_km":39.0,"air_km":601.0,"passages":[],"domestic":false},"MY|M_IN|sea|any":{"days":23.1,"nm":2196,"truck_km":77.0,"air_km":0.0,"passages":[],"domestic":false},"MY|M_IN|air|any":{"days":7.5,"nm":1805,"truck_km":53.0,"air_km":3342.0,"passages":[],"domestic":false},"MY|M_AE|sea|any":{"days":22.9,"nm":3187,"truck_km":26.0,"air_km":0.0,"passages":["ormuz"],"domestic":false},"MY|M_AE|air|any":{"days":7.5,"nm":2849,"truck_km":32.0,"air_km":5276.0,"passages":[],"domestic":false},"BR|M_US|sea|any":{"days":36.0,"nm":7565,"truck_km":275.0,"air_km":0.0,"passages":["panama"],"domestic":false},"BR|M_US|air|any":{"days":8.0,"nm":5311,"truck_km":142.0,"air_km":9836.0,"passages":[],"domestic":false},"BR|M_EU|sea|any":{"days":30.2,"nm":5481,"truck_km":379.0,"air_km":0.0,"passages":[],"domestic":false},"BR|M_EU|air|any":{"days":8.0,"nm":5273,"truck_km":244.0,"air_km":9766.0,"passages":[],"domestic":false},"BR|M_UK|sea|any":{"days":30.1,"nm":5425,"truck_km":422.0,"air_km":0.0,"passages":[],"domestic":false},"BR|M_UK|air|any":{"days":7.5,"nm":5102,"truck_km":194.0,"air_km":9449.0,"passages":[],"domestic":false},"BR|M_JP|sea|any":{"days":46.2,"nm":11596,"truck_km":248.0,"air_km":0.0,"passages":["chili"],"domestic":false},"BR|M_JP|air|any":{"days":8.0,"nm":9947,"truck_km":164.0,"air_km":18421.0,"passages":[],"domestic":false},"BR|M_BR|sea|any":{"days":2.0,"nm":0,"truck_km":47.0,"air_km":0.0,"passages":[],"domestic":true},"BR|M_BR|air|any":{"days":2.0,"nm":0,"truck_km":47.0,"air_km":0.0,"passages":[],"domestic":true},"BR|M_AU|sea|any":{"days":36.0,"nm":7917,"truck_km":223.0,"air_km":0.0,"passages":["chili"],"domestic":false},"BR|M_AU|air|any":{"days":8.0,"nm":7232,"truck_km":98.0,"air_km":13393.0,"passages":[],"domestic":false},"BR|M_SG|sea|any":{"days":38.2,"nm":9060,"truck_km":203.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"BR|M_SG|air|any":{"days":8.0,"nm":8681,"truck_km":79.0,"air_km":16078.0,"passages":[],"domestic":false},"BR|M_IN|sea|any":{"days":39.3,"nm":8037,"truck_km":239.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"BR|M_IN|air|any":{"days":8.0,"nm":7460,"truck_km":93.0,"air_km":13816.0,"passages":[],"domestic":false},"BR|M_AE|sea|any":{"days":36.9,"nm":8253,"truck_km":188.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false},"BR|M_AE|air|any":{"days":8.0,"nm":6606,"truck_km":72.0,"air_km":12234.0,"passages":[],"domestic":false},"AE|M_US|sea|any":{"days":46.4,"nm":11287,"truck_km":105.0,"air_km":0.0,"passages":["malacca","ormuz"],"domestic":false},"AE|M_US|air|any":{"days":8.0,"nm":7255,"truck_km":111.0,"air_km":13437.0,"passages":[],"domestic":false},"AE|M_EU|sea|cape":{"days":45.7,"nm":11045,"truck_km":209.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false},"AE|M_EU|sea|suez":{"days":32.4,"nm":6262,"truck_km":209.0,"air_km":0.0,"passages":["babalmandab","suez","ormuz","gibraltar"],"domestic":false},"AE|M_EU|air|any":{"days":7.5,"nm":2800,"truck_km":213.0,"air_km":5185.0,"passages":[],"domestic":false},"AE|M_UK|sea|cape":{"days":45.5,"nm":10990,"truck_km":252.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false},"AE|M_UK|sea|suez":{"days":32.2,"nm":6207,"truck_km":252.0,"air_km":0.0,"passages":["babalmandab","suez","ormuz","gibraltar"],"domestic":false},"AE|M_UK|air|any":{"days":7.5,"nm":2977,"truck_km":163.0,"air_km":5513.0,"passages":[],"domestic":false},"AE|M_JP|sea|any":{"days":31.9,"nm":6437,"truck_km":78.0,"air_km":0.0,"passages":["malacca","ormuz"],"domestic":false},"AE|M_JP|air|any":{"days":7.5,"nm":4329,"truck_km":133.0,"air_km":8018.0,"passages":[],"domestic":false},"AE|M_BR|sea|any":{"days":41.9,"nm":8253,"truck_km":229.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false},"AE|M_BR|air|any":{"days":10.0,"nm":6606,"truck_km":49.0,"air_km":12234.0,"passages":[],"domestic":false},"AE|M_AU|sea|any":{"days":33.9,"nm":7161,"truck_km":53.0,"air_km":0.0,"passages":["ormuz"],"domestic":false},"AE|M_AU|air|any":{"days":8.0,"nm":6502,"truck_km":67.0,"air_km":12042.0,"passages":[],"domestic":false},"AE|M_SG|sea|any":{"days":22.7,"nm":3502,"truck_km":33.0,"air_km":0.0,"passages":["malacca","ormuz"],"domestic":false},"AE|M_SG|air|any":{"days":7.5,"nm":3160,"truck_km":48.0,"air_km":5852.0,"passages":[],"domestic":false},"AE|M_IN|sea|any":{"days":20.2,"nm":1169,"truck_km":69.0,"air_km":0.0,"passages":["ormuz"],"domestic":false},"AE|M_IN|air|any":{"days":7.5,"nm":1044,"truck_km":62.0,"air_km":1934.0,"passages":[],"domestic":false},"AE|M_AE|sea|any":{"days":4.0,"nm":0,"truck_km":11.0,"air_km":0.0,"passages":[],"domestic":true},"AE|M_AE|air|any":{"days":4.0,"nm":0,"truck_km":11.0,"air_km":0.0,"passages":[],"domestic":true}},"feeds":{"ID":{"days":21.9,"nm":2495.0,"passages":[],"air_days":7.0},"VN":{"days":17.7,"nm":1318.0,"passages":[],"air_days":7.0},"MY":{"days":20.1,"nm":2565.0,"passages":["malacca"],"air_days":7.0},"BR":{"days":48.7,"nm":11041.0,"passages":["south_africa","sunda"],"air_days":9.0},"AE":{"days":28.7,"nm":5651.0,"passages":["malacca","ormuz"],"air_days":7.0}},"duties":{"USA":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"EU":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"GBR":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"JPN":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"AUS":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"SGP":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"IND":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"BRA":{"CN":0.16,"ID":0.16,"VN":0.16,"MY":0.16,"BR":0.0,"AE":0.16},"ARE":{"CN":0.05,"ID":0.05,"VN":0.05,"MY":0.05,"BR":0.05,"AE":0.05},"MEX":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0}},"scenarios":[{"id":"now","label":"Current duties (Oct 2026)","probability":0.5,"overrides":[],"note":"Duties as in data/tariffs.csv"},{"id":"cn301","label":"US tariffs China-made laptops (25%)","probability":0.2,"overrides":[{"tkey":"USA","origin":"CN","duty":0.25}],"note":"For example China's suspended 2019 list on laptops is brought back"},{"id":"s232","label":"Section 232 phase 2 on laptops (25%, every origin)","probability":0.15,"overrides":[{"tkey":"USA","origin":"*","duty":0.25}],"note":"Proposed scope; rate assumed 25% as for phase 1"},{"id":"asia301","label":"Asia Section 301 without the computer exemption","probability":0.1,"overrides":[{"tkey":"USA","origin":"CN","duty":0.125},{"tkey":"USA","origin":"VN","duty":0.125},{"tkey":"USA","origin":"ID","duty":0.1},{"tkey":"USA","origin":"MY","duty":0.1}],"note":"Rates of the 24 Jul 2026 action applied to laptops"},{"id":"brcut","label":"Brazil removes the 16% on laptops","probability":0.05,"overrides":[{"tkey":"BRA","origin":"*","duty":0.0}],"note":"For example a wider Ex-tarifario"}],"sites":{"CN":{"label":"China · Kunshan","conv_index":1.0,"parts_duty":0.0,"capacity":14000.0,"fixed_cost":0.0,"min_load":0.0,"open":true,"board_local":false,"status":"PLACEHOLDER","note":"Current site; capacity covers all demand"},"ID":{"label":"Indonesia · Cikarang","conv_index":1.08,"parts_duty":0.0,"capacity":5000.0,"fixed_cost":1500000.0,"min_load":0.5,"open":true,"board_local":false,"status":"PRACTITIONER (+5-10% new-site conversion) / PLACEHOLDER","note":"Parts enter a bonded zone duty-free"},"VN":{"label":"Vietnam · Bac Ninh","conv_index":1.06,"parts_duty":0.0,"capacity":5000.0,"fixed_cost":1500000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Parts enter an export processing zone duty-free"},"MY":{"label":"Malaysia · Penang","conv_index":1.12,"parts_duty":0.0,"capacity":4000.0,"fixed_cost":1800000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Free industrial zone; higher wages than VN and ID"},"BR":{"label":"Brazil · Jundiai","conv_index":1.6,"parts_duty":0.08,"capacity":2000.0,"fixed_cost":2500000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Parts pay import duty (average across the BOM); local assembly saves Brazil's 16% on the finished unit"},"AE":{"label":"UAE · Jebel Ali","conv_index":1.35,"parts_duty":0.0,"capacity":1500.0,"fixed_cost":2000000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Free zone; mainland sales still pay the GCC 5% unless the unit qualifies as a GCC product"}},"P":{"customs_value_cn_usd":480.0,"conversion_cost_cn_usd":25.0,"parts_value_usd":367.0,"carrying_rate_annual":0.2,"units_per_feu":1800.0,"kits_per_feu":2600.0,"sea_feu_base_usd":900.0,"sea_feu_per_nm_usd":0.2,"handling_usd_per_unit":1.5,"truck_usd_per_unit_100km":0.15,"air_usd_per_kg_base":2.5,"air_usd_per_kg_per_1000km":0.22,"kg_per_unit":3.0,"planning_cost_usd_per_unit_week":1.25,"chokepoint_premium_usd":0.0,"board_origin_weight":1.0,"board_extra_usd":6.0,"board_fixed_usd_yr":1200000.0,"horizon_years":3.0,"ramp_months":12.0,"rush_premium_usd":1000000.0,"duty_change_prob":0.2},"ranges":{"USA|CN":[0.0,1.45],"USA|VN":[0.0,0.46],"USA|ID":[0.0,0.32],"USA|MY":[0.0,0.24],"USA|BR":[0.0,0.1],"USA|AE":[0.0,0.1]},"peaks_2025":{"USA|CN":1.45,"USA|VN":0.46,"USA|ID":0.32,"USA|MY":0.24,"USA|BR":0.1,"USA|AE":0.1}}};
 const IN = D.input;
 const ORG = IN.origins, MK = IN.markets, NONCN = ORG.filter((o) => o !== 'CN');
+const TKEYS = [...new Set(MK.map((m) => m.tkey))];
 const P0 = { ...IN.P };
 const SITES0 = JSON.parse(JSON.stringify(IN.sites));
 const DEM0 = Object.fromEntries(MK.map((m) => [m.market, m.weekly_units]));
 const PROB0 = Object.fromEntries(IN.scenarios.map((s) => [s.id, s.probability]));
-const SCOL = { CN: 0, ID: 2, VN: 3, MY: 4, BR: 1, AE: 5 };
+const RANGES0 = JSON.parse(JSON.stringify(IN.ranges));
+const PEAK = IN.peaks_2025;
+// Site colours in a validated order: adjacent sites stay distinct under colour-blindness, light and dark.
+const SCOL = { CN: 0, ID: 2, VN: 1, MY: 3, BR: 4, AE: 5 };
+const scv = (o) => `var(--c${SCOL[o] + 1})`;
+const SNAME = { CN: 'China', ID: 'Indonesia', VN: 'Vietnam', MY: 'Malaysia', BR: 'Brazil', AE: 'UAE' };
 const SHORT = { now: 'Current', cn301: 'China 25% in US', s232: '232 on every origin', asia301: 'Asia 301', brcut: 'Brazil 0%' };
 const SHORT2 = { now: 'Current', cn301: 'CN 25% US', s232: '232 all', asia301: 'Asia 301', brcut: 'BR 0%' };
+const MKN = { USA: 'US', EU: 'EU', GBR: 'UK', JPN: 'JP', BRA: 'BR', AUS: 'AU', SGP: 'SEA', IND: 'IN', ARE: 'ME' };
 const saved = R.load();
 const S = {
   sc: IN.scenarios.some((s) => s.id === saved.sc) ? saved.sc : 'now',
   rs: saved.rs === 'suez' ? 'suez' : 'cape',
   mode: saved.mode === 'air' ? 'air' : 'sea',
   view: ['total', 'duty', 'freight', 'days'].includes(saved.view) ? saved.view : 'total',
+  runs: [100, 200, 500].includes(saved.runs) ? saved.runs : 200,
   P: { ...P0 }, sites: JSON.parse(JSON.stringify(SITES0)), dem: { ...DEM0 }, prob: { ...PROB0 },
+  ranges: saved.ranges && typeof saved.ranges === 'object' ? saved.ranges : JSON.parse(JSON.stringify(RANGES0)),
   edits: saved.edits && typeof saved.edits === 'object' ? saved.edits : {},
   selm: MK.some((m) => m.market === saved.selm) ? saved.selm : 'US',
+  rm: TKEYS.includes(saved.rm) ? saved.rm : 'USA',
 };
 for (const k in (saved.P || {})) if (k in P0 && typeof saved.P[k] === 'number') S.P[k] = saved.P[k];
 for (const k in (saved.dem || {})) if (k in DEM0) S.dem[k] = saved.dem[k];
 for (const k in (saved.prob || {})) if (k in PROB0) S.prob[k] = saved.prob[k];
 if (saved.sites) for (const o of ORG) if (saved.sites[o]) for (const k of ['open', 'board_local', 'capacity', 'conv_index', 'parts_duty', 'fixed_cost', 'min_load']) if (k in saved.sites[o]) S.sites[o][k] = saved.sites[o][k];
-const persist = () => R.save({ sc: S.sc, rs: S.rs, mode: S.mode, view: S.view, P: S.P, sites: S.sites, dem: S.dem, prob: S.prob, edits: S.edits, selm: S.selm });
+const persist = () => R.save({ torwho: typeof TORWHO === 'undefined' ? 'best' : TORWHO, sc: S.sc, rs: S.rs, mode: S.mode, view: S.view, runs: S.runs, P: S.P, sites: S.sites, dem: S.dem, prob: S.prob, ranges: S.ranges, edits: S.edits, selm: S.selm, rm: S.rm });
 const openSites = () => ORG.filter((o) => S.sites[o].open);
 const fpKey = (open, board) => open.join('+') + (board && open.some((o) => o !== 'CN') ? ' · boards' : '');
+const fpLabel = (open, board) => open.map((o) => SNAME[o]).join(' + ') + (board && open.some((o) => o !== 'CN') ? ' · own boards' : '');
+const chips = (open, board) => open.map((o) => `<span class="sitechip"><i style="background:${scv(o)}"></i>${o}</span>`).join('') + (board && open.some((o) => o !== 'CN') ? '<span class="chip prac">own boards</span>' : '');
 const curBoard = () => { const n = openSites().filter((o) => o !== 'CN'); if (!n.length) return null; const b = n.map((o) => !!S.sites[o].board_local); return b.every((x) => x === b[0]) ? b[0] : 'mixed'; };
 const curKey = () => { const b = curBoard(); return b === 'mixed' ? null : fpKey(openSites(), b); };
 const marketName = (m) => m.market === 'SEA' ? 'Singapore' : m.market === 'ME' ? 'the UAE' : m.market;
+const M$ = (v, d = 2) => '$' + R.num(v / 1e6, d) + 'M';
 
 // ---------------------------------------------------------------- model input with the viewer's changes
 function currentInput() {
@@ -680,9 +897,11 @@ function currentInput() {
   return { ...IN, markets: MK.map((m) => ({ ...m, weekly_units: S.dem[m.market] })),
     scenarios: IN.scenarios.map((s) => ({ ...s, probability: S.prob[s.id], overrides: s.overrides.concat(extra) })) };
 }
+const todayDuties = () => FPE.dutyMatrix(currentInput(), currentInput().scenarios[0]);
 
 // ---------------------------------------------------------------- inputs panel
 const RANGE = {
+  duty_change_prob: ['Chance a market changes its duties', 0, 1, 0.05, 'pct', '_rng'],
   customs_value_cn_usd: ['China customs value per unit', 300, 900, 5, 'usd', 'Cost base'],
   conversion_cost_cn_usd: ['China conversion cost per unit', 5, 80, 1, 'usd', 'Cost base'],
   parts_value_usd: ['Parts shipped to a non-China site', 150, 700, 5, 'usd', 'Cost base'],
@@ -706,16 +925,65 @@ const RANGE = {
   chokepoint_premium_usd: ['Premium per unit per risky passage', 0, 30, 0.5, 'usd2', 'Planning and risk'],
 };
 const fmtR = (kind, v) => ({ usd: () => '$' + R.num(v), usd2: () => '$' + R.num(v, 2), usdm: () => R.usd(v, 1), pct: () => R.pct(v), n1: () => R.num(v, 1), n2: () => R.num(v, 2) }[kind] || (() => R.num(v)))();
+const prmHtml = (k) => `<div class="prm" data-key="${k}"><div class="prm-h"><label for="p-${k}">${RANGE[k][0]}</label><output id="o-${k}"></output></div>
+      <input type="range" id="p-${k}" min="${RANGE[k][1]}" max="${RANGE[k][2]}" step="${RANGE[k][3]}" value="${S.P[k]}"></div>`;
 const SITE_SL = [['cap', 'capacity', 'Capacity, units/week', 0, 15000, 250], ['ml', 'min_load', 'Minimum load', 0, 0.9, 0.05], ['ci', 'conv_index', 'Conversion cost vs China', 0.7, 2, 0.01],
   ['pd', 'parts_duty', 'Import duty on parts', 0, 0.2, 0.005], ['fc', 'fixed_cost', 'Fixed cost per year if open', 0, 6000000, 100000]];
 const siteFmt = (k, v) => k === 'capacity' ? R.num(v) : k === 'min_load' || k === 'parts_duty' ? R.pct(v, k === 'parts_duty' ? 1 : 0) : k === 'conv_index' ? v.toFixed(2) + '×' : R.usd(v, 1);
+
+function buildRanges() {
+  R.$('#rng-mk').innerHTML = TKEYS.map((t) => `<button type="button" data-t="${t}" aria-pressed="${t === S.rm}" title="${R.esc(t)}">${MKN[t] || t}</button>`).join('');
+  R.$('#rng-mk').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { S.rm = b.dataset.t; persist(); buildRanges(); }));
+  const base = todayDuties()[S.rm];
+  R.$('#rng-rows').innerHTML = ORG.map((o) => `<div class="rrow" data-o="${o}">
+      <div class="rrow-h"><span class="sw" style="background:${scv(o)}"></span><b>${o}</b><span>${SNAME[o]}-made</span><output id="rv-${o}"></output></div>
+      <div class="dual" id="dual-${o}" style="--rc:${scv(o)}"><div class="trk"></div><div class="band"></div>
+        <div class="tk today" style="--p:${Math.min(1, base[o] / 1.5)}"></div>${PEAK[`USA|${o}`] !== undefined ? `<div class="tk peak" style="--p:${Math.min(1, PEAK[`USA|${o}`] / 1.5)}" title="US, April 2025: ${R.pct(PEAK[`USA|${o}`])}"></div>` : ''}
+        <input type="range" class="lo" min="0" max="150" step="0.5" aria-label="${MKN[S.rm]} duty on ${SNAME[o]}-made laptops, low end">
+        <input type="range" class="hi" min="0" max="150" step="0.5" aria-label="${MKN[S.rm]} duty on ${SNAME[o]}-made laptops, high end"></div></div>`).join('');
+  ORG.forEach((o) => {
+    const el = R.$('#dual-' + o), lo = el.querySelector('.lo'), hi = el.querySelector('.hi');
+    const key = `${S.rm}|${o}`, [a, b] = S.ranges[key] || [base[o], base[o]];
+    lo.value = a * 100; hi.value = b * 100;
+    const on = () => {
+      let x = +lo.value, y = +hi.value;
+      if (x > y) { if (document.activeElement === lo) lo.value = x = y; else hi.value = y = x; }
+      if (Math.abs(x - y) < 1e-9 && Math.abs(x / 100 - base[o]) < 1e-9) delete S.ranges[key]; else S.ranges[key] = [x / 100, y / 100];
+      paintRange(o); scheduleMC(); persist(); paintRangeCounts();
+    };
+    lo.addEventListener('input', on); hi.addEventListener('input', on);
+    paintRange(o);
+  });
+  paintRangeCounts();
+}
+function paintRange(o) {
+  const base = todayDuties()[S.rm][o], [a, b] = S.ranges[`${S.rm}|${o}`] || [base, base];
+  const el = R.$('#dual-' + o);
+  el.style.setProperty('--lo', Math.min(1, a / 1.5)); el.style.setProperty('--hi', Math.min(1, b / 1.5));
+  const f = (v) => R.pct(v, Math.abs(v * 100 - Math.round(v * 100)) > 1e-6 ? 1 : 0);
+  R.$('#rv-' + o).textContent = Math.abs(a - b) < 1e-9 ? `fixed at ${f(a)}` : `${f(a)} – ${f(b)}`;
+  R.$(`.rrow[data-o="${o}"]`).classList.toggle('wide', b - a > 1e-9);
+}
+function paintRangeCounts() {
+  const wide = Object.entries(S.ranges).filter(([, [a, b]]) => b - a > 1e-9);
+  R.$('#cnt-rng').textContent = wide.length ? `${wide.length} ranges` : 'none';
+  R.$('#rng-mk').querySelectorAll('button').forEach((b) => b.classList.toggle('has', wide.some(([k]) => k.startsWith(b.dataset.t + '|'))));
+}
+R.$('#rng-presets').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+  const base = todayDuties();
+  if (b.dataset.p === 'today') S.ranges = {};
+  else if (b.dataset.p === 'us2025') S.ranges = JSON.parse(JSON.stringify(RANGES0));
+  else { S.ranges = {}; TKEYS.forEach((t) => ORG.forEach((o) => { const pk = PEAK[`USA|${o}`]; if (pk !== undefined) S.ranges[`${t}|${o}`] = [base[t][o], Math.max(base[t][o], pk)]; })); }
+  persist(); buildRanges(); scheduleMC();
+}));
+
 function buildInputs() {
   R.$('#sites').innerHTML = ORG.map((o) => {
     const s = S.sites[o];
     const sl = SITE_SL.filter(([, k]) => o !== 'CN' || ['capacity', 'conv_index'].includes(k)).map(([id, k, lab, mn, mx, st]) =>
       `<div class="mini" data-k="${k}"><span>${lab}</span><output id="o-${id}-${o}"></output><input type="range" id="${id}-${o}" min="${mn}" max="${mx}" step="${st}" value="${s[k]}" aria-label="${R.esc(s.label)}: ${lab}"></div>`).join('');
     return `<div class="site-row" data-o="${o}">
-      <div class="site-h"><label><input type="checkbox" id="open-${o}" ${s.open ? 'checked' : ''}>${R.esc(s.label)}</label><span class="chip" style="border-color:var(--c${SCOL[o] + 1});color:var(--c${SCOL[o] + 1})">${o}</span></div>
+      <div class="site-hd"><label><input type="checkbox" id="open-${o}" ${s.open ? 'checked' : ''}><span class="sw" style="background:${scv(o)}"></span>${R.esc(s.label)}</label></div>
       ${o === 'CN' ? '' : `<label class="tog"><input type="checkbox" id="board-${o}" ${s.board_local ? 'checked' : ''}>Main board made here (takes this origin)</label>`}
       ${sl}</div>`;
   }).join('');
@@ -726,10 +994,8 @@ function buildInputs() {
     SITE_SL.forEach(([id, k]) => { const el = R.$(`#${id}-${o}`); if (el) el.addEventListener('input', () => { S.sites[o][k] = +el.value; paint(); schedule(); }); });
   });
   const groups = {};
-  Object.entries(RANGE).forEach(([k, r]) => { (groups[r[5]] = groups[r[5]] || []).push(k); });
-  let html = Object.entries(groups).map(([g, keys], gi) => `<details class="grp"${gi === 1 ? ' open' : ''}><summary>${g}<span class="cnt"></span></summary>` +
-    keys.map((k) => `<div class="prm" data-key="${k}"><div class="prm-h"><label for="p-${k}">${RANGE[k][0]}</label><output id="o-${k}"></output></div>
-      <input type="range" id="p-${k}" min="${RANGE[k][1]}" max="${RANGE[k][2]}" step="${RANGE[k][3]}" value="${S.P[k]}"></div>`).join('') + '</details>').join('');
+  Object.entries(RANGE).forEach(([k, r]) => { if (r[5] !== '_rng') (groups[r[5]] = groups[r[5]] || []).push(k); });
+  let html = Object.entries(groups).map(([g, keys]) => `<details class="grp"><summary>${g}<span class="cnt"></span></summary>` + keys.map(prmHtml).join('') + '</details>').join('');
   html += `<details class="grp"><summary>Demand, units per week<span class="cnt"></span></summary>` + MK.map((m) =>
     `<div class="prm" data-dem="${m.market}"><div class="prm-h"><label for="d-${m.market}">${m.market} · ${R.esc(m.name)}</label><output id="o-d-${m.market}"></output></div>
       <input type="range" id="d-${m.market}" min="0" max="8000" step="50" value="${S.dem[m.market]}"></div>`).join('') + '</details>';
@@ -738,9 +1004,11 @@ function buildInputs() {
       <input type="range" id="pr-${s.id}" min="0" max="1" step="0.05" value="${S.prob[s.id]}"></div>`).join('') +
     '<p class="hint" style="margin:6px 0 0">Shown as shares of the total, so they always add up to 100%.</p></details>';
   R.$('#groups').innerHTML = html;
+  R.$('#rng-prob').innerHTML = prmHtml('duty_change_prob');
   Object.keys(RANGE).forEach((k) => R.$('#p-' + k).addEventListener('input', (e) => { S.P[k] = +e.target.value; paint(); schedule(); }));
   MK.forEach((m) => R.$('#d-' + m.market).addEventListener('input', (e) => { S.dem[m.market] = +e.target.value; paint(); schedule(); }));
   IN.scenarios.forEach((s) => R.$('#pr-' + s.id).addEventListener('input', (e) => { S.prob[s.id] = +e.target.value; paint(); schedule(); }));
+  buildRanges();
   paint();
 }
 function paint() {
@@ -748,6 +1016,8 @@ function paint() {
   ORG.forEach((o) => {
     const s = S.sites[o], s0 = SITES0[o];
     R.$(`.site-row[data-o="${o}"]`).classList.toggle('closed', !s.open);
+    R.$('#open-' + o).checked = s.open;
+    if (R.$('#board-' + o)) R.$('#board-' + o).checked = !!s.board_local;
     SITE_SL.forEach(([id, k]) => {
       const out = R.$(`#o-${id}-${o}`); if (!out) return;
       out.textContent = siteFmt(k, s[k]);
@@ -766,7 +1036,7 @@ function paint() {
   document.querySelectorAll('#groups details.grp').forEach((d) => { const n = d.querySelectorAll('.prm.changed').length; d.querySelector('.cnt').textContent = n ? n + ' changed' : ''; });
 }
 R.$('#reset').addEventListener('click', () => {
-  S.P = { ...P0 }; S.sites = JSON.parse(JSON.stringify(SITES0)); S.dem = { ...DEM0 }; S.prob = { ...PROB0 }; S.edits = {};
+  S.P = { ...P0 }; S.sites = JSON.parse(JSON.stringify(SITES0)); S.dem = { ...DEM0 }; S.prob = { ...PROB0 }; S.edits = {}; S.ranges = JSON.parse(JSON.stringify(RANGES0));
   buildInputs(); schedule();
 });
 R.$('#fold').addEventListener('click', () => { const f = R.$('#inputs').classList.toggle('folded'); R.$('#fold').textContent = f ? 'Show inputs' : 'Hide inputs'; });
@@ -777,8 +1047,11 @@ R.seg(R.$('#f-s'), IN.scenarios.map((s) => [s.id, SHORT[s.id] || s.id]), S.sc, (
 R.seg(R.$('#f-r'), [['cape', 'Avoid (Cape)'], ['suez', 'Through Suez']], S.rs, (v) => { S.rs = v; schedule(); });
 R.seg(R.$('#f-m'), [['sea', 'Ocean'], ['air', 'Air']], S.mode, (v) => { S.mode = v; persist(); draw(); });
 R.seg(R.$('#f-v'), [['total', 'Landed $'], ['duty', 'Duty $'], ['freight', 'Freight $'], ['days', 'Days']], S.view, (v) => { S.view = v; persist(); draw(); });
+R.seg(R.$('#f-n'), [[100, '100'], [200, '200'], [500, '500']], S.runs, (v) => { S.runs = +v; persist(); scheduleMC(); });
+let TORWHO = saved.torwho === 'open' ? 'open' : 'best';
+R.seg(R.$('#f-tor'), [['best', 'Best bet'], ['open', 'Open now']], TORWHO, (v) => { TORWHO = v; tornado(); R.update(cTor); });
 
-// ---------------------------------------------------------------- compute
+// ---------------------------------------------------------------- deterministic compute (main thread, ~0.1 s)
 let RES = null, timer = null;
 function compute() {
   const t0 = performance.now();
@@ -787,6 +1060,7 @@ function compute() {
   const mats = inp.scenarios.map((s) => FPE.dutyMatrix(inp, s));
   const duties = mats[si];
   const ev = open.length ? FPE.evaluate(inp, P, sites, open, S.rs, duties) : null;
+  const evNow = open.length ? FPE.evaluate(inp, P, sites, open, S.rs, mats[0]) : null;
   const cn = FPE.evaluate(inp, P, sites, ['CN'], S.rs, duties);
   const fps = FPE.footprints(inp, P, sites, S.rs, inp.scenarios);
   const [fixed, curCosts] = open.length ? FPE.yearlyCosts(inp, P, sites, open, S.rs, mats) : [0, mats.map(() => 1e12)];
@@ -800,28 +1074,126 @@ function compute() {
   const same = base && fpKey(base.open, base.board) === curKey();
   cur.wait = !base || same ? H * cur.expected : inp.scenarios.reduce((a, s, k) => { const cb = base.costs[k]; return a + s.probability * Math.min(H * cb, lag * cb + (H - lag) * curCosts[k] + P.rush_premium_usd); }, 0) / wsum;
   cur.build_now_value = cur.wait - H * cur.expected;
-  RES = { inp, mats, duties, si, ev, cn, fps, cur, base, ms: performance.now() - t0 };
-  R.$('#status').textContent = `${fps.length} footprints × ${inp.scenarios.length} scenarios in ${RES.ms.toFixed(0)} ms`;
+  RES = { inp, mats, duties, si, ev, evNow, cn, fps, cur, base, ms: performance.now() - t0 };
   draw();
+  scheduleMC();
 }
 function schedule() { persist(); clearTimeout(timer); timer = setTimeout(compute, 60); }
+
+// ---------------------------------------------------------------- duty-range Monte Carlo in a worker (~1–3 s)
+let MC = null, worker = null, jobId = 0, mcTimer = null, mcSig = '', mcStart = 0;
+const WORKER_SRC = document.getElementById('fpe').textContent + `
+self.onmessage = (e) => { const a = e.data; const t0 = Date.now();
+  const r = FPE.dutyMonteCarlo(a.inp, a.P, a.sites, a.rs, a.ranges, a.runs, 7, (f) => self.postMessage({ id: a.id, progress: f }));
+  r.ms = Date.now() - t0; self.postMessage({ id: a.id, result: r }); };`;
+function scheduleMC() { clearTimeout(mcTimer); mcTimer = setTimeout(runMC, 250); }
+function setStatus() {
+  const busy = !!(worker && mcStart);
+  R.$('#status').classList.toggle('busy', busy);
+  R.$('#hero').classList.toggle('busy', busy);
+  R.$('#status').textContent = `${RES ? RES.fps.length : 0} footprints · scenarios in ${RES ? RES.ms.toFixed(0) : 0} ms · ` + (busy ? `pricing ${S.runs} duty draws…` : MC ? `${MC.runs} duty draws in ${(MC.ms / 1000).toFixed(1)} s` : '');
+}
+function runMC() {
+  if (!RES) return;
+  const msg = { inp: RES.inp, P: S.P, sites: S.sites, rs: S.rs, ranges: S.ranges, runs: S.runs };
+  const sig = JSON.stringify([msg.P, msg.sites, msg.rs, msg.ranges, msg.runs, msg.inp.markets.map((m) => m.weekly_units), S.edits]);
+  if (sig === mcSig && MC) return;
+  mcSig = sig;
+  if (worker) worker.terminate();
+  const id = ++jobId;
+  try {
+    worker = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], { type: 'text/javascript' })));
+  } catch (err) {                                   // no workers: run a smaller job on the page
+    MC = FPE.dutyMonteCarlo(msg.inp, msg.P, msg.sites, msg.rs, msg.ranges, Math.min(100, msg.runs), 7); MC.ms = 0;
+    worker = null; mcStart = 0; drawMC(); setStatus(); return;
+  }
+  mcStart = performance.now(); setStatus();
+  worker.onmessage = (e) => {
+    if (e.data.id !== id) return;
+    if (e.data.progress !== undefined) { R.$('#prog').style.width = (e.data.progress * 100).toFixed(0) + '%'; return; }
+    MC = e.data.result; mcStart = 0; worker.terminate(); worker = null;
+    R.$('#prog').style.width = '0';
+    drawMC(); setStatus();
+  };
+  worker.postMessage({ id, ...msg });
+}
+
+// ---------------------------------------------------------------- hero + ladder
+function hero() {
+  const rows = RES.fps;
+  if (!rows.length) { R.$('#hero-main').innerHTML = '<p class="empty">No set of sites can cover demand within capacity and minimum loads.</p>'; R.$('#ladder').innerHTML = ''; return; }
+  const top = MC ? MC.rows[0] : null;
+  const rob = rows.reduce((a, r) => (r.regret < a.regret ? r : a), rows[0]);
+  const cnOnly = MC ? MC.rows.find((r) => r.open.length === 1 && r.open[0] === 'CN') : null;
+  const tipRows = rows.filter((r) => !r.is_base).map((r) => [r, tip(r)]).filter(([, w]) => w !== null && w > 0);
+  const easiest = tipRows.length ? tipRows.reduce((a, b) => (b[1] < a[1] ? b : a)) : null;
+  const ranged = Object.values(S.ranges).filter(([a, b]) => b - a > 1e-9).length;
+  if (top) {
+    const fig = top.open.map((o) => `<span class="st"><span class="dot" style="background:${scv(o)}"></span>${SNAME[o]}</span>`).join('<span class="plus">+</span>');
+    const todayCost = rows.find((r) => fpKey(r.open, r.board) === fpKey(top.open, top.board));
+    R.$('#hero-main').innerHTML = `
+      <div class="hero-eye"><span>Best bet under the duty ranges</span>${top.board && top.open.length > 1 ? '<span class="chip prac">own main boards</span>' : ''}<span class="chip">${ranged} ranges · ${MC.runs} draws</span></div>
+      <div class="hero-fig">${fig}</div>
+      <p class="hero-why">Lowest average yearly cost when ${ranged ? `the ${ranged} stretched duties move inside their ranges, each market changing with a ${R.pct(S.P.duty_change_prob)} chance` : 'duties stay at today’s rates (no range is stretched)'}. ${top.open.length > 1 ? `It pays ${todayCost ? M$(todayCost.costs[0] - RES.base.costs[0], 1) : '–'} a year more than the cheapest footprint at today's duties, as insurance.` : 'No second site pays for itself under these ranges.'}</p>
+      <div class="hero-stats">
+        <div class="hs"><span class="l">Mean yearly cost</span><span class="v">${M$(top.mean)}</span><span class="s">P50 ${M$(top.p50)}</span></div>
+        <div class="hs"><span class="l">Bad year (P90)</span><span class="v">${M$(top.p90)}</span><span class="s">good year ${M$(top.p10)}</span></div>
+        <div class="hs"><span class="l">Cheapest in</span><span class="v">${R.pct(top.win)}</span><span class="s">of the draws</span></div>
+        <div class="hs"><span class="l">Regret, P90</span><span class="v">${M$(top.regret_p90, 1)}</span><span class="s">mean ${M$(top.regret_mean, 1)}</span></div>
+      </div>`;
+  } else if (!R.$('#hero-main').innerHTML) {
+    R.$('#hero-main').innerHTML = '<div class="hero-eye"><span>Best bet under the duty ranges</span></div><div class="hero-fig" style="color:var(--muted)">Pricing the draws…</div>';
+  }
+  const base = RES.base;
+  R.$('#ladder').innerHTML = [
+    ['Cheapest at today’s duties', chips(base.open, base.board), `${M$(base.costs[0])} a year`],
+    ['Lowest worst-case regret, named scenarios', chips(rob.open, rob.board), `never more than ${M$(rob.regret, 1)} a year off`],
+    ['China alone is the cheapest', cnOnly ? `<b>${R.pct(cnOnly.win)}</b>` : '–', cnOnly ? `of the draws · mean ${M$(cnOnly.mean)}, P90 ${M$(cnOnly.p90)}` : ''],
+    ['Build a hedge now once a China tariff is more likely than', easiest ? `<b>${R.pct(easiest[1])}</b>` : 'never', easiest ? `${fpKey(easiest[0].open, easiest[0].board)} · ${R.num(S.P.ramp_months)}-month ramp-up` : ''],
+  ].map(([l, v, s]) => `<div class="lr"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></div>`).join('');
+}
+
+// ---------------------------------------------------------------- site strip
+function strip() {
+  const ev = RES.evNow, tabUS = FPE.landedTable(RES.inp, S.P, S.sites, 'sea', S.rs, RES.mats[0]);
+  const usJ = MK.findIndex((m) => m.market === 'US');
+  const today = RES.mats[0].USA;
+  R.$('#strip').innerHTML = ORG.map((o) => {
+    const s = S.sites[o], load = ev && ev.load[o] ? ev.load[o] : 0, cap = s.capacity || 1;
+    const serves = ev ? MK.filter((m) => (ev.alloc[`${o}|${m.market}`] || 0) > 0.5).map((m) => m.market) : [];
+    const c = tabUS[o][usJ];
+    const board = o === 'CN' ? 'Home base' : s.board_local ? 'Own boards' : 'CN boards';
+    return `<article class="sc${s.open ? '' : ' closed'}" style="--sc:${scv(o)}">
+      <div class="sc-h"><span class="sc-name">${SNAME[o]}<small>${R.esc(s.label.split(' · ')[1] || '')}</small></span>
+        <button type="button" class="tgl" data-o="${o}" aria-pressed="${s.open}">${s.open ? 'Open' : 'Closed'}</button></div>
+      <div class="meter" title="Load ${R.num(load)} of ${R.num(cap)} units/week; minimum load ${R.pct(s.min_load)}"><i style="width:${Math.min(100, 100 * load / cap).toFixed(1)}%"></i>${o === 'CN' || !s.min_load ? '' : `<b style="left:${(100 * s.min_load).toFixed(1)}%"></b>`}</div>
+      <div class="sc-load"><span>${R.num(load)} / ${R.num(cap)}</span><span>${R.pct(load / cap)}</span></div>
+      <div class="sc-serves"><b style="font-weight:600">${board}</b> · ${s.open ? (serves.length ? serves.join(' · ') : 'idle') : 'not in the footprint'}</div>
+      <div class="sc-kv"><span>US landed</span><span>$${R.num(c.total, 0)}</span>
+        <span title="US duty today and at the April 2025 peak">US duty</span><span>${R.pct(c.duty_rate, 0)} → ${PEAK['USA|' + o] !== undefined ? R.pct(c.origin_weight ? PEAK['USA|CN'] : PEAK['USA|' + o], 0) : '–'}</span>
+        <span>Days to US</span><span>${R.num(c.days, 1)}</span></div>
+    </article>`;
+  }).join('');
+  R.$('#strip').querySelectorAll('.tgl').forEach((b) => b.addEventListener('click', () => { const o = b.dataset.o; S.sites[o].open = !S.sites[o].open; paint(); schedule(); }));
+  void today;
+}
 
 // ---------------------------------------------------------------- KPIs
 function kpis() {
   const { ev, cn, cur } = RES;
   const card = (label, value, sub, cls) => `<div class="kpi"><span class="k-label">${label}</span><span class="k-value${cls ? ' ' + cls : ''}">${value}</span><span class="k-sub">${sub}</span></div>`;
-  if (!ev) { R.$('#kpis').innerHTML = card('Open sites', 'None', 'tick at least one site on the left'); return; }
+  if (!ev) { R.$('#kpis').innerHTML = card('Open sites', 'None', 'tick at least one site'); return; }
   const year = 52 * ev.weekly_cost + cur.fixed, yearCN = 52 * cn.weekly_cost;
   const served = MK.reduce((a, m) => a + S.dem[m.market], 0) - ev.unmet;
   const d = year - yearCN;
   const warn = ev.unmet > 1e-6 ? `<b class="neg">${R.num(ev.unmet)} units/week not covered</b>` : ev.underload > 1e-6 ? `<b class="neg">${R.num(ev.underload)} units/week short of minimum loads</b>` : `$${R.num(year / Math.max(1, 52 * served), 2)} per unit · fixed ${R.usd(cur.fixed, 1)}`;
   const bn = cur.build_now_value, H = S.P.horizon_years, small = Math.abs(bn) < 5e4;
   R.$('#kpis').innerHTML = [
-    card('Yearly cost, this footprint', R.usd(year), warn),
+    card(`Yearly cost · ${SHORT[S.sc]}`, R.usd(year), warn),
     card('Against China only', (d <= 0 ? '−' : '+') + R.usd(Math.abs(d)), d <= 0 ? 'cheaper per year in this scenario' : 'dearer per year in this scenario'),
     card('Duty per year', R.usd(52 * ev.weekly_duty), `${R.pct(ev.weekly_duty / Math.max(1, ev.weekly_cost), 1)} of landed cost`),
-    card('Expected across scenarios', cur.expected > 1e11 ? '–' : R.usd(cur.expected), cur.expected > 1e11 ? 'not feasible in some scenario' : `worst regret ${R.usd(cur.regret, 1)}`),
-    card('Build now or wait', small ? '–' : (bn > 0 ? 'Build, ' : 'Wait, ') + R.usd(Math.abs(bn), 1), small ? 'this is the cheapest footprint for today’s duties' : `${bn > 0 ? 'saved by building now' : 'saved by waiting'} over ${H} years`, bn > 5e4 ? 'pos' : ''),
+    card('Expected, named scenarios', cur.expected > 1e11 ? '–' : R.usd(cur.expected), cur.expected > 1e11 ? 'not feasible in some scenario' : `worst regret ${R.usd(cur.regret, 1)}`),
+    card('Build now or wait', small ? '–' : (bn > 0 ? 'Build now' : 'Wait'), small ? 'this is the cheapest footprint today' : `${bn > 0 ? 'building now saves' : 'waiting saves'} ${R.usd(Math.abs(bn), 1)} over ${H} years`, bn > 5e4 ? 'pos' : ''),
     card('Red Sea or Hormuz', R.kunits((ev.exposure['Red Sea'] || 0) + (ev.exposure['Hormuz'] || 0)) + '/wk', `average ${R.num(ev.avg_days, 1)} days to the MGI`),
   ].join('');
 }
@@ -833,12 +1205,12 @@ const cSankey = R.chart('c-sankey', (t) => {
   const nodes = [], links = [], usedS = new Set(), usedM = new Set();
   Object.entries(RES.ev.alloc).forEach(([k, q]) => { const [s, m] = k.split('|'); usedS.add(s); usedM.add(m); links.push({ source: S.sites[s].label, target: m + ' · ' + MK.find((x) => x.market === m).code, value: Math.round(q) }); });
   ORG.filter((s) => usedS.has(s)).forEach((s) => nodes.push({ name: S.sites[s].label, itemStyle: { color: t.c[SCOL[s]] } }));
-  MK.filter((m) => usedM.has(m.market)).forEach((m) => nodes.push({ name: m.market + ' · ' + m.code, itemStyle: { color: t.muted } }));
+  MK.filter((m) => usedM.has(m.market)).forEach((m) => nodes.push({ name: m.market + ' · ' + m.code, itemStyle: { color: t.c[6] } }));
   return {
     ...o, legend: { show: false },
     tooltip: { ...o.tooltip, trigger: 'item', formatter: (p) => p.dataType === 'edge' ? `${R.esc(p.data.source)} → ${R.esc(p.data.target)}<br><b>${R.num(p.data.value)}</b> units/week` : `${R.esc(p.name)}<br><b>${R.num(p.value)}</b> units/week` },
-    series: [{ type: 'sankey', left: 4, right: 92, top: 8, bottom: 8, nodeWidth: 12, nodeGap: 9, layoutIterations: 0, draggable: false, emphasis: { focus: 'adjacency' },
-      label: { color: t.ink, fontFamily: t.fBody, fontSize: 12 }, lineStyle: { color: 'source', opacity: 0.32, curveness: 0.5 },
+    series: [{ type: 'sankey', left: 4, right: 96, top: 8, bottom: 8, nodeWidth: 10, nodeGap: 10, layoutIterations: 0, draggable: false, emphasis: { focus: 'adjacency' },
+      itemStyle: { borderWidth: 0 }, label: { color: t.ink, fontFamily: t.fBody, fontSize: 12 }, lineStyle: { color: 'source', opacity: 0.28, curveness: 0.5 },
       data: nodes, links }],
   };
 });
@@ -852,14 +1224,14 @@ function heat() {
   const all = ORG.flatMap((o) => MK.map((_, j) => val(tab[o][j])));
   const lo = Math.min(...all), hi = Math.max(...all);
   R.$('#h-heat').textContent = { total: 'Landed cost per unit', duty: 'Duty per unit', freight: 'Freight per unit', days: 'Days to the MGI' }[view] + (S.mode === 'air' ? ' · air' : ' · ocean');
-  R.$('#t-heat').innerHTML = '<thead><tr><th class="txt">Market</th>' + ORG.map((o) => `<th>${o}<small>${o === 'CN' ? '&nbsp;' : S.sites[o].board_local ? 'own boards' : 'CN boards'}</small></th>`).join('') + '</tr></thead><tbody>' +
+  R.$('#t-heat').innerHTML = '<thead><tr><th class="txt">Market</th>' + ORG.map((o) => `<th><span class="sw" style="background:${scv(o)};width:7px;height:7px;margin-right:4px"></span>${o}<small>${o === 'CN' ? '&nbsp;' : S.sites[o].board_local ? 'own boards' : 'CN boards'}</small></th>`).join('') + '</tr></thead><tbody>' +
     MK.map((m, j) => {
       const best = open.length ? open.reduce((a, o) => (tab[o][j].total < tab[a][j].total ? o : a), open[0]) : null;
       return `<tr class="${m.market === S.selm ? 'selm' : ''}" data-m="${m.market}" tabindex="0"><td class="txt"><b>${m.market}</b><small>${R.esc(m.name)}</small></td>` +
         ORG.map((o) => {
           const c = tab[o][j], v = val(c), w = hi > lo ? (v - lo) / (hi - lo) : 0;
           const cls = ['cell', o === best ? 'best' : '', S.sites[o].open ? '' : 'closed'].join(' ');
-          return `<td class="${cls}" style="background:color-mix(in srgb, var(--c4) ${(w * 40).toFixed(0)}%, transparent)" title="${R.esc(S.sites[o].label)} → ${m.market}: landed $${R.num(c.total, 1)} · duty ${R.pct(c.duty_rate, 1)}${c.origin_weight > 0 && Math.abs(c.own_rate - c.duty_rate) > 1e-9 ? ' (China-made board)' : ''} · ${R.num(c.days, 1)} days${c.risky.length ? ' · via ' + c.risky.join(', ') : ''}">${fmt(v)}</td>`;
+          return `<td class="${cls}" style="background:color-mix(in srgb, var(--c1) ${(w * 34).toFixed(0)}%, transparent)" title="${R.esc(S.sites[o].label)} → ${m.market}: landed $${R.num(c.total, 1)} · duty ${R.pct(c.duty_rate, 1)}${c.origin_weight > 0 && Math.abs(c.own_rate - c.duty_rate) > 1e-9 ? ' (China-made board)' : ''} · ${R.num(c.days, 1)} days${c.risky.length ? ' · via ' + c.risky.join(', ') : ''}">${fmt(v)}</td>`;
         }).join('') + '</tr>';
     }).join('') + '</tbody>';
   R.$('#t-heat').querySelectorAll('tbody tr').forEach((tr) => {
@@ -870,7 +1242,7 @@ function heat() {
 }
 
 // ---------------------------------------------------------------- cost drill-down
-const PARTS = [['factory', 'Factory value', 6], ['freight', 'Freight', 0], ['duty', 'Duty', 4], ['carry', 'Carrying in transit', 2], ['plan', 'Planning (longer chain)', 3], ['risk', 'Chokepoint premium', 5]];
+const PARTS = [['factory', 'Factory value', 6], ['freight', 'Freight', 0], ['duty', 'Duty', 1], ['carry', 'Carrying in transit', 2], ['plan', 'Planning (longer chain)', 3], ['risk', 'Chokepoint premium', 5]];
 const cDrill = R.chart('c-drill', (t) => {
   const o = R.base(t);
   if (!RES) return { ...o };
@@ -882,49 +1254,49 @@ const cDrill = R.chart('c-drill', (t) => {
     ...o,
     tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const s = ORG[ps[0].dataIndex], c = tab[s][j]; return R.tip(t, PARTS.map(([k, n, ci]) => [t.c[ci], n, '$' + R.num(c[k], 2)]).concat([[t.ink, 'Landed', '$' + R.num(c.total, 2)]]), S.sites[s].label + ' → ' + S.selm); } },
     legend: { ...o.legend, type: 'plain', data: PARTS.map((p) => p[1]) },
-    grid: { ...o.grid, top: 62 },
+    grid: { ...o.grid, top: (document.getElementById('c-drill').clientWidth < 520 ? 86 : 62) },
     xAxis: R.axis(t, { type: 'category', data: ORG, splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 12 } }),
-    yAxis: R.axis(t, { type: 'value', min: Math.max(0, Math.floor((minF - 40) / 50) * 50), axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + v } }),
-    series: PARTS.map(([k, n, ci]) => ({ type: 'bar', stack: 'c', name: n, barWidth: '58%', itemStyle: { color: t.c[ci] },
+    yAxis: R.axis(t, { type: 'value', min: Math.max(0, Math.floor((minF - 40) / 50) * 50), axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true, formatter: (v) => '$' + v } }),
+    series: PARTS.map(([k, n, ci], pi) => ({ type: 'bar', stack: 'c', name: n, barMaxWidth: 24, itemStyle: { color: t.c[ci], borderColor: t.panel, borderWidth: 1, borderRadius: pi === PARTS.length - 1 ? [4, 4, 0, 0] : 0 },
       data: ORG.map((s) => ({ value: +tab[s][j][k].toFixed(4), itemStyle: { opacity: S.sites[s].open ? 1 : 0.4 } })) })),
   };
 });
 
-// ---------------------------------------------------------------- tariff sweep
+// ---------------------------------------------------------------- tariff sweep (0 to the 2025 ceiling)
 const cSweep = R.chart('c-sweep', (t) => {
   const o = R.base(t);
   if (!RES || !RES.fps.length) return { ...o };
   const inp = RES.inp, m = MK.find((x) => x.market === S.selm), xs = [];
-  for (let k = 0; k <= 24; k++) xs.push(k * 0.025);
+  for (let k = 0; k <= 30; k++) xs.push(k * 0.05);
   const lines = [], seen = new Set();
-  const addLine = (name, open, sites, key) => { key = key || name; if (seen.has(key) || !open.length) return; seen.add(key); lines.push({ name, open, sites }); };
+  const addLine = (name, open, sites, key) => { if (seen.has(key) || !open.length) return; seen.add(key); lines.push({ name, open, sites }); };
   const rows = RES.fps, rob = rows.reduce((a, r) => (r.regret < a.regret ? r : a), rows[0]);
   addLine('China only', ['CN'], S.sites, 'CN');
   const ck = curKey();
-  if (ck) addLine(ck + ' (now open)', openSites(), S.sites, ck);
-  [rows[0], rob].concat(rows.filter((r) => r.board && r.open.length === 2).slice(0, 2))
-    .forEach((r) => addLine(fpKey(r.open, r.board), r.open, FPE.withBoards(S.sites, r.open, r.open.some((x) => x !== 'CN') ? r.board : null), fpKey(r.open, r.board)));
-  const pal = [t.c[0], t.c[3], t.c[2], t.c[4], t.c[5]];
-  const series = lines.map((L, i) => ({
-    type: 'line', name: L.name, showSymbol: false, lineStyle: { width: L.name.endsWith('(now open)') ? 3 : 2, type: L.name === 'China only' ? [6, 4] : 'solid' },
-    itemStyle: { color: L.name === 'China only' ? t.ink2 : pal[i % pal.length] },
+  if (ck) addLine(ck + ' (open now)', openSites(), S.sites, ck);
+  const extra = [rob].concat(MC ? [MC.rows[0]] : []).concat(rows.filter((r) => r.board && r.open.length === 2).slice(0, 2));
+  extra.forEach((r) => addLine(fpKey(r.open, r.board), r.open, FPE.withBoards(S.sites, r.open, r.open.some((x) => x !== 'CN') ? r.board : null), fpKey(r.open, r.board)));
+  const pal = [t.ink2, t.c[0], t.c[2], t.c[1], t.c[3], t.c[5]];
+  const series = lines.slice(0, 6).map((L, i) => ({
+    type: 'line', name: L.name, showSymbol: false, lineStyle: { width: 2, type: L.name === 'China only' ? [6, 4] : 'solid' }, itemStyle: { color: pal[i] },
     data: xs.map((x) => {
       const d = JSON.parse(JSON.stringify(RES.duties)); d[m.tkey].CN = x;
       const c = FPE.yearlyCosts(inp, S.P, L.sites, L.open, S.rs, [d])[1][0];
       return c > 1e11 ? null : +(c / 1e6).toFixed(3);
     }),
   }));
-  const cur = RES.duties[m.tkey].CN, snap = Math.min(24, Math.round(cur / 0.025));
-  series.push({ type: 'line', name: '_now', data: [], markLine: { silent: true, symbol: 'none', lineStyle: { color: t.muted, type: [3, 3] },
-    label: { show: false }, data: [{ xAxis: R.pct(xs[snap], 1) }] } });
+  const cur = RES.duties[m.tkey].CN, snap = Math.min(30, Math.round(cur / 0.05));
+  const ml = [{ xAxis: R.pct(xs[snap]), lineStyle: { color: t.muted, type: [3, 3] } }];
+  if (m.tkey === 'USA') ml.push({ xAxis: R.pct(xs[Math.round(PEAK['USA|CN'] / 0.05)]), lineStyle: { color: t.bad, type: [3, 3] } });
+  series.push({ type: 'line', name: '_mark', data: [], markLine: { silent: true, symbol: 'none', label: { show: false }, data: ml } });
   R.$('#h-sweep').textContent = `If ${marketName(m)} taxes China-made laptops`;
   return {
     ...o,
-    legend: { ...o.legend, data: lines.map((L) => L.name) },
-    grid: { ...o.grid, top: 64, bottom: 24 },
-    tooltip: { ...o.tooltip, valueFormatter: (v) => v == null ? '–' : '$' + R.num(v, 2) + 'M' },
-    xAxis: R.axis(t, { type: 'category', boundaryGap: false, data: xs.map((x) => R.pct(x, 1)), name: `duty in ${m.market} on China-made units`, nameLocation: 'middle', nameGap: 26, splitLine: { show: false } }),
-    yAxis: R.axis(t, { type: 'value', scale: true, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + v + 'M' } }),
+    legend: { ...o.legend, type: 'plain', data: lines.slice(0, 6).map((L) => L.name) },
+    grid: { ...o.grid, top: (document.getElementById('c-sweep').clientWidth < 520 ? 84 : lines.length > 3 ? 62 : 36), bottom: 24 },
+    tooltip: { ...o.tooltip, valueFormatter: (v) => v == null ? '–' : '$' + R.num(v, 1) + 'M' },
+    xAxis: R.axis(t, { type: 'category', boundaryGap: false, data: xs.map((x) => R.pct(x)), name: `duty in ${m.market} on China-made units`, nameLocation: 'middle', nameGap: 26, splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true, interval: 4 } }),
+    yAxis: R.axis(t, { type: 'value', scale: true, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true, formatter: (v) => '$' + v + 'M' } }),
     series,
   };
 });
@@ -934,7 +1306,7 @@ function beTable() {
   const own = FPE.breakEven(RES.inp, S.P, FPE.withBoards(S.sites, ORG, true), S.rs, RES.duties);
   const imp = FPE.breakEven(RES.inp, S.P, FPE.withBoards(S.sites, ORG, false), S.rs, RES.duties);
   const fmt = (v, now) => v === null ? 'never' : v <= now + 1e-12 ? (v === 0 ? 'now' : R.pct(v, 1) + ' ✓') : R.pct(v, 1);
-  R.$('#t-be').innerHTML = '<thead><tr><th class="txt">Market</th>' + NONCN.map((o) => `<th>${o}<small>own / CN</small></th>`).join('') + '</tr></thead><tbody>' +
+  R.$('#t-be').innerHTML = '<thead><tr><th class="txt">Market</th>' + NONCN.map((o) => `<th><span class="sw" style="background:${scv(o)};width:7px;height:7px;margin-right:4px"></span>${o}<small>own / CN</small></th>`).join('') + '</tr></thead><tbody>' +
     MK.map((m, j) => {
       const now = RES.duties[m.tkey].CN;
       return `<tr><td class="txt"><b>${m.market}</b><small>now ${R.pct(now, 1)}</small></td>` + NONCN.map((o) => {
@@ -945,7 +1317,95 @@ function beTable() {
     }).join('') + '</tbody>';
 }
 
-// ---------------------------------------------------------------- footprints
+// ---------------------------------------------------------------- duty ranges: fan chart, tornado, table
+const cFan = R.chart('c-fan', (t) => {
+  const o = R.base(t);
+  if (!MC || !RES) return { ...o };
+  const ck = curKey();
+  const rows = MC.rows.slice(0, 10);
+  const cur = MC.rows.find((r) => fpKey(r.open, r.board) === ck), cn = MC.rows.find((r) => fpKey(r.open, r.board) === 'CN');
+  [cur, cn].forEach((r) => { if (r && !rows.includes(r)) rows.push(r); });
+  const today = (r) => { const f = RES.fps.find((x) => fpKey(x.open, x.board) === fpKey(r.open, r.board)); return f ? f.costs[0] : null; };
+  const lo = Math.floor(Math.min(...rows.map((r) => Math.min(r.p10, today(r) || r.p10))) / 1e6) - 1;
+  const names = rows.map((r) => fpKey(r.open, r.board) + (fpKey(r.open, r.board) === ck ? '  ◂' : ''));
+  return {
+    ...o,
+    legend: { ...o.legend, data: ['P10–P90', 'Mean', 'At today’s duties'] },
+    tooltip: { ...o.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (ps) => { const r = rows[ps[0].dataIndex]; return R.tip(t, [[t.c[0], 'P10', M$(r.p10)], [t.c[0], 'P50', M$(r.p50)], [t.c[0], 'P90', M$(r.p90)], [t.ink, 'Mean', M$(r.mean)], [t.muted, 'At today’s duties', today(r) ? M$(today(r)) : '–'], [t.ink2, 'Cheapest in', R.pct(r.win) + ' of draws'], [t.ink2, 'Regret, mean / P90', M$(r.regret_mean, 1) + ' / ' + M$(r.regret_p90, 1)]], fpLabel(r.open, r.board)); } },
+    grid: { ...o.grid, top: 36, right: 24 },
+    xAxis: R.axis(t, { type: 'value', min: lo, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true, formatter: (v) => '$' + v + 'M' } }),
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: names, splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 11 } }),
+    series: [
+      { type: 'bar', stack: 'r', name: '_base', data: rows.map((r) => r.p10 / 1e6), itemStyle: { color: 'transparent' }, tooltip: { show: false }, barWidth: 12, silent: true },
+      { type: 'bar', stack: 'r', name: 'P10–P90', data: rows.map((r) => Math.max(0.08, (r.p90 - r.p10) / 1e6)), barWidth: 12, itemStyle: { color: t.c[0], opacity: 0.4, borderRadius: 4 } },
+      { type: 'scatter', name: 'At today’s duties', data: rows.map((r, i) => [today(r) ? today(r) / 1e6 : null, i]), symbol: 'rect', symbolSize: [2, 18], itemStyle: { color: t.ink2 } },
+      { type: 'scatter', name: 'Mean', data: rows.map((r, i) => [r.mean / 1e6, i]), symbolSize: 10, itemStyle: { color: t.ink, borderColor: t.panel, borderWidth: 2 } },
+    ],
+  };
+});
+let TOR = [];
+const cTor = R.chart('c-tor', (t) => {
+  const o = R.base(t);
+  if (!RES || !TOR.length) return { ...o, title: { text: Object.values(S.ranges).some(([a, b]) => b - a > 1e-9) ? 'No stretched duty changes this footprint\u2019s cost' : 'Stretch a duty range on the left to see what it does', left: 'center', top: 'middle', textStyle: { color: t.muted, fontSize: 12, fontWeight: 400, fontFamily: t.fBody } } };
+  const rows = TOR.slice(0, 12);
+  return {
+    ...o,
+    legend: { ...o.legend, data: ['Range low end', 'Range high end'] },
+    tooltip: { ...o.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (ps) => { const r = rows[ps[0].dataIndex]; return R.tip(t, [[t.c[0], `At ${R.pct(r.lo, 1)}`, (r.dLo >= 0 ? '+' : '−') + M$(Math.abs(r.dLo), 2)], [t.c[1], `At ${R.pct(r.hi, 1)}`, (r.dHi >= 0 ? '+' : '−') + M$(Math.abs(r.dHi), 2)]], `${MKN[r.t]} duty on ${SNAME[r.o]}-made laptops`); } },
+    grid: { ...o.grid, top: 36, right: 30 },
+    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true, formatter: (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + '$' + Math.abs(v) + 'M' } }),
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: rows.map((r) => `${MKN[r.t]} · ${r.o}`), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 11 } }),
+    series: [
+      { type: 'bar', name: 'Range low end', stack: 'x', barWidth: 12, data: rows.map((r) => ({ value: +(r.dLo / 1e6).toFixed(3), itemStyle: { borderRadius: r.dLo < 0 ? [4, 0, 0, 4] : [0, 4, 4, 0] } })), itemStyle: { color: t.c[0] } },
+      { type: 'bar', name: 'Range high end', stack: 'y', barWidth: 12, barGap: '-100%', data: rows.map((r) => ({ value: +(r.dHi / 1e6).toFixed(3), itemStyle: { borderRadius: r.dHi < 0 ? [4, 0, 0, 4] : [0, 4, 4, 0] } })), itemStyle: { color: t.c[1] } },
+    ],
+  };
+});
+function tornado() {
+  // Swing of one footprint's yearly cost when one duty sits at either end of its range, all others today.
+  TOR = [];
+  let open = openSites(), sites = S.sites, name = curKey() || open.join('+');
+  if (TORWHO === 'best' && MC) { const r = MC.rows[0]; open = r.open; sites = FPE.withBoards(S.sites, r.open, r.open.some((x) => x !== 'CN') ? r.board : null); name = fpKey(r.open, r.board); }
+  R.$('#hh-tor').textContent = `${name} · one duty at a time at each end of its range, the others at today's rates`;
+  if (!open.length) return;
+  const base = RES.mats[0], c0 = FPE.yearlyCosts(RES.inp, S.P, sites, open, S.rs, [base])[1][0];
+  for (const [k, [lo, hi]] of Object.entries(S.ranges)) {
+    if (hi - lo < 1e-9) continue;
+    const [tk, o] = k.split('|');
+    const at = (v) => { const d = JSON.parse(JSON.stringify(base)); d[tk][o] = v; return FPE.yearlyCosts(RES.inp, S.P, sites, open, S.rs, [d])[1][0] - c0; };
+    const dLo = at(lo), dHi = at(hi);
+    if (Math.abs(dLo) + Math.abs(dHi) > 1e3) TOR.push({ t: tk, o, lo, hi, dLo, dHi, swing: Math.abs(dHi - dLo) });
+  }
+  TOR.sort((a, b) => b.swing - a.swing);
+}
+function mcTable() {
+  if (!MC) { R.$('#t-mc').innerHTML = '<tbody><tr><td class="empty">Pricing the draws…</td></tr></tbody>'; return; }
+  const ck = curKey(), rows = MC.rows.slice(0, 12);
+  const cur = MC.rows.find((r) => fpKey(r.open, r.board) === ck), cn = MC.rows.find((r) => fpKey(r.open, r.board) === 'CN');
+  [cur, cn].forEach((r) => { if (r && !rows.includes(r)) rows.push(r); });
+  const wmax = Math.max(...MC.rows.map((r) => r.win)) || 1;
+  R.$('#h-mc').textContent = `${MC.rows.length} footprints × ${MC.runs} draws · yearly cost, $M · sorted by mean`;
+  R.$('#t-mc').innerHTML = '<thead><tr><th class="txt">Open sites</th><th>Mean</th><th>P10</th><th>P50</th><th>P90</th><th class="txt">Cheapest in</th><th>Regret, mean</th><th>Regret, P90</th><th></th></tr></thead><tbody>' +
+    rows.map((r, i) => `<tr class="${fpKey(r.open, r.board) === ck ? 'cur' : ''}"><td class="txt"><div class="fp-open">${chips(r.open, r.board)}${i === 0 ? '<span class="chip good">lowest mean</span>' : ''}</div></td>
+      <td><b>${R.num(r.mean / 1e6, 2)}</b></td><td>${R.num(r.p10 / 1e6, 2)}</td><td>${R.num(r.p50 / 1e6, 2)}</td><td>${R.num(r.p90 / 1e6, 2)}</td>
+      <td class="txt" style="font-family:var(--f-mono);font-size:12px;white-space:nowrap"><span class="winbar" style="width:${(48 * r.win / wmax).toFixed(0)}px"></span>${R.pct(r.win)}</td>
+      <td>${R.num(r.regret_mean / 1e6, 2)}</td><td>${R.num(r.regret_p90 / 1e6, 2)}</td>
+      <td><button type="button" class="usebtn" data-k="${MC.rows.indexOf(r)}" aria-label="Use ${R.esc(fpKey(r.open, r.board))}">Use</button></td></tr>`).join('') + '</tbody>';
+  R.$('#t-mc').querySelectorAll('.usebtn').forEach((b) => b.addEventListener('click', () => useFp(MC.rows[+b.dataset.k])));
+}
+function useFp(r) {
+  ORG.forEach((o) => { S.sites[o].open = r.open.includes(o); if (o !== 'CN' && r.open.includes(o)) S.sites[o].board_local = r.board; });
+  paint(); schedule();
+}
+function drawMC() {
+  if (!RES) return;
+  hero(); mcTable(); tornado(); R.update(cTor);
+  const ranged = Object.values(S.ranges).filter(([a, b]) => b - a > 1e-9).length;
+  R.$('#n-03').textContent = ranged ? `${ranged} duties stretched · ${R.pct(S.P.duty_change_prob)} chance of a change per market` : 'No range stretched: every draw equals today';
+  [cFan, cSweep].forEach(R.update);
+}
+
+// ---------------------------------------------------------------- footprints across named scenarios
 const tip = (r) => RES.inp.scenarios.some((s) => s.id === 'cn301') ? FPE.tippingWeight(r, RES.inp.scenarios, 'cn301', S.P.horizon_years) : null;
 const tipTxt = (r) => { const w = tip(r); return w === null ? 'never' : w === 0 ? 'any' : R.pct(w); };
 function fpTable() {
@@ -959,39 +1419,31 @@ function fpTable() {
   const best = scen.map((_, k) => Math.min(...rows.map((r) => r.costs[k])));
   R.$('#h-fp').textContent = `${rows.length} feasible footprints · yearly cost per scenario, $M · sorted by expected cost`;
   R.$('#t-fp').innerHTML = '<thead><tr><th class="txt">Open sites</th>' + scen.map((s) => `<th title="${R.esc(s.label)}">${SHORT2[s.id] || s.id}<small>weight ${R.pct(s.probability / wsum)}</small></th>`).join('') +
-    `<th>Expected</th><th>Worst regret</th><th title="Expected cost of waiting minus building now, over ${S.P.horizon_years} years; positive means build now">Build now<small>vs wait, ${S.P.horizon_years} yrs, $M</small></th><th title="Weight on the scenario of a 25% US tariff on China-made laptops above which building this footprint now beats waiting; other scenarios keep their relative weights">Build now if<small>CN 25% weight &gt;</small></th><th></th></tr></thead><tbody>` +
+    `<th>Expected</th><th>Worst regret</th><th title="Expected cost of waiting minus building now, over ${S.P.horizon_years} years; positive means build now">Build now<small>vs wait, ${S.P.horizon_years} yrs, $M</small></th><th title="Weight on the scenario of a 25% US tariff on China-made laptops above which building this footprint now beats waiting">Build now if<small>CN 25% weight &gt;</small></th><th></th></tr></thead><tbody>` +
     top.map((r) => {
       const key = fpKey(r.open, r.board);
       const tags = [r === rows[0] ? '<span class="chip good">lowest expected</span>' : '', r === rob ? '<span class="chip warn">lowest regret</span>' : '', r.is_base ? '<span class="chip">best today</span>' : ''].join('');
-      return `<tr class="${key === ck ? 'cur' : ''}"><td class="txt"><div class="fp-open">${r.open.map((o) => `<span class="chip" style="border-color:var(--c${SCOL[o] + 1});color:var(--c${SCOL[o] + 1})">${o}</span>`).join('')}${r.board ? '<span class="chip prac">own boards</span>' : ''}${tags}</div></td>` +
+      return `<tr class="${key === ck ? 'cur' : ''}"><td class="txt"><div class="fp-open">${chips(r.open, r.board)}${tags}</div></td>` +
         r.costs.map((c, k) => `<td${c - best[k] < 1 ? ' style="font-weight:700"' : ''}>${c > 1e11 ? '–' : R.num(c / 1e6, 2)}</td>`).join('') +
         `<td><b>${R.num(r.expected / 1e6, 2)}</b></td><td>${R.num(r.regret / 1e6, 2)}</td><td class="${r.build_now_value > 5e4 ? 'pos' : r.build_now_value < -5e4 ? 'neg' : ''}">${r.is_base ? '–' : (r.build_now_value >= 0 ? '+' : '−') + R.num(Math.abs(r.build_now_value) / 1e6, 2)}</td>` +
-        `<td>${r.is_base ? '–' : tipTxt(r)}</td>` +
-        `<td><button type="button" class="usebtn" data-i="${rows.indexOf(r)}" aria-label="Use ${R.esc(key)}">Use</button></td></tr>`;
+        `<td>${r.is_base ? '–' : tipTxt(r)}</td><td><button type="button" class="usebtn" data-i="${rows.indexOf(r)}" aria-label="Use ${R.esc(key)}">Use</button></td></tr>`;
     }).join('') + '</tbody>';
-  R.$('#t-fp').querySelectorAll('.usebtn').forEach((b) => b.addEventListener('click', () => {
-    const r = rows[+b.dataset.i];
-    ORG.forEach((o) => {
-      S.sites[o].open = r.open.includes(o); R.$('#open-' + o).checked = S.sites[o].open;
-      if (o !== 'CN' && r.open.includes(o)) { S.sites[o].board_local = r.board; R.$('#board-' + o).checked = r.board; }
-    });
-    paint(); schedule();
-  }));
+  R.$('#t-fp').querySelectorAll('.usebtn').forEach((b) => b.addEventListener('click', () => useFp(rows[+b.dataset.i])));
 }
 
 // ---------------------------------------------------------------- duty matrix
 function dutyTable() {
   const base = FPE.dutyMatrix(IN, IN.scenarios[RES.si]), d = RES.duties;
-  R.$('#t-duty').innerHTML = '<thead><tr><th class="txt">Market</th>' + ORG.map((o) => `<th>${o}</th>`).join('') + '</tr></thead><tbody>' +
+  R.$('#t-duty').innerHTML = '<thead><tr><th class="txt">Market</th>' + ORG.map((o) => `<th><span class="sw" style="background:${scv(o)};width:7px;height:7px;margin-right:4px"></span>${o}</th>`).join('') + '</tr></thead><tbody>' +
     MK.map((m) => `<tr><td class="txt">${m.market}<small>${R.esc(m.tkey)}</small></td>` + ORG.map((o) => {
       const v = d[m.tkey][o], ed = S.edits[m.tkey] && o in S.edits[m.tkey];
-      return `<td><input class="duty-in${ed ? ' edited' : ''}" type="number" min="0" max="100" step="0.5" value="${+(v * 100).toFixed(2)}" data-k="${m.tkey}" data-o="${o}" aria-label="Duty in ${m.market} on units from ${o}" title="${ed ? 'Edited; scenario value ' + R.pct(base[m.tkey][o], 1) + '. Clear the cell to restore it.' : 'Scenario value'}"></td>`;
+      return `<td><input class="duty-in${ed ? ' edited' : ''}" type="number" min="0" max="150" step="0.5" value="${+(v * 100).toFixed(2)}" data-k="${m.tkey}" data-o="${o}" aria-label="Duty in ${m.market} on units from ${o}" title="${ed ? 'Edited; scenario value ' + R.pct(base[m.tkey][o], 1) + '. Clear the cell to restore it.' : 'Scenario value'}"></td>`;
     }).join('') + '</tr>').join('') + '</tbody>';
   R.$('#t-duty').querySelectorAll('.duty-in').forEach((el) => el.addEventListener('change', () => {
     const k = el.dataset.k, o = el.dataset.o;
     if (el.value === '') { if (S.edits[k]) { delete S.edits[k][o]; if (!Object.keys(S.edits[k]).length) delete S.edits[k]; } }
-    else (S.edits[k] = S.edits[k] || {})[o] = Math.max(0, +el.value) / 100;
-    schedule();
+    else (S.edits[k] = S.edits[k] || {})[o] = Math.min(1.5, Math.max(0, +el.value / 100));
+    schedule(); buildRanges();
   }));
 }
 
@@ -1007,9 +1459,9 @@ const cChoke = R.chart('c-choke', (t) => {
   return {
     ...o, legend: { show: false }, tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.num(v) + ' units/week' },
     grid: { ...o.grid, top: 6, right: 44 },
-    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.kunits } }),
+    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true, formatter: R.kunits } }),
     yAxis: R.axis(t, { type: 'category', inverse: true, data: keys.map((k) => PNAME[k] || k), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12 } }),
-    series: [{ type: 'bar', barWidth: '55%', data: keys.map((k) => ({ value: exp[k], itemStyle: { color: risky.has(k) ? t.bad : t.c[0] } })),
+    series: [{ type: 'bar', barWidth: 12, data: keys.map((k) => ({ value: exp[k], itemStyle: { color: risky.has(k) ? t.bad : t.c[0], borderRadius: [0, 4, 4, 0] } })),
       label: { show: true, position: 'right', color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => R.kunits(p.value) } }],
   };
 });
@@ -1022,7 +1474,6 @@ function insight() {
   const tab = FPE.landedTable(inp, S.P, S.sites, 'sea', S.rs, nowD);
   const cheapest = MK.map((m, j) => [m.market, ORG.reduce((a, o) => (tab[o][j].total < tab[a][j].total ? o : a), 'CN')]);
   const notCN = cheapest.filter(([, o]) => o !== 'CN');
-  const rob = rows.reduce((a, r) => (r.regret < a.regret ? r : a), rows[0]);
   const usJ = MK.findIndex((m) => m.market === 'US');
   const beOwn = FPE.breakEven(inp, S.P, FPE.withBoards(S.sites, ORG, true), S.rs, nowD);
   const beImp = FPE.breakEven(inp, S.P, FPE.withBoards(S.sites, ORG, false), S.rs, nowD);
@@ -1030,21 +1481,20 @@ function insight() {
   const cand = asia.filter((o) => beOwn[o][usJ] !== null);
   const usBest = cand.length ? cand.reduce((a, o) => (beOwn[o][usJ] < beOwn[a][usJ] ? o : a), cand[0]) : null;
   const impNever = asia.filter((o) => beImp[o][usJ] === null).length;
-  const bn = rows.reduce((a, r) => (r.build_now_value > a.build_now_value ? r : a), rows[0]);
-  const wsum = inp.scenarios.reduce((a, s) => a + s.probability, 0) || 1;
-  const hedges = rows.filter((r) => !r.is_base).map((r) => [r, tip(r)]).filter(([, w]) => w !== null && w > 0);
-  const easiest = hedges.length ? hedges.reduce((a, b) => (b[1] < a[1] ? b : a)) : null;
+  const top = MC ? MC.rows[0] : null;
+  R.$('#n-01').textContent = `Today China is cheapest for ${cheapest.length - notCN.length} of ${cheapest.length} markets`;
   R.$('#insight').innerHTML = `
-    <p><b>Under today's duties China is the cheapest source for ${cheapest.length - notCN.length} of ${cheapest.length} markets${notCN.length ? `; the exception${notCN.length > 1 ? 's are' : ' is'} ${notCN.map(([m, o]) => `${m} (from ${o})`).join(', ')}` : ''}.</b> Laptops pay no duty in the US, EU, UK, Japan, Australia, Singapore or India from any site, so only freight, the longer chain and conversion cost separate the sites. A site in Brazil avoids Brazil's 16%; a UAE free-zone site does not avoid the UAE's 5%.</p>
-    <p><b>A second site only hedges a China tariff if it makes its own main boards.</b> US customs gives a laptop the origin of its main board, so with the board-origin weight at ${R.num(S.P.board_origin_weight, 2)}, ${impNever} of the 3 Asian sites would never beat China in the US while they assemble China-made boards. ${usBest ? `Making the boards on site, ${usBest} beats China in the US once the duty on China-made laptops passes ${R.pct(beOwn[usBest][usJ], 1)}.` : ''}</p>
-    <p><b>Lowest expected cost: ${fpKey(rows[0].open, rows[0].board)}</b> (${R.usd(rows[0].expected)} a year). <b>Lowest worst-case regret: ${fpKey(rob.open, rob.board)}</b>, never more than ${R.usd(rob.regret, 1)} a year above the best choice for any scenario. ${bn.build_now_value > 5e4 ? `Building ${fpKey(bn.open, bn.board)} now rather than waiting is worth ${R.usd(bn.build_now_value, 1)} over ${S.P.horizon_years} years.` : `With a ${R.num(S.P.ramp_months)}-month ramp-up and a ${R.pct(S.prob.cn301 / wsum)} weight on a China tariff, waiting beats building now for every footprint: a hedge site pays its fixed cost and runs its minimum load every year, and pays back only if the tariff comes.${easiest ? ` Building ${fpKey(easiest[0].open, easiest[0].board)} now becomes the better bet once that weight passes ${R.pct(easiest[1])}.` : ''}`}</p>`;
+    <p><b>Under today's duties China is the cheapest source for ${cheapest.length - notCN.length} of ${cheapest.length} markets${notCN.length ? `; the exception${notCN.length > 1 ? 's are' : ' is'} ${notCN.map(([m, o]) => `${m} (from ${SNAME[o]})`).join(', ')}` : ''}.</b> Laptops pay no duty in the US, EU, UK, Japan, Australia, Singapore or India from any site, so only freight, the longer chain and conversion cost separate the sites. A site in Brazil avoids Brazil's 16%; a UAE free-zone site does not avoid the UAE's 5%.</p>
+    <p><b>A second site only hedges a China tariff if it makes its own main boards.</b> With the board-origin weight at ${R.num(S.P.board_origin_weight, 2)}, ${impNever} of the 3 Asian sites never beat China in the US while they assemble China-made boards. ${usBest ? `Making the boards on site, ${SNAME[usBest]} beats China in the US once the duty on China-made laptops passes ${R.pct(beOwn[usBest][usJ], 1)}.` : ''}</p>
+    ${top ? `<p><b>Under the duty ranges, ${fpLabel(top.open, top.board)} has the lowest mean cost</b> (${M$(top.mean)} a year, P90 ${M$(top.p90)}). If the US repeats April 2025 it hits every Asian site at once, scaled to its own peak, so the site with the lowest peak rate is the better hedge, not the cheapest site today.</p>` : ''}`;
 }
 
 function draw() {
   if (!RES) return;
-  kpis(); heat(); beTable(); fpTable(); dutyTable(); insight();
+  hero(); strip(); kpis(); heat(); beTable(); fpTable(); dutyTable(); insight(); tornado(); mcTable();
   R.$('#h-sankey').textContent = `${IN.scenarios[RES.si].label} · ocean · units per week`;
-  [cSankey, cDrill, cSweep, cChoke].forEach(R.update);
+  [cSankey, cDrill, cSweep, cChoke, cFan, cTor].forEach(R.update);
+  setStatus();
 }
 buildInputs();
 compute();

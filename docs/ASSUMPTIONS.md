@@ -3,7 +3,7 @@
 Every rule and number in the model, with where it came from. Status:
 **PRACTITIONER** = generalized from hands-on industry practice; sites and numbers are virtualized (no employer-specific data) · **WEB** = sourced online · **PLACEHOLDER** = invented, needs calibration · **OPEN** = question pending.
 
-Last updated: 2026-10-15 (v0.7: Module 7 footprint — six sites, nine markets, real laptop duties, origin by main board)
+Last updated: 2026-10-15 (v0.7: Module 7 footprint — six sites, nine markets, real laptop duties, origin by main board, duty ranges up to the April 2025 peak)
 
 ## Business rules — MWD (Material Without Demand)
 
@@ -80,6 +80,8 @@ Last updated: 2026-10-15 (v0.7: Module 7 footprint — six sites, nine markets, 
 | India duty on laptops | 0% basic customs duty (ITA); laptops need an import authorisation (IMS) | WEB — [A2Z Taxcorp](https://a2ztaxcorp.net/government-notifies-procedure-for-import-management-system-for-restricted-it-hardware-for-calendar-year-2026/) |
 | Brazil duty on laptops | 16% import duty (NCM 8471.30.12, Mercosur TEC) on CIF from every foreign site; a Brazilian-made laptop pays none, but its imported parts do (modelled 8% average) | WEB — [Buscador NCM](https://buscadorncm.com.br/ncm/84713012); parts rate PLACEHOLDER |
 | UAE duty on laptops | 5% GCC tariff on CIF, also on free-zone units entering the mainland unless they qualify as a GCC national product; some sources say computers are free | WEB-CONFLICTING — [Middle East Briefing](https://middleeastbriefing.com/doing-business-guide/uae/taxation-and-accounting/custom-duties-export-import-tax-uae) |
+| Duty ceilings (April 2025 peak, US) | China 145% (125% reciprocal + 20% fentanyl, 10 Apr–13 May 2025); Vietnam 46%, Indonesia 32%, Malaysia 24% (announced 2 Apr 2025, paused at 10%); Brazil and UAE 10% (Brazil 50% from 6 Aug 2025). Laptops were exempted from the reciprocal part on 11 Apr 2025, so China-made laptops actually paid 20% — 145% is the ceiling without that exemption. Default ranges: US duties from today's rate up to these peaks; other markets fixed unless stretched on the page (slider scale 0–150%) — `data/duty_ranges.csv` | WEB — [CBS News](https://cbsnews.com/news/us-exempts-smartphones-computers-from-global-trump-tariffs), [Dimerco reciprocal tariff table (10 Apr 2025)](https://lp.dimerco.com/hubfs/Content/USA%20Reciprocal%20Tariff%20Table%20(April%2010).pdf) |
+| Chance a market changes its duties | 20% per market and Monte Carlo draw; a change moves every origin to the same point of its range (as in April 2025, when the US hit all Asian sites at once) | PLACEHOLDER |
 | Duty scenarios and weights | Current 50% · US 25% on China-made laptops 20% · Section 232 phase 2 at 25% on every origin 15% · Asia Section 301 without the computer exemption 10% · Brazil removes its 16% 5% — `data/duty_scenarios.csv` | PLACEHOLDER (weights); rates WEB |
 | Site conversion cost vs China | ID 1.08× · VN 1.06× · MY 1.12× · BR 1.60× · AE 1.35× of China's $25 per unit | PRACTITIONER (+5–10% for a new SE Asia site) / PLACEHOLDER |
 | Site capacity and fixed cost per year | CN 14,000/wk · ID and VN 5,000/wk, $1.5M · MY 4,000/wk, $1.8M · BR 2,000/wk, $2.5M · AE 1,500/wk, $2.0M — `data/sites.csv` | PLACEHOLDER |
