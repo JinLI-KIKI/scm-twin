@@ -160,6 +160,11 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
 .topbar .repo:hover { color: var(--ink); }
 @media (max-width: 560px) { .topbar .repo { display: none; } .topbar .brand-name { display: none; } }
 
+.gslide { min-width: 170px; }
+.gslide .s-label { display: flex; justify-content: space-between; gap: 8px; }
+.gslide output { font: 600 13px var(--f-mono); color: var(--ink); }
+.gslide input[type="range"] { width: 100%; accent-color: var(--ink); margin: 4px 0 0; }
+.gslide .ticks { display: flex; justify-content: space-between; font: 10px var(--f-mono); color: var(--muted); }
 .heat td.h { color: var(--ink); }
 </style>
 <header class="topbar">
@@ -176,15 +181,16 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
       <h1>Old Stock at Successor Launch</h1>
       <p class="sub">What happens to an old laptop model's finished units when its successor reaches the market: the price-protection bill, units left with the brand or with dealers, material left over (MWD) and sales lost, under six ways of running the last months.</p>
     </div>
-    <div class="asof">Model run 2026-10-15 · 200 Monte Carlo runs per cell</div>
+    <div class="asof">Model run 2026-10-16 · 200 Monte Carlo runs per cell</div>
   </div>
 
   <section class="slicers" aria-label="Filters">
     <div class="slicer"><span class="s-label" id="l-s">Strategy</span><div class="seg" role="group" aria-labelledby="l-s" id="f-s"></div></div>
-    <div class="slicer"><span class="s-label" id="l-d">Net price drop at launch</span><div class="seg" role="group" aria-labelledby="l-d" id="f-d"></div></div>
-    <div class="slicer"><span class="s-label" id="l-b">Sales forecast optimism</span><div class="seg" role="group" aria-labelledby="l-b" id="f-b"></div></div>
+    <div class="slicer gslide"><span class="s-label"><label for="f-d">Net price drop at launch</label><output id="o-d"></output></span><input type="range" id="f-d" min="0" step="1"><span class="ticks" id="t-d"></span></div>
+    <div class="slicer gslide"><span class="s-label"><label for="f-b">Sales forecast optimism</label><output id="o-b"></output></span><input type="range" id="f-b" min="0" step="1"><span class="ticks" id="t-b"></span></div>
     <div class="slicer"><span class="s-label" id="l-c">US duty and MGI customs status</span><div class="seg" role="group" aria-labelledby="l-c" id="f-c"></div></div>
-    <div class="slicer"><span class="s-label" id="l-l">How sales lock (average across GEOs)</span><div class="seg" role="group" aria-labelledby="l-l" id="f-l"></div></div>
+    <div class="slicer gslide"><span class="s-label"><label for="f-l">How sales lock (average across GEOs)</label><output id="o-l"></output></span><input type="range" id="f-l" min="0" step="1"><span class="ticks" id="t-l"></span></div>
+    <span class="hint" style="align-self:center">Sliders snap to the computed grid · any value in between: <a href="fg-live.html">FG simulator</a></span>
     <div class="slicer"><span class="s-label" id="l-v">Whose cost</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
   </section>
 
@@ -355,12 +361,20 @@ document.getElementById('n-launch').textContent = M.launch_week;
 document.getElementById('n-eol').textContent = M.eol_week;
 
 const segS = R.seg(R.$('#f-s'), ST.map((s) => [s, SHORT[s]]), S.s, (v) => { S.s = v; draw(); });
-R.seg(R.$('#f-d'), D.drops.map((v) => [v, R.pct(v)]), S.d, (v) => { S.d = v; draw(); });
-R.seg(R.$('#f-b'), D.biases.map((v) => [v, '+' + R.pct(v)]), S.b, (v) => { S.b = v; draw(); });
+// Grid sliders: each snaps to the values the page was computed for; any value in between is on the FG simulator page.
+function gridSlider(id, values, labels, get, set) {
+  const el = R.$('#f-' + id);
+  el.max = values.length - 1; el.value = Math.max(0, values.indexOf(get()));
+  R.$('#o-' + id).textContent = labels[el.value];
+  R.$('#t-' + id).innerHTML = labels.map((l) => `<span>${R.esc(l)}</span>`).join('');
+  el.addEventListener('input', () => { set(values[+el.value]); R.$('#o-' + id).textContent = labels[el.value]; draw(); });
+}
+gridSlider('d', D.drops, D.drops.map((v) => R.pct(v)), () => S.d, (v) => { S.d = v; });
+gridSlider('b', D.biases, D.biases.map((v) => '+' + R.pct(v)), () => S.b, (v) => { S.b = v; });
 R.seg(R.$('#f-c'), D.customs.map((v) => [v, CUST[v]]), S.c, (v) => { S.c = v; draw(); });
 R.seg(R.$('#f-v'), [['brand', 'Brand'], ['system', 'Brand + dealers']], S.v, (v) => { S.v = v; draw(); });
 const LSTYLE = { low: 'Lock low (−10%)', even: 'About right', high: 'Lock high (+10%)' };
-R.seg(R.$('#f-l'), Object.keys(D.lockstyles).map((k) => [k, LSTYLE[k]]), S.l, (v) => { S.l = v; draw(); });
+gridSlider('l', Object.keys(D.lockstyles), Object.keys(D.lockstyles).map((k) => ({ low: 'Low −10%', even: 'About right', high: 'High +10%' })[k] || k), () => S.l, (v) => { S.l = v; });
 
 const COMP = [
   ['markdown_above_floor_usd', 'Markdown above floor', 1],

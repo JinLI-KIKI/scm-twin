@@ -1,6 +1,10 @@
 <title>Transfer Cutover Timing</title>
 <!--__HEAD__-->
-<style>/*__CSS__*/</style>
+<style>/*__CSS__*/
+.tslide { min-width: min(320px, 80vw); }
+.tslide .s-label { display: flex; justify-content: space-between; gap: 8px; }
+.tslide output { font: 600 13px var(--f-mono); color: var(--ink); }
+.tslide input[type="range"] { width: 100%; accent-color: var(--ink); margin: 4px 0 0; }</style>
 <!--__NAV__-->
 <main class="report">
   <div class="report-head">
@@ -13,7 +17,7 @@
   </div>
 
   <section class="slicers" aria-label="Filters">
-    <div class="slicer"><span class="s-label" id="l-t">China-origin US tariff</span><div class="seg" role="group" aria-labelledby="l-t" id="f-t"></div></div>
+    <div class="slicer tslide"><span class="s-label"><label for="f-t">China-origin US tariff</label><output id="o-t"></output></span><input type="range" id="f-t" min="0" max="50" step="1"></div>
     <div class="slicer"><span class="s-label" id="l-r">Move pre-SMT parts to the new site (R14)</span><div class="seg" role="group" aria-labelledby="l-r" id="f-r"></div></div>
   </section>
 
@@ -55,7 +59,8 @@ const saved = R.load();
 const S = { t: D.tariffs.includes(saved.t) ? saved.t : 0.25, r: saved.r === 0 ? 0 : 1, sel: null };
 const rows = (t = S.t, r = S.r) => D.sweeps[t.toFixed(2) + '|' + r];
 const bestOf = (rs) => rs.reduce((a, b) => (b.total < a.total ? b : a), rs[0]);
-R.seg(R.$('#f-t'), D.tariffs.map((v) => [v, R.pct(v)]), S.t, (v) => { S.t = v; S.sel = null; draw(); });
+R.$('#f-t').value = Math.round(S.t * 100); R.$('#o-t').textContent = R.pct(S.t);
+R.$('#f-t').addEventListener('input', (e) => { S.t = D.tariffs[+e.target.value]; R.$('#o-t').textContent = R.pct(S.t); S.sel = null; draw(); });
 R.seg(R.$('#f-r'), [[1, 'On'], [0, 'Off']], S.r, (v) => { S.r = +v; S.sel = null; draw(); });
 const PARTS = [
   ['tariff', 'Tariff paid (weeks before C)', (t) => t.d16],
@@ -103,11 +108,11 @@ const cBest = R.chart('c-best', (t) => {
     ...o,
     tooltip: { ...o.tooltip, valueFormatter: (v) => 'week ' + v },
     grid: { ...o.grid, top: 40, bottom: 18 },
-    xAxis: R.axis(t, { type: 'category', data: xs, boundaryGap: false, splitLine: { show: false }, name: 'China tariff', nameLocation: 'middle', nameGap: 26 }),
+    xAxis: R.axis(t, { type: 'category', data: xs, boundaryGap: false, splitLine: { show: false }, name: 'China tariff', nameLocation: 'middle', nameGap: 26, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, interval: 4 } }),
     yAxis: R.axis(t, { type: 'value', min: 0, max: D.window, interval: 4, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => 'C' + v } }),
     series: [
-      { type: 'line', step: 'middle', name: 'Moving parts on', data: best(1), lineStyle: { width: 2.5, color: t.c[0] }, itemStyle: { color: t.c[0] }, symbolSize: 6 },
-      { type: 'line', step: 'middle', name: 'Moving parts off', data: best(0), lineStyle: { width: 2, type: [6, 4], color: t.c[1] }, itemStyle: { color: t.c[1] }, symbolSize: 6,
+      { type: 'line', step: 'middle', name: 'Moving parts on', data: best(1), lineStyle: { width: 2, color: t.c[0] }, itemStyle: { color: t.c[0] }, showSymbol: false },
+      { type: 'line', step: 'middle', name: 'Moving parts off', data: best(0), lineStyle: { width: 2, type: [6, 4], color: t.c[1] }, itemStyle: { color: t.c[1] }, showSymbol: false,
         markLine: { symbol: 'none', silent: true, lineStyle: { color: t.muted, type: [4, 4] }, label: { color: t.ink2, fontSize: 11, formatter: R.pct(S.t) }, data: [{ xAxis: R.pct(S.t) }] } },
     ],
   };
@@ -120,10 +125,10 @@ const cChain = R.chart('c-chain', (t) => {
     ...o,
     tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.usd(v) },
     grid: { ...o.grid, top: 40, bottom: 18 },
-    xAxis: R.axis(t, { type: 'category', data: xs, splitLine: { show: false }, name: 'China tariff', nameLocation: 'middle', nameGap: 26 }),
+    xAxis: R.axis(t, { type: 'category', data: xs, splitLine: { show: false }, name: 'China tariff', nameLocation: 'middle', nameGap: 26, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, interval: 4 } }),
     yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
     series: [
-      { type: 'bar', name: 'Tariff saved per year', data: ch.map((c, i) => ({ value: c.tariff_saved_per_year, itemStyle: { color: t.c[2], opacity: D.tariffs[i] === S.t ? 1 : .55 } })), itemStyle: { color: t.c[2] } },
+      { type: 'bar', name: 'Tariff saved per year', barMaxWidth: 10, data: ch.map((c, i) => ({ value: c.tariff_saved_per_year, itemStyle: { color: t.c[2], opacity: D.tariffs[i] === S.t ? 1 : .45, borderRadius: [3, 3, 0, 0] } })), itemStyle: { color: t.c[2] } },
       { type: 'line', name: `Carrying +${D.lt_adder} weeks of material`, data: ch.map((c) => c.pipeline_carry_per_year), showSymbol: false, lineStyle: { width: 2, color: t.c[1] }, itemStyle: { color: t.c[1] } },
     ],
   };

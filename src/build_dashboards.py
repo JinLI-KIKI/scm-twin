@@ -95,7 +95,7 @@ def data_mwd():
 
 
 # ----------------------------------------------------------------------------- Module 2
-TR_TARIFFS = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.35, 0.50]
+TR_TARIFFS = [i / 100 for i in range(0, 51)]   # every 1% from 0 to 50%, so the page can slide
 
 
 def data_transfer():

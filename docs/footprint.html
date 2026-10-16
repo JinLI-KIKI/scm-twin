@@ -183,8 +183,10 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
 .prm input[type="range"] { width: 100%; accent-color: var(--sea); margin: 2px 0 0; }
 .prm-meta { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
 .prm-meta .rst { font: 11px var(--f-body); color: var(--c2); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
-.prm-r { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
-.prm-r input { width: 72px; font: 12px var(--f-mono); color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 5px; }
+.prm-r { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0 8px; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.prm-r .dual { grid-column: 1 / -1; }
+.prm-r .rv { font: 12px var(--f-mono); color: var(--c2); text-align: right; }
+.prm-r input[type="number"] { width: 72px; font: 12px var(--f-mono); color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 5px; }
 .prm-r.off { opacity: .45; }
 .results { display: grid; gap: 12px; min-width: 0; }
 .ctrl { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end; padding: 10px 14px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
@@ -209,6 +211,39 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
   .inputs.folded .grp { display: none; }
   .mobile-toggle { display: inline-block; }
 }
+
+/* ---------- sliders shared by the studio pages
+   .one  = one value: filled track up to the value, a tick for the reference value (--p) and an optional red tick (.peak)
+   .dual = a range: two thumbs over one track, band between them (--lo, --hi as 0–1 shares of the scale) */
+.dual { position: relative; height: 26px; --lo: 0%; --hi: 0%; }
+.dual .trk, .dual .band { position: absolute; top: 11px; height: 4px; border-radius: 2px; }
+.dual .trk { left: 7px; right: 7px; background: var(--rule); }
+.dual .band { left: calc(7px + (100% - 14px) * var(--lo)); width: calc((100% - 14px) * (var(--hi) - var(--lo))); background: var(--rc); min-width: 2px; }
+.dual .tk, .one .tk { position: absolute; top: 6px; width: 2px; height: 14px; margin-left: -1px; border-radius: 1px; left: calc(7px + (100% - 14px) * var(--p)); }
+.dual .tk.today, .one .tk.today { background: var(--ink); }
+.dual .tk.peak, .one .tk.peak { background: var(--bad); height: 6px; top: 20px; }
+.dual input[type="range"] { position: absolute; left: 0; right: 0; top: 4px; width: 100%; height: 18px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+.dual input[type="range"]::-webkit-slider-runnable-track { background: transparent; border: 0; height: 18px; }
+.dual input[type="range"]::-moz-range-track { background: transparent; border: 0; }
+.dual input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 14px; height: 14px; margin-top: 2px; border-radius: 50%; background: var(--panel); border: 2px solid var(--ink); cursor: ew-resize; box-shadow: 0 0 0 2px var(--panel); }
+.dual input[type="range"]::-moz-range-thumb { pointer-events: auto; width: 10px; height: 10px; border-radius: 50%; background: var(--panel); border: 2px solid var(--ink); cursor: ew-resize; }
+.dual input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--sea); outline-offset: 2px; }
+.one { position: relative; height: 22px; --v: 0; --p: 0; }
+.one .trk, .one .fill { position: absolute; top: 9px; height: 4px; border-radius: 2px; }
+.one .trk { left: 6px; right: 6px; background: var(--rule); }
+.one .fill { left: 6px; width: calc((100% - 12px) * var(--v)); background: var(--rc, var(--c1)); }
+.one .tk { top: 4px; left: calc(6px + (100% - 12px) * var(--p)); opacity: .75; }
+.one .tk.peak { top: 15px; height: 6px; opacity: 1; }
+.one input[type="range"] { position: absolute; left: 0; right: 0; top: 2px; width: 100%; height: 18px; margin: 0; background: none; -webkit-appearance: none; appearance: none; cursor: pointer; }
+.one input[type="range"]::-webkit-slider-runnable-track { background: transparent; border: 0; height: 18px; }
+.one input[type="range"]::-moz-range-track { background: transparent; border: 0; }
+.one input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; margin-top: 3px; border-radius: 50%; background: var(--rc, var(--c1)); border: 2px solid var(--panel); box-shadow: 0 0 0 1px var(--ink-2); cursor: ew-resize; }
+.one input[type="range"]::-moz-range-thumb { width: 9px; height: 9px; border-radius: 50%; background: var(--rc, var(--c1)); border: 2px solid var(--panel); box-shadow: 0 0 0 1px var(--ink-2); cursor: ew-resize; }
+.one input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--sea); outline-offset: 2px; }
+.slider-ctl { display: grid; gap: 2px; min-width: 150px; }
+.slider-ctl .s-label { display: flex; justify-content: space-between; gap: 8px; }
+.slider-ctl output { font: 600 12px var(--f-mono); color: var(--ink); }
+.slider-ctl input[type="range"] { width: 100%; accent-color: var(--ink); margin: 3px 0 0; }
 
 /* ---------- section dividers */
 .sec { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; margin: 8px 0 -4px; min-width: 0; }
@@ -291,23 +326,17 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
 .rrow-h b { font: 600 12px var(--f-mono); color: var(--ink); }
 .rrow-h output { margin-left: auto; font: 12px var(--f-mono); color: var(--ink); }
 .rrow.wide .rrow-h output { color: var(--c2); font-weight: 600; }
-.dual { position: relative; height: 26px; --lo: 0%; --hi: 0%; }
-.dual .trk, .dual .band { position: absolute; top: 11px; height: 4px; border-radius: 2px; }
-.dual .trk { left: 7px; right: 7px; background: var(--rule); }
-.dual .band { left: calc(7px + (100% - 14px) * var(--lo)); width: calc((100% - 14px) * (var(--hi) - var(--lo))); background: var(--rc); min-width: 2px; }
-.dual .tk { position: absolute; top: 6px; width: 2px; height: 14px; margin-left: -1px; border-radius: 1px; left: calc(7px + (100% - 14px) * var(--p)); }
-.dual .tk.today { background: var(--ink); }
-.dual .tk.peak { background: var(--bad); height: 6px; top: 20px; }
-.dual input[type="range"] { position: absolute; left: 0; right: 0; top: 4px; width: 100%; height: 18px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
-.dual input[type="range"]::-webkit-slider-runnable-track { background: transparent; border: 0; height: 18px; }
-.dual input[type="range"]::-moz-range-track { background: transparent; border: 0; }
-.dual input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 14px; height: 14px; margin-top: 2px; border-radius: 50%; background: var(--panel); border: 2px solid var(--ink); cursor: ew-resize; box-shadow: 0 0 0 2px var(--panel); }
-.dual input[type="range"]::-moz-range-thumb { pointer-events: auto; width: 10px; height: 10px; border-radius: 50%; background: var(--panel); border: 2px solid var(--ink); cursor: ew-resize; }
-.dual input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--sea); outline-offset: 2px; }
 .dual-scale { display: flex; justify-content: space-between; font: 10px var(--f-mono); color: var(--muted); padding: 0 2px; }
 .rng-key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: var(--muted); margin: 4px 0; }
 .rng-key i { display: inline-block; width: 2px; height: 10px; vertical-align: -1px; margin-right: 4px; }
 
+/* ---------- duty sliders */
+.sub-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font: 600 12px var(--f-body); color: var(--ink); margin-top: 6px; }
+.sub-h .cnt { font: 500 11px var(--f-mono); color: var(--c2); }
+.cellsl { display: grid; gap: 0; min-width: 70px; cursor: default; }
+.cellsl output { font: 12px var(--f-mono); color: var(--ink); text-align: right; line-height: 1.3; }
+.cellsl.edited output { color: var(--c2); font-weight: 600; }
+.tbl td.dc { padding-top: 5px; padding-bottom: 3px; }
 /* ---------- tables and small things */
 .heat td.cell { cursor: pointer; }
 .heat tbody tr { cursor: pointer; }
@@ -317,7 +346,8 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
 .tbl th small, .tbl td.txt small { display: block; color: var(--muted); font: 400 10px/1.3 var(--f-body); text-transform: none; letter-spacing: 0; }
 .duty-in { width: 58px; font: 12px var(--f-mono); color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 4px; text-align: right; }
 .duty-in.edited { border-color: var(--c2); color: var(--c2); font-weight: 600; }
-.fp-open { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; white-space: nowrap; }
+.fp-open { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 210px; }
+.fp-open .chip, .fp-open .sitechip { white-space: nowrap; }
 .sitechip { display: inline-flex; align-items: center; gap: 5px; font: 500 11px/1.6 var(--f-mono); padding: 0 7px 0 6px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); color: var(--ink); }
 .sitechip i { width: 7px; height: 7px; border-radius: 50%; }
 .tbl tr.cur td { background: var(--hl); }
@@ -348,7 +378,7 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
       <h1>Factory Footprint Studio</h1>
       <p class="sub">Six candidate assembly sites, nine regional distribution centres and the laptop duties in force in October 2026, with four tariff scenarios and duty ranges you stretch by hand up to the April 2025 peak. A laptop takes the origin of its main board, so a site that only assembles China-made boards does not escape a China tariff. Everything below recomputes as you move an input.</p>
     </div>
-    <div class="asof">Built 2026-10-15 · duties checked Oct 2026 · <a href="rules.html">sources</a> · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/footprint.md">formulas</a></div>
+    <div class="asof">Built 2026-10-16 · duties checked Oct 2026 · <a href="rules.html">sources</a> · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/footprint.md">formulas</a></div>
   </div>
 
   <div class="sim">
@@ -357,8 +387,18 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
         <h2>Inputs</h2>
         <span><button type="button" class="btn mobile-toggle" id="fold">Show inputs</button> <button type="button" class="btn" id="reset">Reset all</button></span>
       </div>
-      <details class="grp" open><summary>Duty ranges · drag to stretch<span class="cnt" id="cnt-rng"></span></summary>
+      <details class="grp" open><summary>Duties · slide to set<span class="cnt" id="cnt-rng"></span></summary>
         <div class="rng-mk" id="rng-mk" role="group" aria-label="Market whose duties you edit"></div>
+        <div class="sub-h"><span id="rate-h">Rate</span><span class="cnt" id="cnt-rate"></span></div>
+        <label class="tog" style="margin:2px 0 4px"><input type="checkbox" id="rate-link">Move every origin together</label>
+        <div id="rate-rows"></div>
+        <div class="dual-scale"><span>0%</span><span>50%</span><span>100%</span><span>150%</span></div>
+        <div class="chips" style="margin:8px 0 4px" id="rate-actions">
+          <button type="button" data-a="reset">Back to the scenario rates</button>
+          <button type="button" data-a="peak">Up to the US Apr 2025 peak</button>
+          <button type="button" data-a="zero">All 0%</button>
+        </div>
+        <div class="sub-h" style="margin-top:8px"><span>Range for the duty draws</span><span class="hint">drag both ends</span></div>
         <div class="rng-key"><span><i style="background:var(--ink)"></i>today</span><span><i style="background:var(--bad);height:6px"></i>US peak, Apr 2025</span><span>scale 0–150%</span></div>
         <div id="rng-rows"></div>
         <div class="dual-scale"><span>0%</span><span>50%</span><span>100%</span><span>150%</span></div>
@@ -379,7 +419,7 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
         <div class="slicer"><span class="s-label" id="l-r">Red Sea</span><div class="seg" role="group" aria-labelledby="l-r" id="f-r"></div></div>
         <div class="slicer"><span class="s-label" id="l-m">Grid mode</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
         <div class="slicer"><span class="s-label" id="l-v">Grid shows</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
-        <div class="slicer"><span class="s-label" id="l-n">Duty draws</span><div class="seg" role="group" aria-labelledby="l-n" id="f-n"></div></div>
+        <div class="slicer slider-ctl"><span class="s-label"><label for="runs">Duty draws</label><output id="o-runs"></output></span><input type="range" id="runs" min="50" max="1000" step="50"></div>
         <span class="status" id="status" aria-live="polite"></span>
       </section>
 
@@ -439,12 +479,12 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
           <div class="tbl-wrap"><table class="tbl" id="t-fp"></table></div>
         </div>
 
-        <div class="sec"><span class="n">05</span><h3>Duties and chokepoints</h3><span class="rule"></span><span class="note">Edits here apply to every scenario and to the centre of every range</span></div>
-        <div class="viz w7">
-          <div class="viz-h"><h2>Duties in this scenario</h2><span class="hint">Percent, by where the unit is assembled · type to change</span></div>
+        <div class="sec"><span class="n">05</span><h3>Duties and chokepoints</h3><span class="rule"></span><span class="note">Slide a cell to change that duty in the selected scenario; changes to Current also move the centre of every range</span></div>
+        <div class="viz w8">
+          <div class="viz-h"><h2 id="h-duty">Duties in this scenario</h2><span class="hint">Percent, by where the unit is assembled · black tick: scenario value · double-click a cell to restore it</span></div>
           <div class="tbl-wrap"><table class="tbl" id="t-duty"></table></div>
         </div>
-        <div class="viz w5">
+        <div class="viz w4">
           <div class="viz-h"><h2>Straits and capes</h2><span class="hint">Units per week on the chosen network</span></div>
           <div id="c-choke" class="chart"></div>
         </div>
@@ -870,10 +910,10 @@ const S = {
   rs: saved.rs === 'suez' ? 'suez' : 'cape',
   mode: saved.mode === 'air' ? 'air' : 'sea',
   view: ['total', 'duty', 'freight', 'days'].includes(saved.view) ? saved.view : 'total',
-  runs: [100, 200, 500].includes(saved.runs) ? saved.runs : 200,
+  runs: Number.isFinite(saved.runs) && saved.runs >= 50 && saved.runs <= 1000 ? saved.runs : 200,
   P: { ...P0 }, sites: JSON.parse(JSON.stringify(SITES0)), dem: { ...DEM0 }, prob: { ...PROB0 },
   ranges: saved.ranges && typeof saved.ranges === 'object' ? saved.ranges : JSON.parse(JSON.stringify(RANGES0)),
-  edits: saved.edits && typeof saved.edits === 'object' ? saved.edits : {},
+  edits: saved.edits && typeof saved.edits === 'object' && Object.keys(saved.edits).every((k) => k in PROB0) ? saved.edits : {},   // {scenario: {market: {origin: rate}}}
   selm: MK.some((m) => m.market === saved.selm) ? saved.selm : 'US',
   rm: TKEYS.includes(saved.rm) ? saved.rm : 'USA',
 };
@@ -893,10 +933,21 @@ const M$ = (v, d = 2) => '$' + R.num(v / 1e6, d) + 'M';
 
 // ---------------------------------------------------------------- model input with the viewer's changes
 function currentInput() {
-  const extra = Object.entries(S.edits).flatMap(([k, os]) => Object.entries(os).map(([o, d]) => ({ tkey: k, origin: o, duty: d })));
+  const extra = (sid) => Object.entries(S.edits[sid] || {}).flatMap(([k, os]) => Object.entries(os).map(([o, d]) => ({ tkey: k, origin: o, duty: d })));
   return { ...IN, markets: MK.map((m) => ({ ...m, weekly_units: S.dem[m.market] })),
-    scenarios: IN.scenarios.map((s) => ({ ...s, probability: S.prob[s.id], overrides: s.overrides.concat(extra) })) };
+    scenarios: IN.scenarios.map((s) => ({ ...s, probability: S.prob[s.id], overrides: s.overrides.concat(extra(s.id)) })) };
 }
+// Duties as each scenario sets them (no slider changes) and as they stand now (with them)
+const OFFICIAL = Object.fromEntries(IN.scenarios.map((s) => [s.id, FPE.dutyMatrix(IN, s)]));
+const dutyNow = (tk, o, sid = S.sc) => { const e = S.edits[sid] && S.edits[sid][tk]; return e && o in e ? e[o] : OFFICIAL[sid][tk][o]; };
+function setDuty(tk, o, v, sid = S.sc) {
+  v = Math.min(1.5, Math.max(0, Math.round(v * 2000) / 2000));
+  const all = (S.edits[sid] = S.edits[sid] || {}), e = (all[tk] = all[tk] || {});
+  if (Math.abs(v - OFFICIAL[sid][tk][o]) < 1e-9) delete e[o]; else e[o] = v;
+  if (!Object.keys(e).length) delete all[tk];
+  if (!Object.keys(all).length) delete S.edits[sid];
+}
+const nEdits = (sid) => Object.values(S.edits[sid] || {}).reduce((a, e) => a + Object.keys(e).length, 0);
 const todayDuties = () => FPE.dutyMatrix(currentInput(), currentInput().scenarios[0]);
 
 // ---------------------------------------------------------------- inputs panel
@@ -933,7 +984,7 @@ const siteFmt = (k, v) => k === 'capacity' ? R.num(v) : k === 'min_load' || k ==
 
 function buildRanges() {
   R.$('#rng-mk').innerHTML = TKEYS.map((t) => `<button type="button" data-t="${t}" aria-pressed="${t === S.rm}" title="${R.esc(t)}">${MKN[t] || t}</button>`).join('');
-  R.$('#rng-mk').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { S.rm = b.dataset.t; persist(); buildRanges(); }));
+  R.$('#rng-mk').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { S.rm = b.dataset.t; persist(); buildRanges(); buildRates(); }));
   const base = todayDuties()[S.rm];
   R.$('#rng-rows').innerHTML = ORG.map((o) => `<div class="rrow" data-o="${o}">
       <div class="rrow-h"><span class="sw" style="background:${scv(o)}"></span><b>${o}</b><span>${SNAME[o]}-made</span><output id="rv-${o}"></output></div>
@@ -1009,6 +1060,7 @@ function buildInputs() {
   MK.forEach((m) => R.$('#d-' + m.market).addEventListener('input', (e) => { S.dem[m.market] = +e.target.value; paint(); schedule(); }));
   IN.scenarios.forEach((s) => R.$('#pr-' + s.id).addEventListener('input', (e) => { S.prob[s.id] = +e.target.value; paint(); schedule(); }));
   buildRanges();
+  buildRates();
   paint();
 }
 function paint() {
@@ -1037,17 +1089,18 @@ function paint() {
 }
 R.$('#reset').addEventListener('click', () => {
   S.P = { ...P0 }; S.sites = JSON.parse(JSON.stringify(SITES0)); S.dem = { ...DEM0 }; S.prob = { ...PROB0 }; S.edits = {}; S.ranges = JSON.parse(JSON.stringify(RANGES0));
-  buildInputs(); schedule();
+  buildInputs(); buildDutyTable(); schedule();
 });
 R.$('#fold').addEventListener('click', () => { const f = R.$('#inputs').classList.toggle('folded'); R.$('#fold').textContent = f ? 'Show inputs' : 'Hide inputs'; });
 if (matchMedia('(max-width: 980px)').matches) R.$('#inputs').classList.add('folded');
 
 // ---------------------------------------------------------------- controls
-R.seg(R.$('#f-s'), IN.scenarios.map((s) => [s.id, SHORT[s.id] || s.id]), S.sc, (v) => { S.sc = v; schedule(); });
+R.seg(R.$('#f-s'), IN.scenarios.map((s) => [s.id, SHORT[s.id] || s.id]), S.sc, (v) => { S.sc = v; buildRates(); buildDutyTable(); schedule(); });
 R.seg(R.$('#f-r'), [['cape', 'Avoid (Cape)'], ['suez', 'Through Suez']], S.rs, (v) => { S.rs = v; schedule(); });
 R.seg(R.$('#f-m'), [['sea', 'Ocean'], ['air', 'Air']], S.mode, (v) => { S.mode = v; persist(); draw(); });
 R.seg(R.$('#f-v'), [['total', 'Landed $'], ['duty', 'Duty $'], ['freight', 'Freight $'], ['days', 'Days']], S.view, (v) => { S.view = v; persist(); draw(); });
-R.seg(R.$('#f-n'), [[100, '100'], [200, '200'], [500, '500']], S.runs, (v) => { S.runs = +v; persist(); scheduleMC(); });
+R.$('#runs').value = S.runs; R.$('#o-runs').textContent = S.runs;
+R.$('#runs').addEventListener('input', (e) => { S.runs = +e.target.value; R.$('#o-runs').textContent = S.runs; persist(); scheduleMC(); });
 let TORWHO = saved.torwho === 'open' ? 'open' : 'best';
 R.seg(R.$('#f-tor'), [['best', 'Best bet'], ['open', 'Open now']], TORWHO, (v) => { TORWHO = v; tornado(); R.update(cTor); });
 
@@ -1096,7 +1149,7 @@ function setStatus() {
 function runMC() {
   if (!RES) return;
   const msg = { inp: RES.inp, P: S.P, sites: S.sites, rs: S.rs, ranges: S.ranges, runs: S.runs };
-  const sig = JSON.stringify([msg.P, msg.sites, msg.rs, msg.ranges, msg.runs, msg.inp.markets.map((m) => m.weekly_units), S.edits]);
+  const sig = JSON.stringify([msg.P, msg.sites, msg.rs, msg.ranges, msg.runs, msg.inp.markets.map((m) => m.weekly_units), S.edits.now || {}]);
   if (sig === mcSig && MC) return;
   mcSig = sig;
   if (worker) worker.terminate();
@@ -1431,21 +1484,83 @@ function fpTable() {
   R.$('#t-fp').querySelectorAll('.usebtn').forEach((b) => b.addEventListener('click', () => useFp(rows[+b.dataset.i])));
 }
 
-// ---------------------------------------------------------------- duty matrix
-function dutyTable() {
-  const base = FPE.dutyMatrix(IN, IN.scenarios[RES.si]), d = RES.duties;
+// ---------------------------------------------------------------- duty matrix: one slider per market and origin
+function buildDutyTable() {
   R.$('#t-duty').innerHTML = '<thead><tr><th class="txt">Market</th>' + ORG.map((o) => `<th><span class="sw" style="background:${scv(o)};width:7px;height:7px;margin-right:4px"></span>${o}</th>`).join('') + '</tr></thead><tbody>' +
-    MK.map((m) => `<tr><td class="txt">${m.market}<small>${R.esc(m.tkey)}</small></td>` + ORG.map((o) => {
-      const v = d[m.tkey][o], ed = S.edits[m.tkey] && o in S.edits[m.tkey];
-      return `<td><input class="duty-in${ed ? ' edited' : ''}" type="number" min="0" max="150" step="0.5" value="${+(v * 100).toFixed(2)}" data-k="${m.tkey}" data-o="${o}" aria-label="Duty in ${m.market} on units from ${o}" title="${ed ? 'Edited; scenario value ' + R.pct(base[m.tkey][o], 1) + '. Clear the cell to restore it.' : 'Scenario value'}"></td>`;
-    }).join('') + '</tr>').join('') + '</tbody>';
-  R.$('#t-duty').querySelectorAll('.duty-in').forEach((el) => el.addEventListener('change', () => {
-    const k = el.dataset.k, o = el.dataset.o;
-    if (el.value === '') { if (S.edits[k]) { delete S.edits[k][o]; if (!Object.keys(S.edits[k]).length) delete S.edits[k]; } }
-    else (S.edits[k] = S.edits[k] || {})[o] = Math.min(1.5, Math.max(0, +el.value / 100));
-    schedule(); buildRanges();
+    MK.map((m) => `<tr><td class="txt">${m.market}<small>${R.esc(m.tkey)}</small></td>` + ORG.map((o) =>
+      `<td class="dc"><div class="cellsl" id="cs-${m.tkey}-${o}"><output></output><div class="one" style="--rc:${scv(o)}"><div class="trk"></div><div class="fill"></div><div class="tk today"></div>${m.tkey === 'USA' && PEAK['USA|' + o] !== undefined ? `<div class="tk peak" style="--p:${Math.min(1, PEAK['USA|' + o] / 1.5)}"></div>` : ''}
+        <input type="range" min="0" max="150" step="0.5" data-k="${m.tkey}" data-o="${o}" aria-label="Duty in ${m.market} on laptops made in ${SNAME[o]}"></div></div></td>`).join('') + '</tr>').join('') + '</tbody>';
+  R.$('#t-duty').querySelectorAll('input[type="range"]').forEach((el) => {
+    el.addEventListener('input', () => { setDuty(el.dataset.k, el.dataset.o, +el.value / 100); afterDutyChange(el); });
+    el.addEventListener('dblclick', () => { setDuty(el.dataset.k, el.dataset.o, OFFICIAL[S.sc][el.dataset.k][el.dataset.o]); afterDutyChange(null); });
+  });
+  paintDutyTable();
+}
+function paintDutyTable(skip) {
+  R.$('#h-duty').textContent = `Duties · ${SHORT[S.sc]}${nEdits(S.sc) ? ` · ${nEdits(S.sc)} changed` : ''}`;
+  MK.forEach((m) => ORG.forEach((o) => {
+    const box = R.$(`#cs-${m.tkey}-${o}`); if (!box) return;
+    const v = dutyNow(m.tkey, o), off = OFFICIAL[S.sc][m.tkey][o], inp = box.querySelector('input');
+    if (inp !== skip) inp.value = v * 100;
+    box.classList.toggle('edited', Math.abs(v - off) > 1e-9);
+    box.querySelector('output').textContent = R.pct(v, Math.abs(v * 100 - Math.round(v * 100)) > 1e-6 ? 1 : 0);
+    box.querySelector('.one').style.setProperty('--v', Math.min(1, v / 1.5));
+    box.querySelector('.one').style.setProperty('--p', Math.min(1, off / 1.5));
+    box.title = `${m.market} duty on ${SNAME[o]}-made laptops: ${R.pct(v, 1)} (scenario value ${R.pct(off, 1)})`;
   }));
 }
+function afterDutyChange(src) {
+  paintDutyTable(src); paintRates(src);
+  if (S.sc === 'now') buildRanges();
+  persist(); schedule();
+}
+
+// ---------------------------------------------------------------- duty rates in the inputs panel (selected market)
+let LINK = false;
+function buildRates() {
+  const tk = S.rm;
+  R.$('#rate-rows').innerHTML = ORG.map((o) => `<div class="rrow" data-ro="${o}">
+      <div class="rrow-h"><span class="sw" style="background:${scv(o)}"></span><b>${o}</b><span>${SNAME[o]}-made</span><output id="ro-${o}"></output></div>
+      <div class="one" id="rs-${o}" style="--rc:${scv(o)}"><div class="trk"></div><div class="fill"></div><div class="tk today"></div>${tk === 'USA' && PEAK['USA|' + o] !== undefined ? `<div class="tk peak" style="--p:${Math.min(1, PEAK['USA|' + o] / 1.5)}"></div>` : ''}
+        <input type="range" min="0" max="150" step="0.5" aria-label="${MKN[tk]} duty on ${SNAME[o]}-made laptops"></div></div>`).join('');
+  ORG.forEach((o) => {
+    const el = R.$(`#rs-${o} input`);
+    el.addEventListener('input', () => {
+      const v = +el.value / 100, d = v - dutyNow(tk, o);
+      setDuty(tk, o, v);
+      if (LINK) ORG.forEach((q) => { if (q !== o) setDuty(tk, q, dutyNow(tk, q) + d); });
+      afterDutyChange(el);
+    });
+    el.addEventListener('dblclick', () => { setDuty(tk, o, OFFICIAL[S.sc][tk][o]); afterDutyChange(null); });
+  });
+  paintRates();
+}
+function paintRates(skip) {
+  const tk = S.rm;
+  R.$('#rate-h').textContent = `Rate in ${MKN[tk]} · ${SHORT[S.sc]}`;
+  ORG.forEach((o) => {
+    const box = R.$('#rs-' + o); if (!box) return;
+    const v = dutyNow(tk, o), off = OFFICIAL[S.sc][tk][o], el = box.querySelector('input');
+    if (el !== skip) el.value = v * 100;
+    box.style.setProperty('--v', Math.min(1, v / 1.5)); box.style.setProperty('--p', Math.min(1, off / 1.5));
+    const f = (x) => R.pct(x, Math.abs(x * 100 - Math.round(x * 100)) > 1e-6 ? 1 : 0);
+    R.$('#ro-' + o).textContent = Math.abs(v - off) > 1e-9 ? `${f(v)} (was ${f(off)})` : f(v);
+    R.$(`.rrow[data-ro="${o}"]`).classList.toggle('wide', Math.abs(v - off) > 1e-9);
+  });
+  const n = IN.scenarios.reduce((a, sc) => a + nEdits(sc.id), 0);
+  R.$('#cnt-rate').textContent = n ? `${n} changed` : '';
+}
+R.$('#rate-link').addEventListener('change', (e) => { LINK = e.target.checked; });
+R.$('#rate-actions').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+  const tk = S.rm;
+  ORG.forEach((o) => {
+    const pk = PEAK['USA|' + o];
+    if (b.dataset.a === 'reset') setDuty(tk, o, OFFICIAL[S.sc][tk][o]);
+    else if (b.dataset.a === 'peak' && pk !== undefined) setDuty(tk, o, Math.max(OFFICIAL[S.sc][tk][o], pk));
+    else if (b.dataset.a === 'zero') setDuty(tk, o, 0);
+  });
+  afterDutyChange(null);
+}));
 
 // ---------------------------------------------------------------- chokepoints
 const PNAME = { malacca: 'Malacca Strait', sunda: 'Sunda Strait', ormuz: 'Strait of Hormuz', suez: 'Suez Canal', babalmandab: 'Bab-el-Mandeb', gibraltar: 'Gibraltar', south_africa: 'Cape of Good Hope', panama: 'Panama Canal', chili: 'Chile / Cape Horn' };
@@ -1459,7 +1574,7 @@ const cChoke = R.chart('c-choke', (t) => {
   return {
     ...o, legend: { show: false }, tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.num(v) + ' units/week' },
     grid: { ...o.grid, top: 6, right: 44 },
-    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true, formatter: R.kunits } }),
+    xAxis: R.axis(t, { type: 'value', splitNumber: 3, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true, formatter: R.kunits } }),
     yAxis: R.axis(t, { type: 'category', inverse: true, data: keys.map((k) => PNAME[k] || k), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12 } }),
     series: [{ type: 'bar', barWidth: 12, data: keys.map((k) => ({ value: exp[k], itemStyle: { color: risky.has(k) ? t.bad : t.c[0], borderRadius: [0, 4, 4, 0] } })),
       label: { show: true, position: 'right', color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => R.kunits(p.value) } }],
@@ -1491,12 +1606,13 @@ function insight() {
 
 function draw() {
   if (!RES) return;
-  hero(); strip(); kpis(); heat(); beTable(); fpTable(); dutyTable(); insight(); tornado(); mcTable();
+  hero(); strip(); kpis(); heat(); beTable(); fpTable(); paintDutyTable(document.activeElement); paintRates(document.activeElement); insight(); tornado(); mcTable();
   R.$('#h-sankey').textContent = `${IN.scenarios[RES.si].label} · ocean · units per week`;
   [cSankey, cDrill, cSweep, cChoke, cFan, cTor].forEach(R.update);
   setStatus();
 }
 buildInputs();
+buildDutyTable();
 compute();
 </script>
 

@@ -128,6 +128,17 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   alone stays the cheapest in about 80% of the draws but has a P90 of about $396M a year
   against $348M.
 
+## Day 4 — 2026-10-16
+
+**Built:**
+- **Every value is a slider.** Footprint page: each duty, market by market and origin by
+  origin, slides in the selected scenario (inputs panel, with an option to move every origin
+  together, and a slider grid in the duty table); duty draws slide from 50 to 1,000. FG
+  simulator: range ends are two-thumb sliders, runs slide. Transfer timing: the China tariff
+  slides from 0 to 50% in 1% steps (grid recomputed at every step). Finished goods: price drop,
+  sales optimism and lock style slide across the computed grid, with the simulator linked for
+  values in between.
+
 ## Next — Day 4
 
 - **Practitioner check of Module 7**: minimum load of a hedge site (Q28), time to open and

@@ -28,7 +28,7 @@
         <div class="slicer"><span class="s-label" id="l-s">Strategy</span><div class="seg" role="group" aria-labelledby="l-s" id="f-s"></div></div>
         <div class="slicer"><span class="s-label" id="l-c">US duty and MGI customs status</span><div class="seg" role="group" aria-labelledby="l-c" id="f-c"></div></div>
         <div class="slicer"><span class="s-label" id="l-m">Inputs as</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
-        <div class="slicer"><span class="s-label" id="l-r">Monte Carlo runs</span><div class="seg" role="group" aria-labelledby="l-r" id="f-r"></div></div>
+        <div class="slicer slider-ctl"><span class="s-label"><label for="runs">Monte Carlo runs</label><output id="o-runs"></output></span><input type="range" id="runs" min="50" max="1000" step="50"></div>
         <div class="slicer"><span class="s-label" id="l-v">Whose cost</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
         <span class="status" id="status" aria-live="polite">Starting…</span>
       </section>
@@ -79,7 +79,7 @@ const S = {
   s: ST.includes(saved.s) ? saved.s : 'lock_ibp',
   c: Object.keys(CUST).includes(saved.c) ? saved.c : 'base',
   m: saved.m === 'range' ? 'range' : 'fixed',
-  n: [100, 200, 500].includes(saved.n) ? saved.n : 200,
+  n: Number.isFinite(saved.n) && saved.n >= 50 && saved.n <= 1000 ? saved.n : 200,
   v: saved.v === 'system' ? 'system' : 'brand',
   P: { ...P0, ...(saved.P || {}) },
   lo: { ...(saved.lo || {}) }, hi: { ...(saved.hi || {}) },
@@ -112,8 +112,10 @@ function buildInputs() {
         <div class="prm-h"><label for="p-${r.key}">${R.esc(r.label)}</label><output id="o-${r.key}"></output></div>
         <input type="range" id="p-${r.key}" min="${r.min}" max="${r.max}" step="${r.step}">
         <div class="prm-r${r.sample === '1' ? '' : ' off'}" data-r="${r.key}" hidden>
-          <span>range</span><input type="number" id="lo-${r.key}" step="${r.step}" aria-label="Low value"><span>to</span><input type="number" id="hi-${r.key}" step="${r.step}" aria-label="High value">
-          ${r.sample === '1' ? '' : '<span>fixed in range mode</span>'}
+          <span>${r.sample === '1' ? 'Range sampled in each run · drag both ends' : 'Fixed in range mode (a structural setting)'}</span><span class="rv" id="rv-${r.key}"></span>
+          <div class="dual" id="du-${r.key}" style="--rc:var(--c2)"><div class="trk"></div><div class="band"></div><div class="tk today"></div>
+            <input type="range" class="lo" id="lo-${r.key}" min="${r.min}" max="${r.max}" step="${r.step}" aria-label="${R.esc(r.label)}, low end of the range"${r.sample === '1' ? '' : ' disabled'}>
+            <input type="range" class="hi" id="hi-${r.key}" min="${r.min}" max="${r.max}" step="${r.step}" aria-label="${R.esc(r.label)}, high end of the range"${r.sample === '1' ? '' : ' disabled'}></div>
         </div>
         <div class="prm-meta"><span class="chip ${kind}" title="${R.esc(STATUS[r.key] ? STATUS[r.key].note : '')}">${R.esc(st.split(' ')[0] || 'PLACEHOLDER')}</span><button type="button" class="rst" data-reset="${r.key}" hidden>reset</button></div>
       </div>`;
@@ -124,8 +126,13 @@ function buildInputs() {
     el.addEventListener('input', () => { S.P[r.key] = +el.value; paintInputs(); schedule(); });
     const lo = R.$('#lo-' + r.key), hi = R.$('#hi-' + r.key);
     lo.value = loOf(r.key); hi.value = hiOf(r.key);
-    lo.addEventListener('change', () => { S.lo[r.key] = +lo.value; schedule(); });
-    hi.addEventListener('change', () => { S.hi[r.key] = +hi.value; schedule(); });
+    const onRange = (which) => {
+      let a = +lo.value, b = +hi.value;
+      if (a > b) { if (which === 'lo') lo.value = a = b; else hi.value = b = a; }
+      S.lo[r.key] = a; S.hi[r.key] = b; paintRange(r); schedule();
+    };
+    lo.addEventListener('input', () => onRange('lo'));
+    hi.addEventListener('input', () => onRange('hi'));
   });
   box.addEventListener('click', (e) => {
     const k = e.target.getAttribute && e.target.getAttribute('data-reset');
@@ -133,9 +140,17 @@ function buildInputs() {
   });
   paintInputs();
 }
+function paintRange(r) {
+  const span = (+r.max - +r.min) || 1, f = (x) => Math.min(1, Math.max(0, (x - +r.min) / span));
+  const a = Math.min(loOf(r.key), S.P[r.key]), b = Math.max(hiOf(r.key), S.P[r.key]);   // the range always contains the base value
+  const el = R.$('#du-' + r.key);
+  el.style.setProperty('--lo', f(a)); el.style.setProperty('--hi', f(b)); el.querySelector('.tk').style.setProperty('--p', f(S.P[r.key]));
+  R.$('#rv-' + r.key).textContent = r.sample === '1' ? `${fmtVal(r.key, a)} – ${fmtVal(r.key, b)}` : '';
+}
 function paintInputs() {
   const changed = [];
   D.ranges.forEach((r) => {
+    paintRange(r);
     const v = S.P[r.key], diff = Math.abs(v - P0[r.key]) > 1e-12;
     R.$('#o-' + r.key).textContent = fmtVal(r.key, v);
     const row = R.$(`.prm[data-key="${r.key}"]`);
@@ -157,6 +172,7 @@ R.$('#changed').addEventListener('click', (e) => {
 R.$('#reset').addEventListener('click', () => {
   S.P = { ...P0 }; S.lo = {}; S.hi = {};
   D.ranges.forEach((r) => { R.$('#p-' + r.key).value = P0[r.key]; R.$('#lo-' + r.key).value = r.low; R.$('#hi-' + r.key).value = r.high; });
+  R.$('#runs').value = S.n = 200; R.$('#o-runs').textContent = S.n;
   paintInputs(); schedule();
 });
 R.$('#fold').addEventListener('click', () => {
@@ -215,7 +231,8 @@ function schedule() { R.save({ s: S.s, c: S.c, m: S.m, n: S.n, v: S.v, P: S.P, l
 R.seg(R.$('#f-s'), ST.map((s) => [s, SHORT[s]]), S.s, (v) => { S.s = v; schedule(); });
 R.seg(R.$('#f-c'), Object.keys(CUST).map((k) => [k, CUST[k][0]]), S.c, (v) => { S.c = v; schedule(); });
 R.seg(R.$('#f-m'), [['fixed', 'Fixed values'], ['range', 'Ranges']], S.m, (v) => { S.m = v; paintInputs(); schedule(); });
-R.seg(R.$('#f-r'), [[100, '100'], [200, '200'], [500, '500']], S.n, (v) => { S.n = +v; schedule(); });
+R.$('#runs').value = S.n; R.$('#o-runs').textContent = S.n;
+R.$('#runs').addEventListener('input', (e) => { S.n = +e.target.value; R.$('#o-runs').textContent = S.n; schedule(); });
 R.seg(R.$('#f-v'), [['brand', 'Brand'], ['system', 'Brand + dealers']], S.v, (v) => { S.v = v; if (RES) draw(); });
 
 // ---------------------------------------------------------------- KPIs
