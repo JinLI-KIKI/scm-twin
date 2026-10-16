@@ -290,7 +290,9 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
         share[MGI_OF[loc]] += s
     regions = sorted(share)
     first = next(iter(fgm))
-    launch = models[fgm[first]["successor"]]["npi"] + T      # successor reaches the market
+    # successor reaches the market; launch_lag_weeks (optional) holds the launch fixed while the
+    # chain gets longer, which is how Module 7 asks what a slower site costs at end of life
+    launch = models[fgm[first]["successor"]]["npi"] + int(P.get("launch_lag_weeks", T))
     eol = models[first]["eol"]                               # last build week of the old model
     horizon = launch + int(P["tail_weeks"]) + 1
     traj = {k: [0.0] * horizon for k in ["demand", "forecast", "sold", "lost", "builds",

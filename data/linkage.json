@@ -1,0 +1,52 @@
+{
+ "chain": {
+  "usd_per_unit_week": 1.2873394020717317,
+  "eol_mwd_per_year": 749746.4677665766,
+  "units_per_year": 145600.0,
+  "extra_weeks": 4.0,
+  "window_old": 16,
+  "window_new": 20
+ },
+ "finished_goods": {
+  "usd_per_unit_week": 1.7128195151471268,
+  "points": [
+   [
+    5,
+    32.623435716866865
+   ],
+   [
+    6,
+    34.53109811602006
+   ],
+   [
+    7,
+    36.29250530905816
+   ],
+   [
+    8,
+    37.94948659820148
+   ],
+   [
+    9,
+    39.47833905151179
+   ]
+  ],
+  "strategy": "lock",
+  "runs": 300
+ },
+ "transition": {
+  "urgent_usd_per_weekly_unit": 226.46153846153845,
+  "cutover_usd_per_weekly_unit": 202.46153846153845,
+  "expedite_usd_per_weekly_unit": 24.0,
+  "urgent_best_week": 0,
+  "planned_usd_per_weekly_unit": 0.0,
+  "planned_best_week": 16,
+  "weekly_units": 2800.0,
+  "parts": {
+   "holding": 526572.3076923076,
+   "relocation": 40320.0,
+   "rework": 0.0,
+   "mwd": 0.0
+  }
+ }
+}

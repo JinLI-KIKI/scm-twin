@@ -44,6 +44,7 @@
   <footer class="notes">
     <p><b>Benefit.</b> Tariff saved = US weekly units × customs value × (China rate − Indonesia rate) × 52.</p>
     <p><b>Recurring costs.</b> Extra end-of-life MWD because plans are committed 20 instead of 16 weeks ahead with forecast accuracy about 8 points worse (R17, R18); carrying cost of 4 more weeks of material in the chain; new-site conversion cost +5–10% (R20). <b>One-time costs.</b> Tariff still paid on volume the new site cannot cover while it ramps (R16); expediting parts while the longer lead time is not yet covered (R21). Ramp length depends on GSM strength.</p>
+    <p id="n-link"></p>
     <p><b>Status.</b> Lead-time adder, forecast-accuracy gap and conversion uplift are practitioner input (virtualized); ramp weeks, expediting cost and error correlation are placeholders. Details in the <a href="rules.html">Rules register</a>; code in <code>src/business_case.py</code>.</p>
   </footer>
 </main>
@@ -165,4 +166,5 @@ function draw() {
   [cWf, cHist, cBe, cTor].forEach(R.update);
 }
 draw();
+if (D.linkage) { const c = D.linkage.chain; R.$('#n-link').innerHTML = `<b>Used in Module 7.</b> The extra EOL MWD of the longer commitment window (${c.window_old} → ${c.window_new} weeks, US: ${R.usd(c.eol_mwd_per_year, 2)} a year on ${R.num(c.units_per_year)} units) divided by the ${R.num(c.extra_weeks)} extra weeks gives <b>$${R.num(c.usd_per_unit_week, 2)} per unit per extra week of chain</b>. The <a href="footprint.html">Footprint</a> page charges it to every non-China site for its parts feed plus one week (<code>src/integrate.py</code> → <code>data/linkage.json</code>).`; }
 </script>

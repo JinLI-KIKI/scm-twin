@@ -34,7 +34,8 @@ Last updated: 2026-10-15
 | ✓ | Report pages — ten linked BI-style pages (`src/build_dashboards.py`) | done |
 | ✓ | F1 pulled forward — finished-goods simulator with input ranges, live in the browser (`docs/fg-live.html`) | done |
 | ✓ | Module 7 — factory footprint: six sites, nine markets, real duties, origin by main board (`src/footprint.py`) | done (takes most of B2, C1 and D3) |
-| → | Phase A — core loop closure | **next (day 4): practitioner check of Module 7, formula review, then A2** |
+| ✓ | Module 7 on 2026 reality: Hormuz bypass, lane freight benchmarks, ODM terms, China parts scenario, back-test on US imports | done (day 4) |
+| → | Phase A — core loop closure | **A4 first link done (day 4); next: Jin's check of Q28–Q31, formula review, then A2** |
 
 ## Phase A — core loop closure · 5 days → release v1
 
@@ -43,7 +44,7 @@ Last updated: 2026-10-15
 | A1 ✓ | **Module 4 — finished goods at MGI.** Sell-in vs sell-through, excess build-up, step price drop at successor launch paid as price protection (R26, R27), sales volume lock (R28, R31), dealer leftovers and stock rotation (R30), disposition paths 1–6 (R11), post-customs vs FTZ (R25). | An excess-stock scenario returns the cost of each path and the cheapest path per product line. |
 | A2 | **Module 5 — demand and KPI view.** Tariff → retail price (pass-through) → units (elasticity by segment) → fiscal-year shipment gap. Score decisions twice: BU view (MWD + shipment target) and company view (total cost). | The same transfer decision is scored both ways and the page shows where the two views disagree. |
 | A3 | **Module 6 — new-site ramp and risk board hedge.** Capacity, yield and certification ramp curves; board-build timing vs the ODM's capacity response; GSM strength as a parameter. | The model returns a recommended board-build lead per model under demand uncertainty. |
-| A4 | **Integrated simulation.** Chain modules 1–6 week by week. | One command runs a full transfer scenario end to end and writes a summary report. |
+| A4 | **Integrated simulation.** Chain modules 1–6 week by week. | One command runs a full transfer scenario end to end and writes a summary report. **Day 4: first link done** — `src/integrate.py` prices Module 7's chain, end-of-life stock and urgent-transfer costs from Modules 2–4 (`data/linkage.json`). A week-by-week run across all modules remains. |
 
 ## Phase B — breadth · 7 days
 
@@ -73,7 +74,7 @@ Last updated: 2026-10-15
 
 | Step | Scope | Done when |
 |---|---|---|
-| E1 | **Calibration.** Replace placeholders with public data and virtualized practitioner input. | No PLACEHOLDER left on any number that changes a decision. |
+| E1 | **Calibration.** Replace placeholders with public data and virtualized practitioner input. | No PLACEHOLDER left on any number that changes a decision. **Day 4: started** — ocean rates from lane benchmarks; Module 7 back-tested on US imports by origin (2025 and 2026 tariff gaps). |
 | E2 | **Automated refresh.** Scheduled check of tariff and freight news; GitHub Actions rebuilds the site. | The live map rebuilds itself when data files change. |
 
 ## Phase F — product · 5–6 days → release v3

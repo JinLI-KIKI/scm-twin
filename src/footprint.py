@@ -27,19 +27,40 @@ rate = (1 - w) x own rate + w x China rate, with w = board_origin_weight (1 = th
 sites that import their boards, and w = 0 for sites that make the board on site (extra cost per
 unit and a yearly fixed cost) and for sales inside the site's own country.
 
-Allocation: minimum-cost flow from open sites (capacity in units/week) to markets (demand in
-units/week) on the ocean landed costs. A new site must run at least its minimum load (a share of
-capacity: below it the workforce and the customer qualifications are lost), so a second site
-costs its fixed cost plus the landed-cost gap on the volume it has to carry.
+Each new site is run one of two ways (site_terms). 'odm': a line on an ODM's existing overseas
+campus, at a price uplift per unit over the China line (conversion index), a one-time NRE (the
+line's share of the campus fit-out plus qualification) spread over the horizon, a yearly program
+cost and a volume commitment: units below it pay a take-or-pay fee. 'buy': the brand buys an
+electronics plant (price from the capex per unit of capacity of recent ODM campuses), saves the
+ODM's operating margin, and pays depreciation and capital on the price, its own overhead and the
+idle labour below the planned load.
 
-Footprints: every set of open sites that can cover demand and whose minimum loads fit inside
-it, with the boards either imported from China or made on site, scored per scenario (52 weeks
-+ yearly fixed cost of each new site and board line), by expected cost and by worst-case regret.
+Allocation: minimum-cost flow from open lines (capacity in units/week) to markets (demand in
+units/week) on the ocean landed costs; each line is loaded up to its commitment whenever that
+costs less than the fee, and the fee is paid on the rest.
 
-Build now or wait: a new site takes ramp_months to qualify. Waiting means keeping the footprint
+Freight: ocean rates per 40-ft container are published lane benchmarks (Far East to each region):
+pre-war (late Feb 2026), long-term contract (Aug 2026) and spot (Oct 2026); freight_basis 0, 1, 2
+picks them, with straight lines in between. Lanes without a benchmark use the distance formula. The Strait of Hormuz has been closed to normal
+shipping since 28 Feb 2026: with hormuz_closed = 1, Gulf cargo lands at Khor Fakkan and trucks
+to and from Dubai.
+
+Supply scenario: China licences parts exports; non-China sites pay cn_parts_premium on the parts
+they take from China.
+
+Footprints: every set of open sites that can cover demand, with the boards either imported from
+China or made on site, scored per scenario (52 weeks + yearly program, NRE and board-line cost),
+by expected cost and by worst-case regret.
+
+Linked costs (src/integrate.py, data/linkage.json): the chain cost per extra week comes from
+Module 3, the end-of-life finished-goods cost per extra week of transit from Module 4, and the
+cost of moving volume out of China in a hurry from Modules 1-2 (cutover) and 3 (expediting).
+
+Build now or wait: a new site takes ramp_months_odm or ramp_months_buy to qualify (lag). Waiting means keeping the footprint
 that is cheapest under today's duties and opening the new one only in the scenarios where it
-pays, after paying the old cost during the ramp plus a rush premium. Over horizon_years:
-  wait(s) = min(H x C_base(s), lag x C_base(s) + (H - lag) x C(s) + rush)
+pays, after paying the old cost during the ramp, a rush premium and an urgent transfer of the
+volume that leaves China. Over horizon_years:
+  wait(s) = min(H x C_base(s), lag x C_base(s) + (H - lag) x C(s) + rush + urgent x moved(s))
   now(s)  = H x C(s)
 The value of building now is the probability-weighted wait cost minus the build-now cost.
 
@@ -93,19 +114,33 @@ def fp_input():
         markets.append({"market": r["market"], "mgi": r["mgi"], "tkey": r["tkey"],
                         "weekly_units": float(r["weekly_units"]), "valuation": r["valuation"],
                         "name": net["nodes"][r["mgi"]]["name"], "code": net["nodes"][r["mgi"]]["code"]})
+    region = {r["port"]: r["region"] for r in _csv("freight_regions.csv")}
+    freight = {r["lane"]: [float(r["normal_usd_feu"]), float(r["contract_usd_feu"]), float(r["now_usd_feu"])]
+               for r in _csv("freight_lanes.csv")}
+    lane_of = lambda a, b: f"{region.get(a, a)}-{region.get(b, b)}"
     routes = {}
     for r in net["routes"]:
         truck = ssum(lanes[l]["km"] for l in r["lanes"] if lanes[l]["mode"] == "inland")
         air = ssum(lanes[l]["km"] for l in r["lanes"] if lanes[l]["mode"] == "air")
-        key = f"{r['origin']}|{r['mgi']}|{r['mode']}|{r['variant']}"
+        hz = r.get("hormuz", "any")
+        key = f"{r['origin']}|{r['mgi']}|{r['mode']}|{r['variant']}|{hz}"
+        fp, tp = r.get("from_port"), r.get("to_port")
         routes[key] = {"days": r["days"], "nm": r["nm"], "truck_km": truck, "air_km": air,
-                       "passages": r.get("passages", []), "domestic": bool(r.get("domestic"))}
+                       "passages": r.get("passages", []), "domestic": bool(r.get("domestic")),
+                       "lane": lane_of(fp, tp) if fp else "",
+                       "gulf": bool(fp) and "GULF" in (region.get(fp), region.get(tp)),
+                       "bypass": hz == "closed"}
     feeds = {}
     for o, fs in net["feeds"].items():
-        sea = fs[0]
-        nm = ssum(lanes[l]["nm"] for l in sea["lanes"] if lanes[l]["mode"] == "sea")
-        feeds[o] = {"days": sea["days"], "nm": nm, "passages": sea.get("passages", []),
-                    "air_days": fs[1]["days"]}
+        air_days = next(f["days"] for f in fs if f.get("mode") == "air")
+        feeds[o] = {}
+        for state in ("open", "closed"):
+            sea = next(f for f in fs if f.get("mode") == "sea" and f.get("hormuz", "any") in ("any", state))
+            nm = ssum(lanes[l]["nm"] for l in sea["lanes"] if lanes[l]["mode"] == "sea")
+            feeds[o][state] = {"days": sea["days"], "nm": nm, "passages": sea.get("passages", []),
+                               "air_days": air_days, "lane": lane_of(sea["from_port"], sea["to_port"]),
+                               "gulf": "GULF" in (region.get(sea["from_port"]), region.get(sea["to_port"])),
+                               "bypass": sea.get("hormuz") == "closed"}
     duties = {}
     for r in _csv("tariffs.csv"):
         duties[r["iso3"]] = {o: float(r[f"duty_{o.lower()}_origin_pct"]) / 100 for o in origins}
@@ -116,7 +151,9 @@ def fp_input():
             scen[sid] = {"id": sid, "label": r["label"], "probability": float(r["probability"] or 0),
                          "overrides": [], "note": r["note"]}
             order.append(sid)
-        if r["market"]:
+        if r["market"] == "PARTS":                    # China restricts parts exports to other sites
+            scen[sid]["overrides"].append({"tkey": "_parts", "origin": r["origin"], "duty": 1.0})
+        elif r["market"]:
             scen[sid]["overrides"].append({"tkey": r["market"], "origin": r["origin"],
                                            "duty": float(r["duty_pct"]) / 100})
     sites = {}
@@ -124,20 +161,36 @@ def fp_input():
         sites[r["site"]] = {"label": r["label"], "conv_index": float(r["conv_index"]),
                             "parts_duty": float(r["parts_duty_pct"]) / 100,
                             "capacity": float(r["capacity_units_wk"]),
-                            "fixed_cost": float(r["fixed_cost_usd_yr"]),
+                            "fixed_cost": float(r["fixed_cost_usd_yr"]), "nre": float(r["nre_usd"] or 0),
+                            "mode": r.get("mode") or "odm", "buy_price": float(r.get("buy_price_usd") or 0),
                             "min_load": float(r["min_load_pct"]) / 100,
                             "open": r["open_default"] == "1", "board_local": r["board_local"] == "1",
                             "status": r["status"], "note": r["note"]}
     P = {r["key"]: float(r["value"]) for r in _csv("footprint_params.csv")}
+    for o, r in zip(sites, _csv("sites.csv")):        # blank = derived from capex per unit of capacity
+        yearly = sites[o]["capacity"] * 52
+        if not r["nre_usd"]:
+            sites[o]["nre"] = round(P["capex_odm_line_usd_per_annual_unit"] * yearly + P["qualification_usd"], -4)
+        if not r.get("buy_price_usd"):
+            sites[o]["buy_price"] = round(P["capex_plant_usd_per_annual_unit"] * yearly, -4)
+    linkage = None
+    lp = os.path.join(DATA, "linkage.json")
+    if os.path.exists(lp):                          # Modules 1-4 feed three of Module 7's costs
+        with open(lp, encoding="utf-8") as f:
+            linkage = json.load(f)
+        P["planning_cost_usd_per_unit_week"] = linkage["chain"]["usd_per_unit_week"]
+        P["fg_eol_usd_per_unit_week"] = linkage["finished_goods"]["usd_per_unit_week"]
+        P["urgent_transition_usd_per_weekly_unit"] = linkage["transition"]["urgent_usd_per_weekly_unit"]
     ranges, peaks = {}, {}
     for r in _csv("duty_ranges.csv"):
         k = f"{r['market']}|{r['origin']}"
         ranges[k] = [float(r["low_pct"]) / 100, float(r["high_pct"]) / 100]
         if r["peak_2025_pct"]:
             peaks[k] = float(r["peak_2025_pct"]) / 100
-    return {"origins": origins, "markets": markets, "routes": routes, "feeds": feeds,
+    duties["_parts"] = {o: 0.0 for o in origins}      # 1 = this site's China parts carry cn_parts_premium
+    return {"origins": origins, "markets": markets, "routes": routes, "feeds": feeds, "freight": freight,
             "duties": duties, "scenarios": [scen[s] for s in order], "sites": sites, "P": P,
-            "ranges": ranges, "peaks_2025": peaks}
+            "ranges": ranges, "peaks_2025": peaks, "linkage": linkage}
 
 
 def duty_matrix(inp, scenario):
@@ -145,44 +198,87 @@ def duty_matrix(inp, scenario):
     for ov in scenario["overrides"]:
         targets = inp["origins"] if ov["origin"] == "*" else [ov["origin"]]
         for o in targets:
+            if ov["tkey"] == "_parts" and o == "CN":
+                continue
             d[ov["tkey"]][o] = ov["duty"]
     return d
 
 
-def route(inp, o, mgi, mode, red_sea):
-    """Ocean routes through the Red Sea have a Cape and a Suez variant; others one ('any')."""
+def route(inp, o, mgi, mode, red_sea, hormuz):
+    """Ocean routes through the Red Sea have a Cape and a Suez variant; routes through Hormuz an
+    open and a closed (Khor Fakkan bypass) variant; all others one ('any')."""
     R = inp["routes"]
     for v in (red_sea, "any"):
-        k = f"{o}|{mgi}|{mode}|{v}"
-        if k in R:
-            return R[k]
+        for h in (hormuz, "any"):
+            k = f"{o}|{mgi}|{mode}|{v}|{h}"
+            if k in R:
+                return R[k]
     raise KeyError(f"{o}|{mgi}|{mode}")
+
+
+def feu_rate(inp, P, lane, nm):
+    """Ocean rate per 40-ft container on a lane: freight_basis 0 = pre-war (late Feb 2026),
+    1 = long-term contract (Aug 2026), 2 = spot (Oct 2026), straight lines in between. Lanes
+    without a benchmark use the distance formula, scaled by the contract and spot factors."""
+    if lane in inp["freight"]:
+        a, c, b = inp["freight"][lane]
+    else:
+        a = P["sea_feu_base_usd"] + P["sea_feu_per_nm_usd"] * nm
+        c, b = a * P["fallback_contract_factor"], a * P["fallback_now_factor"]
+    x = P["freight_basis"]
+    return a + x * (c - a) if x <= 1 else c + (x - 1) * (b - c)
+
+
+def site_terms(P, s):
+    """How a site is run (R35): 'odm' = an ODM's line on its existing campus (price index on the
+    China line, NRE, yearly program cost, take-or-pay below the commitment); 'buy' = the brand buys
+    an electronics plant (saves the ODM's operating margin, pays depreciation and capital on the
+    price, its own overhead, and the idle labour below the planned load)."""
+    if s.get("mode") == "buy":
+        conv = s["conv_index"] - P["odm_op_margin"] * P["customs_value_cn_usd"] / P["conversion_cost_cn_usd"]
+        return {"conv": conv, "fee": P["labour_share_conversion"] * P["conversion_cost_cn_usd"] * conv,
+                "fixed": s["fixed_cost"] + P["buy_overhead_usd_yr"]
+                + s["buy_price"] * (1 / P["plant_life_years"] + P["capital_rate"]),
+                "ramp": P["ramp_months_buy"]}
+    return {"conv": s["conv_index"], "fee": P["shortfall_fee_usd"],
+            "fixed": s["fixed_cost"] + s["nre"] / P["horizon_years"], "ramp": P["ramp_months_odm"]}
+
+
+def ocean_extra(P, leg):
+    """Gulf surcharge and bypass trucking per container."""
+    return (P["gulf_surcharge_feu"] if leg["gulf"] else 0.0) + (P["bypass_truck_usd_feu"] if leg["bypass"] else 0.0)
 
 
 # ----------------------------------------------------------------------------- landed cost
 def landed(inp, P, sites, o, m, mode, red_sea, duties):
-    r = route(inp, o, m["mgi"], mode, red_sea)
+    hz = "closed" if P["hormuz_closed"] >= 0.5 else "open"
+    r = route(inp, o, m["mgi"], mode, red_sea, hz)
     s = sites[o]
     parts = plan = 0.0
     if o != "CN":
-        f = inp["feeds"][o]
-        parts_freight = (P["sea_feu_base_usd"] + P["sea_feu_per_nm_usd"] * f["nm"]) / P["kits_per_feu"] \
+        f = inp["feeds"][o][hz]
+        parts_freight = (feu_rate(inp, P, f["lane"], f["nm"]) + ocean_extra(P, f)) / P["kits_per_feu"] \
             + P["handling_usd_per_unit"]
         parts_carry = P["parts_value_usd"] * P["carrying_rate_annual"] * f["days"] / 365
-        parts = parts_freight + parts_carry + P["parts_value_usd"] * s["parts_duty"]
+        parts = parts_freight + parts_carry + P["parts_value_usd"] * s["parts_duty"] \
+            + P["parts_value_usd"] * P["cn_parts_premium"] * duties["_parts"][o]
         plan = P["planning_cost_usd_per_unit_week"] * (f["days"] / 7 + 1)
     board = o == "CN" or s["board_local"]
-    cv = P["customs_value_cn_usd"] + P["conversion_cost_cn_usd"] * (s["conv_index"] - 1) + parts \
+    cv = P["customs_value_cn_usd"] + P["conversion_cost_cn_usd"] * (site_terms(P, s)["conv"] - 1) + parts \
         + (P["board_extra_usd"] if o != "CN" and board else 0.0)
     trucking = P["truck_usd_per_unit_100km"] * r["truck_km"] / 100
     if r["domestic"]:
         freight = trucking + P["handling_usd_per_unit"] * 0.5
     elif mode == "sea":
-        freight = (P["sea_feu_base_usd"] + P["sea_feu_per_nm_usd"] * r["nm"]) / P["units_per_feu"] \
+        freight = (feu_rate(inp, P, r["lane"], r["nm"]) + ocean_extra(P, r)) / P["units_per_feu"] \
             + P["handling_usd_per_unit"] + trucking
     else:
         freight = P["kg_per_unit"] * (P["air_usd_per_kg_base"] + P["air_usd_per_kg_per_1000km"] * r["air_km"] / 1000) \
             + P["handling_usd_per_unit"] + trucking
+    # Module 4: a longer (shorter) chain than China's to the same MGI leaves more (less) stock in the
+    # pipeline at the successor launch
+    cn_days = r["days"] if o == "CN" else route(inp, "CN", m["mgi"], mode, red_sea, hz)["days"]
+    fg = P["fg_eol_usd_per_unit_week"] * (r["days"] - cn_days) / 7
     own = duties[m["tkey"]][o]
     w = 0.0 if (board or r["domestic"]) else P["board_origin_weight"]
     rate = (1 - w) * own + w * duties[m["tkey"]]["CN"]
@@ -191,8 +287,8 @@ def landed(inp, P, sites, o, m, mode, red_sea, duties):
     carry = cv * P["carrying_rate_annual"] * r["days"] / 365
     risky = sorted({RISKY[p] for p in r["passages"] if p in RISKY})
     risk = P["chokepoint_premium_usd"] * len(risky)
-    total = cv + freight + duty + carry + plan + risk
-    return {"total": total, "factory": cv, "parts": parts, "freight": freight, "duty": duty,
+    total = cv + freight + duty + carry + plan + fg + risk
+    return {"total": total, "factory": cv, "parts": parts, "freight": freight, "duty": duty, "fg": fg,
             "duty_rate": rate, "own_rate": own, "origin_weight": w, "duty_base": base, "board": board,
             "carry": carry, "plan": plan, "risk": risk, "days": r["days"],
             "passages": r["passages"], "risky": risky, "domestic": r["domestic"]}
@@ -204,13 +300,12 @@ def landed_table(inp, P, sites, mode, red_sea, duties):
 
 
 # ----------------------------------------------------------------------------- allocation
-BIG = 1e6   # cost bonus that makes the solver fill each site's minimum load first
-
-
-def transport(cost, cap, demand, low=None):
+def transport(cost, cap, demand, low=None, bonus=0.0):
     """Minimum-cost flow, sites -> markets. cost[i][j] per unit, cap[i], demand[j], low[i] the
-    minimum load of site i. Successive shortest paths with Bellman-Ford; the first low[i] units
-    out of site i carry a large bonus so they are routed first. Returns (flow[i][j], unmet units)."""
+    minimum volume commitment of site i. Successive shortest paths with Bellman-Ford; the first
+    low[i] units out of site i carry a bonus equal to its fee per unit short (bonus: one number or
+    one per site), so a site is loaded up to its commitment whenever that costs less than paying
+    the fee. Returns (flow, unmet units)."""
     ni, nj = len(cap), len(demand)
     n = ni + nj + 2
     s, t = 0, n - 1
@@ -223,10 +318,11 @@ def transport(cost, cap, demand, low=None):
 
     need = ssum(demand)
     low = low or [0.0] * ni
+    bonus = bonus if isinstance(bonus, list) else [bonus] * ni
     for i in range(ni):
         lo = min(low[i], cap[i])
         if lo > 0:
-            add(s, 1 + i, lo, -BIG)
+            add(s, 1 + i, lo, -bonus[i])
         add(s, 1 + i, cap[i] - lo, 0.0)
     for i in range(ni):
         for j in range(nj):
@@ -281,8 +377,10 @@ def evaluate(inp, P, sites, open_sites, red_sea, duties):
     cap = [sites[o]["capacity"] for o in org]
     low = [sites[o]["min_load"] * sites[o]["capacity"] for o in org]
     dem = [m["weekly_units"] for m in inp["markets"]]
-    flow, unmet = transport(cost, cap, dem, low)
-    underload = ssum(max(0.0, low[i] - ssum(flow[i])) for i in range(len(org)))
+    fee = [site_terms(P, sites[o])["fee"] for o in org]
+    flow, unmet = transport(cost, cap, dem, low, fee)
+    under = [max(0.0, low[i] - ssum(flow[i])) for i in range(len(org))]
+    underload = ssum(under)
     total = duty = days = 0.0
     exposure = {}
     alloc = {}
@@ -299,7 +397,9 @@ def evaluate(inp, P, sites, open_sites, red_sea, duties):
             for p in c["risky"]:
                 exposure[p] = exposure.get(p, 0.0) + q
     served = ssum(dem) - unmet
-    return {"weekly_cost": total, "weekly_duty": duty, "avg_days": days / served if served else 0.0,
+    shortfall = ssum(fee[i] * under[i] for i in range(len(org)))   # take-or-pay or idle labour below the load
+    return {"weekly_cost": total + shortfall, "weekly_landed": total, "weekly_shortfall": shortfall,
+            "weekly_duty": duty, "avg_days": days / served if served else 0.0,
             "alloc": alloc, "unmet": unmet, "underload": underload, "exposure": exposure, "open": org,
             "load": {o: ssum(flow[i]) for i, o in enumerate(org)}}
 
@@ -316,14 +416,16 @@ def with_boards(sites, open_sites, board):
 
 
 def yearly_costs(inp, P, sites, open_sites, red_sea, mats):
-    """Yearly cost of one footprint in each duty matrix: 52 weeks + fixed cost of sites and board lines."""
-    fixed = ssum(sites[o]["fixed_cost"] for o in open_sites) \
+    """Yearly cost of one footprint in each duty matrix: 52 weeks of landed cost and shortfall,
+    plus each site's fixed terms (site_terms) and board lines."""
+    fixed = ssum(site_terms(P, sites[o])["fixed"] for o in open_sites) \
         + P["board_fixed_usd_yr"] * len([o for o in open_sites if o != "CN" and sites[o]["board_local"]])
-    costs = []
+    costs, moved = [], []
     for d in mats:
         ev = evaluate(inp, P, sites, open_sites, red_sea, d)
-        costs.append(52 * ev["weekly_cost"] + fixed + (1e12 if ev["unmet"] > 1e-6 or ev["underload"] > 1e-6 else 0.0))
-    return fixed, costs
+        costs.append(52 * ev["weekly_cost"] + fixed + (1e12 if ev["unmet"] > 1e-6 else 0.0))
+        moved.append(ssum(q for o, q in ev["load"].items() if o != "CN"))   # weekly units built outside China
+    return fixed, costs, moved
 
 
 def footprints(inp, P, sites, red_sea, scen_list=None):
@@ -336,13 +438,12 @@ def footprints(inp, P, sites, red_sea, scen_list=None):
     rows = []
     for mask in range(1, 2 ** len(orgs)):
         open_sites = [o for k, o in enumerate(orgs) if mask >> k & 1]
-        if ssum(sites[o]["capacity"] for o in open_sites) < demand - 1e-9 \
-                or ssum(sites[o]["min_load"] * sites[o]["capacity"] for o in open_sites) > demand + 1e-9:
+        if ssum(sites[o]["capacity"] for o in open_sites) < demand - 1e-9:
             continue
         for board in ((False, True) if any(o != "CN" for o in open_sites) else (None,)):
             sv = with_boards(sites, open_sites, board)
-            fixed, costs = yearly_costs(inp, P, sv, open_sites, red_sea, mats)
-            rows.append({"open": open_sites, "board": bool(board), "fixed": fixed, "costs": costs})
+            fixed, costs, moved = yearly_costs(inp, P, sv, open_sites, red_sea, mats)
+            rows.append({"open": open_sites, "board": bool(board), "fixed": fixed, "costs": costs, "moved": moved})
     best = [min(r["costs"][k] for r in rows) for k in range(len(scen_list))]
     wsum = ssum(s["probability"] for s in scen_list) or 1.0
     for r in rows:
@@ -351,12 +452,18 @@ def footprints(inp, P, sites, red_sea, scen_list=None):
     rows.sort(key=lambda r: (r["expected"], len(r["open"]), r["board"]))
     base = min(rows, key=lambda r: r["costs"][0])
     H = P["horizon_years"]
-    lag = min(P["ramp_months"] / 12, H)
     for r in rows:
+        new = [o for o in r["open"] if o != "CN" and o not in base["open"]]
+        lag = min(max([site_terms(P, sites[o])["ramp"] for o in new], default=0.0) / 12, H)
+        r["lag"] = lag
         wait = []
         for k, c in enumerate(r["costs"]):
             cb = base["costs"][k]
-            wait.append(H * cb if r is base else min(H * cb, lag * cb + (H - lag) * c + P["rush_premium_usd"]))
+            # waiting: open late, pay the old cost through the ramp-up, a rush premium, and an
+            # urgent transfer of the volume that leaves China (Modules 1-3)
+            urgent = P["urgent_transition_usd_per_weekly_unit"] * max(0.0, r["moved"][k] - base["moved"][k])
+            rush = P["rush_premium_usd"] if new else 0.0
+            wait.append(H * cb if r is base else min(H * cb, lag * cb + (H - lag) * c + rush + urgent))
         r["wait_by"] = wait
         r["wait"] = ssum(s["probability"] * w for s, w in zip(scen_list, wait)) / wsum
         r["build_now_value"] = r["wait"] - H * r["expected"]
@@ -386,8 +493,7 @@ def candidates(inp, sites):
     out = []
     for mask in range(1, 2 ** len(orgs)):
         open_sites = [o for k, o in enumerate(orgs) if mask >> k & 1]
-        if ssum(sites[o]["capacity"] for o in open_sites) < demand - 1e-9 \
-                or ssum(sites[o]["min_load"] * sites[o]["capacity"] for o in open_sites) > demand + 1e-9:
+        if ssum(sites[o]["capacity"] for o in open_sites) < demand - 1e-9:
             continue
         for board in ((False, True) if any(o != "CN" for o in open_sites) else (None,)):
             out.append({"open": open_sites, "board": bool(board), "sites": with_boards(sites, open_sites, board)})
@@ -471,6 +577,36 @@ def break_even(inp, P, sites, red_sea, duties):
     return out
 
 
+# ----------------------------------------------------------------------------- back-test
+def backtest(inp, P, sites, red_sea="cape"):
+    """What the model says about what happened: (1) Mar-Nov 2025, China-made laptops paid 20% more
+    in the US: where does US volume go with a Vietnam line, boards imported or made there?
+    (2) since Feb 2026 the China-specific gap is 0, yet volume stayed in Vietnam: with the Vietnam
+    NRE already paid, what weight on a renewed China tariff makes staying the cheaper bet?"""
+    us = next(m["weekly_units"] for m in inp["markets"] if m["market"] == "US")
+    d = duty_matrix(inp, inp["scenarios"][0])
+    d["USA"]["CN"] = 0.20
+    shift = {}
+    for board in (False, True):
+        sv = with_boards(sites, ["CN", "VN"], board)
+        ev = evaluate(inp, P, sv, ["CN", "VN"], red_sea, d)
+        shift["own_boards" if board else "china_boards"] = ev["alloc"].get("VN|US", 0.0) / us
+    sv = with_boards(sites, ["CN", "VN"], True)
+    sv["VN"] = dict(sv["VN"], nre=0.0, buy_price=0.0)       # already paid
+    mats = [duty_matrix(inp, s) for s in inp["scenarios"]]
+    _, c_stay, _ = yearly_costs(inp, P, sv, ["CN", "VN"], red_sea, mats)
+    _, c_back, _ = yearly_costs(inp, P, sv, ["CN"], red_sea, mats)
+    ids = [s["id"] for s in inp["scenarios"]]
+    k = ids.index("cn301")
+    w = [s["probability"] for s in inp["scenarios"]]
+    rest = ssum(x for i, x in enumerate(w) if i != k) or 1.0
+    e = lambda c, p: p * c[k] + (1 - p) * ssum(w[i] * c[i] for i in range(len(c)) if i != k) / rest
+    a0, a1, b0, b1 = e(c_stay, 0), e(c_stay, 1), e(c_back, 0), e(c_back, 1)
+    den = (a0 - b0) - (a1 - b1)
+    implied = None if abs(den) < 1e-9 else max(0.0, min(1.0, (a0 - b0) / den))
+    return {"shift_2025": shift, "implied_weight_2026": implied}
+
+
 # ----------------------------------------------------------------------------- report
 def main():
     inp = fp_input()
@@ -518,7 +654,7 @@ def main():
               f" (${best_now['build_now_value'] / 1e6:.2f}M over {P['horizon_years']:.0f} years vs waiting)")
     else:
         print(f"  waiting beats building now for every footprint over {P['horizon_years']:.0f} years"
-              f" (ramp-up {P['ramp_months']:.0f} months)")
+              f" (ramp-up {P['ramp_months_odm']:.0f} months on an ODM campus, {P['ramp_months_buy']:.0f} for a bought plant)")
     mc = duty_monte_carlo(inp, P, sites, "cape", runs=200)
     print(f"\n== Duty ranges, {mc['runs']} Monte Carlo draws (US up to its April 2025 peak,"
           f" change probability {P['duty_change_prob']:.0%} per market)")
@@ -528,6 +664,14 @@ def main():
         print(f"  {name:<26}{r['mean'] / 1e6:>8.2f}M{r['p10'] / 1e6:>8.2f}M{r['p90'] / 1e6:>8.2f}M"
               f"{r['win']:>10.0%}{r['regret_mean'] / 1e6:>8.2f}M{r['regret_p90'] / 1e6:>8.2f}M")
     print("  mean drawn US duty: " + ", ".join(f"{k.split('|')[1]} {v:.1%}" for k, v in mc["mean_duty"].items()))
+    bt = backtest(inp, P, sites)
+    print("\n== Back-test against US import data (data/us_import_history.csv)")
+    print(f"  2025, China-made laptops +20% in the US: share of US volume the model moves to Vietnam = "
+          f"{bt['shift_2025']['own_boards']:.0%} with boards made there, {bt['shift_2025']['china_boards']:.0%} with China-made boards"
+          f"  (actual: about 60% of US laptop imports from Vietnam in 2025, 68% in May-Jul 2026)")
+    print(f"  2026, no China-specific gap, Vietnam NRE already paid: staying beats moving back once the weight on a renewed"
+          f" China tariff exceeds {bt['implied_weight_2026']:.0%} (actual: volume stayed; the model's default weight is"
+          f" {[s['probability'] for s in inp['scenarios'] if s['id'] == 'cn301'][0] / ssum(s['probability'] for s in inp['scenarios']):.0%})")
     print("\n  weight on 'US 25% on China-made laptops' above which building now beats waiting:")
     for r in rows[:6]:
         if r["is_base"]:

@@ -22,3 +22,4 @@ dest_handling_days_VNM,4,days,PLACEHOLDER,"Import clearance of parts at Hai Phon
 dest_handling_days_MYS,3,days,PLACEHOLDER,"Import clearance of parts at Penang"
 dest_handling_days_CHN,3,days,PLACEHOLDER,
 free_zone_exit_days,2,days,PLACEHOLDER,"Customs entry when free-zone output enters the domestic market"
+hormuz_bypass_queue_days,0.5,days,WEB,"Truck queues of up to 12 hours at Khor Fakkan and Fujairah while Hormuz is closed (Semafor, 2 Sep 2026)"

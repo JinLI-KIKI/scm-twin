@@ -1,7 +1,7 @@
 """
 Check that the browser engine (src/dash/fp_engine.js) reproduces src/footprint.py exactly:
 landed costs, allocations (with minimum loads), the footprint ranking with board variants and
-the build-now value, and the break-even duties. Needs Node.js; skipped if missing.
+the build-now value, the break-even duties, the duty-range Monte Carlo and the back-test. Needs Node.js; skipped if missing.
 
 Run:  python3 tests/test_fp_parity.py
 """
@@ -38,11 +38,13 @@ for (const s of inp.scenarios) {
     out.be.push(inp.origins.filter((o) => o !== 'CN').map((o) => be[o].map((v) => v === null ? -1 : v)));
   }
 }
-const fpRows = (P) => FPE.footprints(inp, P, inp.sites, 'cape').slice(0, 20).map((r) => {
+const BUY = { ...inp.sites, VN: { ...inp.sites.VN, mode: 'buy' }, MY: { ...inp.sites.MY, mode: 'buy' } };
+const fpRows = (P, sites = inp.sites) => FPE.footprints(inp, P, sites, 'cape').slice(0, 20).map((r) => {
   const tw = FPE.tippingWeight(r, inp.scenarios, 'cn301', P.horizon_years);
   return [r.open.join('+') + (r.board ? '/b' : ''), r.expected, r.regret, r.wait, r.build_now_value, tw === null ? -1 : tw];
 });
-out.fps = fpRows(inp.P).concat(fpRows({ ...inp.P, board_origin_weight: 0.5, ramp_months: 18 }));
+out.fps = fpRows(inp.P).concat(fpRows({ ...inp.P, board_origin_weight: 0.5, ramp_months_odm: 18, hormuz_closed: 0, freight_basis: 1.6, shortfall_fee_usd: 30 }))
+  .concat(fpRows({ ...inp.P, freight_basis: 0.3 }, BUY));
 const stress = {};
 for (const m of inp.markets) for (const o of inp.origins) stress[`${m.tkey}|${o}`] = [0, inp.ranges[`USA|${o}`][1]];
 out.mc = [];
@@ -50,6 +52,11 @@ for (const [rg, p, seed] of [[inp.ranges, 0.2, 7], [stress, 0.5, 3]]) {
   const r = FPE.dutyMonteCarlo(inp, { ...inp.P, duty_change_prob: p }, inp.sites, 'cape', rg, 24, seed);
   out.mc.push(r.rows.map((x) => [x.open.join('+') + (x.board ? '/b' : ''), x.mean, x.p10, x.p90, x.win, x.regret_mean, x.regret_p90])
     .concat([Object.values(r.mean_duty)]));
+}
+out.bt = [];
+for (const P of [inp.P, { ...inp.P, hormuz_closed: 0, freight_basis: 0, board_origin_weight: 0.6 }]) {
+  const b = FPE.backtest(inp, P, inp.sites, 'cape');
+  out.bt.push([b.shift_2025.china_boards, b.shift_2025.own_boards, b.implied_weight_2026 === null ? -1 : b.implied_weight_2026]);
 }
 process.stdout.write(JSON.stringify(out));
 """
@@ -85,20 +92,29 @@ def main(tol=1e-9):
             be = FP.break_even(inp, inp["P"], FP.with_boards(inp["sites"], inp["origins"], board), "suez", dm)
             py["be"].append([[-1 if v is None else v for v in be[o]] for o in inp["origins"] if o != "CN"])
 
-    def fp_rows(P):
+    buy = {**inp["sites"], "VN": {**inp["sites"]["VN"], "mode": "buy"}, "MY": {**inp["sites"]["MY"], "mode": "buy"}}
+
+    def fp_rows(P, sites=None):
         out = []
-        for r in FP.footprints(inp, P, inp["sites"], "cape")[:20]:
+        for r in FP.footprints(inp, P, sites or inp["sites"], "cape")[:20]:
             tw = FP.tipping_weight(r, inp["scenarios"], "cn301", P["horizon_years"])
             out.append(["+".join(r["open"]) + ("/b" if r["board"] else ""), r["expected"], r["regret"], r["wait"],
                         r["build_now_value"], -1 if tw is None else tw])
         return out
-    py["fps"] = fp_rows(inp["P"]) + fp_rows({**inp["P"], "board_origin_weight": 0.5, "ramp_months": 18})
+    py["fps"] = fp_rows(inp["P"]) + fp_rows({**inp["P"], "board_origin_weight": 0.5, "ramp_months_odm": 18,
+                                             "hormuz_closed": 0, "freight_basis": 1.6, "shortfall_fee_usd": 30}) \
+        + fp_rows({**inp["P"], "freight_basis": 0.3}, buy)
     stress = {f"{m['tkey']}|{o}": [0.0, inp["ranges"][f"USA|{o}"][1]] for m in inp["markets"] for o in inp["origins"]}
     py["mc"] = []
     for rg, p, seed in ((inp["ranges"], 0.2, 7), (stress, 0.5, 3)):
         r = FP.duty_monte_carlo(inp, {**inp["P"], "duty_change_prob": p}, inp["sites"], "cape", rg, 24, seed)
         py["mc"].append([["+".join(x["open"]) + ("/b" if x["board"] else ""), x["mean"], x["p10"], x["p90"], x["win"],
                           x["regret_mean"], x["regret_p90"]] for x in r["rows"]] + [list(r["mean_duty"].values())])
+    py["bt"] = []
+    for P in (inp["P"], {**inp["P"], "hormuz_closed": 0, "freight_basis": 0, "board_origin_weight": 0.6}):
+        b = FP.backtest(inp, P, inp["sites"], "cape")
+        iw = b["implied_weight_2026"]
+        py["bt"].append([b["shift_2025"]["china_boards"], b["shift_2025"]["own_boards"], -1 if iw is None else iw])
     worst, bad = 0.0, 0
 
     def cmp(a, b, label):
@@ -137,11 +153,14 @@ def main(tol=1e-9):
             for a, b in zip(ra, rb):
                 cmp(a, b, f"mc[{k}][{i}]")
                 nmc += 1
+    for k, (A, B) in enumerate(zip(py["bt"], js["bt"])):
+        for a, b in zip(A, B):
+            cmp(a, b, f"backtest[{k}]")
     if len(py["fps"]) != len(js["fps"]) or len(py["evals"]) != len(js["evals"]):
         bad += 1
         print("MISMATCH lengths")
     n = sum(len(r) * len(r[0]) for r in py["landed"]) + len(py["evals"]) * 5 + len(py["fps"]) * 6 \
-        + sum(len(r) * len(r[0]) for r in py["be"]) + nmc
+        + sum(len(r) * len(r[0]) for r in py["be"]) + nmc + 3 * len(py["bt"])
     print(f"{n} numbers compared: worst relative difference {worst:.2e} -> {'OK' if not bad else str(bad) + ' mismatches'}")
     return 1 if bad else 0
 

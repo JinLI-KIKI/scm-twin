@@ -1,7 +1,7 @@
-site,label,conv_index,parts_duty_pct,capacity_units_wk,fixed_cost_usd_yr,min_load_pct,open_default,board_local,status,note
-CN,China · Kunshan,1.00,0,14000,0,0,1,0,PLACEHOLDER,Current site; capacity covers all demand
-ID,Indonesia · Cikarang,1.08,0,5000,1500000,50,1,0,PRACTITIONER (+5-10% new-site conversion) / PLACEHOLDER,Parts enter a bonded zone duty-free
-VN,Vietnam · Bac Ninh,1.06,0,5000,1500000,50,0,0,PLACEHOLDER,Parts enter an export processing zone duty-free
-MY,Malaysia · Penang,1.12,0,4000,1800000,50,0,0,PLACEHOLDER,Free industrial zone; higher wages than VN and ID
-BR,Brazil · Jundiai,1.60,8,2000,2500000,50,0,0,PLACEHOLDER,Parts pay import duty (average across the BOM); local assembly saves Brazil's 16% on the finished unit
-AE,UAE · Jebel Ali,1.35,0,1500,2000000,50,0,0,PLACEHOLDER,Free zone; mainland sales still pay the GCC 5% unless the unit qualifies as a GCC product
+site,label,conv_index,parts_duty_pct,capacity_units_wk,fixed_cost_usd_yr,nre_usd,buy_price_usd,mode,min_load_pct,open_default,board_local,status,note
+CN,China · Kunshan,1.00,0,14000,0,0,0,odm,0,1,0,PLACEHOLDER,Current ODM line; capacity covers all demand
+ID,Indonesia · Cikarang,1.08,0,5000,600000,,,odm,50,1,0,PRACTITIONER (+5-10% new-site conversion) / PLACEHOLDER · NRE and buy price DERIVED from capex per unit of capacity,ODM campus in a bonded zone; parts enter duty-free
+VN,Vietnam · Bac Ninh,1.06,0,5000,600000,,,odm,50,0,0,PLACEHOLDER · NRE and buy price DERIVED from capex per unit of capacity,"ODM campus in northern Vietnam, like the notebook campuses opened in Ha Nam (2021, 2025) and Nam Dinh (2024); parts enter duty-free"
+MY,Malaysia · Penang,1.12,0,4000,700000,,,odm,50,0,0,PLACEHOLDER · NRE and buy price DERIVED from capex per unit of capacity,ODM or EMS campus in a free industrial zone; higher wages than VN and ID
+BR,Brazil · Jundiai,1.60,8,2000,1000000,,,odm,50,0,0,PLACEHOLDER · NRE and buy price DERIVED from capex per unit of capacity,Contract manufacturer; parts pay import duty (average across the BOM); local assembly saves Brazil 16% on the finished unit
+AE,UAE · Jebel Ali,1.35,0,1500,800000,,,odm,50,0,0,PLACEHOLDER · NRE and buy price DERIVED from capex per unit of capacity,Free-zone contract line; mainland sales still pay the GCC 5% unless the unit qualifies as a GCC product

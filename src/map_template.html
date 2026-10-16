@@ -137,6 +137,13 @@ ul.plain { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 13px; 
           <button type="button" id="v-suez" data-v="suez" aria-pressed="false">Suez Canal</button>
         </div>
       </div>
+      <div>
+        <span class="ctl-label" id="lbl-hz">Strait of Hormuz</span>
+        <div class="seg" role="group" aria-labelledby="lbl-hz" id="seg-hz">
+          <button type="button" id="h-closed" data-v="closed" aria-pressed="true">Closed (since Feb 2026)</button>
+          <button type="button" id="h-open" data-v="open" aria-pressed="false">Open</button>
+        </div>
+      </div>
       <div class="toggles" aria-label="Layers">
         <label><input type="checkbox" id="t-sea" checked> <span class="key sea"></span>Ocean</label>
         <label><input type="checkbox" id="t-air"> <span class="key air"></span>Air</label>
@@ -211,15 +218,17 @@ const NET = /*__DATA__*/null;
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   document.getElementById('seg-origin').innerHTML = Object.entries(NET.origins).map(([k, o]) =>
     `<button type="button" id="o-${k}" data-v="${k}" aria-pressed="false">${o.label}</button>`).join('');
-  const state = { origin: 'CN', variant: 'cape', modes: { sea: true, air: false, inland: true },
+  const state = { origin: 'CN', variant: 'cape', hormuz: 'closed', modes: { sea: true, air: false, inland: true },
                   duty: true, roads: true, sel: 'M_US', bdMode: 'sea', feedSel: null };
   try { const s = JSON.parse(localStorage.getItem('atlas-state') || '{}');
-        ['origin', 'variant', 'sel', 'bdMode'].forEach(k => { if (s[k]) state[k] = s[k]; }); } catch (e) {}
+        ['origin', 'variant', 'hormuz', 'sel', 'bdMode'].forEach(k => { if (s[k]) state[k] = s[k]; }); } catch (e) {}
+  if (!['closed', 'open'].includes(state.hormuz)) state.hormuz = 'closed';
+  const hzOk = (r) => !r.hormuz || r.hormuz === 'any' || r.hormuz === state.hormuz;
   if (!(state.origin in NET.origins)) state.origin = 'CN';
-  const FEED = () => (state.origin !== 'CN' && NET.feeds && NET.feeds[state.origin]) || [];
+  const FEED = () => ((state.origin !== 'CN' && NET.feeds && NET.feeds[state.origin]) || []).filter(hzOk);
   const originCountry = () => NET.origins[state.origin].label.split(' · ')[0];
   const save = () => { try { localStorage.setItem('atlas-state', JSON.stringify(
-    { origin: state.origin, variant: state.variant, sel: state.sel, bdMode: state.bdMode })); } catch (e) {} };
+    { origin: state.origin, variant: state.variant, hormuz: state.hormuz, sel: state.sel, bdMode: state.bdMode })); } catch (e) {} };
 
   const N = NET.nodes, LANES = NET.lanes, ROUTES = NET.routes, T = NET.tariffs;
   const [W0, W1, S0, N0] = NET.window;
@@ -279,7 +288,7 @@ const NET = /*__DATA__*/null;
 
   function activeRoutes() {
     return ROUTES.filter(r => r.origin === state.origin &&
-      (r.variant === 'any' || r.variant === state.variant));
+      (r.variant === 'any' || r.variant === state.variant) && hzOk(r));
   }
   function render() {
     laneGroup.clearLayers(); nodeGroup.clearLayers();
@@ -374,7 +383,8 @@ const NET = /*__DATA__*/null;
     const o = NET.origins[state.origin];
     document.getElementById('bd-title').textContent =
       `${N[o.factory].name} → ${N[r.mgi].name}, by ${r.mode === 'sea' ? 'ocean' : 'air'}` +
-      (r.mode === 'sea' && r.variant !== 'any' ? (r.variant === 'cape' ? ' around the Cape' : ' through Suez') : '');
+      (r.mode === 'sea' && r.variant !== 'any' ? (r.variant === 'cape' ? ' around the Cape' : ' through Suez') : '') +
+      (r.hormuz === 'closed' ? ', Hormuz bypass via Khor Fakkan' : '');
     document.getElementById('bd-total').innerHTML = `${fmt(r.days)}<small>days door to MGI</small>`;
     const color = r.mode === 'sea' ? css('--sea') : css('--air');
     document.getElementById('bd-steps').innerHTML = r.steps.map(([k, d]) =>
@@ -424,6 +434,7 @@ const NET = /*__DATA__*/null;
   });
   seg('seg-origin', 'origin', () => { state.feedSel = null; restyleCountries(); render(); });
   seg('seg-var', 'variant', () => render());
+  seg('seg-hz', 'hormuz', () => { state.feedSel = null; render(); });
   seg('seg-mode', 'bdMode', () => { if (state.bdMode === 'air' && !state.modes.air) { state.modes.air = true; document.getElementById('t-air').checked = true; } render(); fitFocus(); });
   ['sea', 'air', 'inland'].forEach(k => {
     const el = document.getElementById('t-' + k);

@@ -1,0 +1,11 @@
+series,period,china,vietnam,mexico,taiwan,thailand,unit,status,source,note
+hs8471_value,2023,39.6,8.7,27.8,14.3,5.9,USD bn,WEB (Census via import.tax),https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share,"All computers (HS 8471), incl. servers; yearly sums of monthly Census values"
+hs8471_value,2024,35.5,15.3,48.3,25.8,6.8,USD bn,WEB (Census via import.tax),https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share,
+hs8471_value,2025,11.3,33.6,89.9,85.0,20.7,USD bn,WEB (Census via import.tax),https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share,
+hs8471_value,2026 Jan-Jul,3.2,26.1,89.8,82.3,25.6,USD bn,WEB (Census via import.tax),https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share,
+hs8471_share,2023,38.4,8.5,26.9,13.9,5.7,% of US HS 8471 imports,WEB / DERIVED,https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share,
+hs8471_share,2025 May-Jul,2.1,15.5,34.3,38.3,6.3,% of US HS 8471 imports,WEB,https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share,
+hs8471_share,2026 May-Jul,1.9,11.4,43.7,28.1,10.0,% of US HS 8471 imports,WEB,https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share,
+laptop_share,2022,,,,,,% of US laptop imports,WEB (CTA via PCMag),https://finance.yahoo.com/economy/policy/articles/laptop-isnt-made-china-anymore-204113668.html,"Nearly all from China"
+laptop_share,2025,,60,,,,% of US laptop and tablet imports,WEB (CTA via PCMag),https://finance.yahoo.com/economy/policy/articles/laptop-isnt-made-china-anymore-204113668.html,"About 60% from Vietnam"
+laptop_share,2026 May-Jul,,68,,,,% of US HS 8471.30 imports,WEB / DERIVED (import.tax),https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share,"Vietnam 10.7 of 15.8 USD bn portable machines"

@@ -1,0 +1,15 @@
+port,region,note
+P_SHA,FE,Far East origin (Shanghai)
+P_HPH,FE,Far East origin (Hai Phong); destination of the China parts feed
+P_PEN,FE,Far East origin (Penang); destination of the China parts feed
+P_JKT,FE,Far East origin (Jakarta); destination of the China parts feed
+P_LAX,USWC,US West Coast
+P_RTM,NEUR,North Europe
+P_FXT,NEUR,North Europe (UK)
+P_YOK,JP,Japan
+P_SIN,SEA,Southeast Asia (Singapore)
+P_SYD,ANZ,Australia and New Zealand
+P_SSZ,SAEC,South America east coast (Santos)
+P_NSA,INDIA,India west coast (Nhava Sheva)
+P_JEA,GULF,Persian Gulf (Jebel Ali)
+P_KFK,GULF,UAE east coast (Khor Fakkan): Gulf rates while Hormuz is closed

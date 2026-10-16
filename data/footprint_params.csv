@@ -1,23 +1,42 @@
 key,value,status,note
 customs_value_cn_usd,480,PLACEHOLDER,"Transaction value of a China-built unit (P1-14), the duty base"
-conversion_cost_cn_usd,25,PLACEHOLDER,"Assembly and test cost per unit in China; other sites scale it by their conversion index"
-parts_value_usd,367,PLACEHOLDER,"BOM value shipped from the China supply base to a non-China site (P1-14 BOM)"
-carrying_rate_annual,0.20,PLACEHOLDER,"Inventory carrying cost per year"
-units_per_feu,1800,PLACEHOLDER,"Boxed laptops per 40-foot container"
-kits_per_feu,2600,PLACEHOLDER,"Part kits per 40-foot container"
-sea_feu_base_usd,900,PLACEHOLDER,"Fixed part of an ocean rate per 40-foot container"
-sea_feu_per_nm_usd,0.20,PLACEHOLDER,"Distance part of an ocean rate per 40-foot container per nautical mile"
+conversion_cost_cn_usd,25,PLACEHOLDER,Assembly and test cost per unit in China; other sites scale it by their conversion index
+parts_value_usd,367,PLACEHOLDER,BOM value shipped from the China supply base to a non-China site (P1-14 BOM)
+carrying_rate_annual,0.20,PLACEHOLDER,Inventory carrying cost per year
+units_per_feu,1800,PLACEHOLDER,Boxed laptops per 40-foot container
+kits_per_feu,2600,PLACEHOLDER,Part kits per 40-foot container
+sea_feu_base_usd,900,PLACEHOLDER,Fixed part of an ocean rate per 40-foot container
+sea_feu_per_nm_usd,0.20,PLACEHOLDER,Distance part of an ocean rate per 40-foot container per nautical mile
 handling_usd_per_unit,1.5,PLACEHOLDER,"Terminal handling and documentation per unit, origin plus destination"
-truck_usd_per_unit_100km,0.15,PLACEHOLDER,"Inland trucking per unit per 100 km"
+truck_usd_per_unit_100km,0.15,PLACEHOLDER,Inland trucking per unit per 100 km
 air_usd_per_kg_base,2.5,PLACEHOLDER,"Air freight per chargeable kg, fixed part"
 air_usd_per_kg_per_1000km,0.22,PLACEHOLDER,"Air freight per chargeable kg per 1,000 km"
-kg_per_unit,3.0,PLACEHOLDER,"Chargeable weight of a boxed laptop"
-planning_cost_usd_per_unit_week,1.25,DERIVED (Module 3),"Extra end-of-life MWD per unit for each week the chain gets longer (Module 3: about $5 per unit for +4 weeks, US region)"
+kg_per_unit,3.0,PLACEHOLDER,Chargeable weight of a boxed laptop
+planning_cost_usd_per_unit_week,1.287,DERIVED (Module 3),Extra end-of-life material without demand per unit for each week the commitment window grows; recomputed by src/integrate.py into data/linkage.json
 chokepoint_premium_usd,0,PLACEHOLDER,"Risk premium per unit for each risky passage on the route (Red Sea, Hormuz); 0 = ignore risk"
 board_origin_weight,1.0,PRACTITIONER (R13) / WEB,"US origin follows where the main board is made (CBP rulings N350187, N357691); 1 = a site assembling China-made boards pays the China rate, 0 = origin follows final assembly"
 board_extra_usd,6,PLACEHOLDER,"Extra cost per unit to make the main board on site instead of buying it from the China supply base (smaller scale, yield learning)"
-board_fixed_usd_yr,1200000,PLACEHOLDER,"Yearly fixed cost of a board line (SMT and test) at a non-China site"
-horizon_years,3,PLACEHOLDER,"Years over which build-now and wait are compared"
-ramp_months,12,PLACEHOLDER,"Months from deciding to open a site to qualified volume"
-rush_premium_usd,1000000,PLACEHOLDER,"One-off extra cost of opening a site in a hurry after a tariff is announced"
+board_fixed_usd_yr,1200000,PLACEHOLDER,"Yearly cost of an ODM board line (SMT and test) at a non-China site: line program, NRE spread over its life, test sets"
+horizon_years,3,PLACEHOLDER,Years over which build-now and wait are compared
+ramp_months_odm,6,PLACEHOLDER,"Months from deciding to qualified volume on a line at an ODM campus that is already built (program set-up, tooling, qualification). A campus built from scratch took 16-20 months in Vietnam (Quanta Nam Dinh: licence May 2023, first products Sep 2024; Wistron Ha Nam Victory I: Apr 2020 to Dec 2021)"
+ramp_months_buy,9,PLACEHOLDER,"Months from signing to qualified laptop volume in a bought electronics plant (re-tooling, re-qualification, staff transfer)"
+rush_premium_usd,1000000,PLACEHOLDER,One-off extra cost of opening a site in a hurry after a tariff is announced
 duty_change_prob,0.2,PLACEHOLDER,"Chance that a market changes its laptop duties within the horizon, drawn per market and Monte Carlo run; a change moves every origin to the same point of its range"
+freight_basis,1,WEB,"Which ocean rate the plan pays: 0 = pre-war (late Feb 2026), 1 = long-term contract (Xeneta, Aug 2026), 2 = spot (Oct 2026), straight lines in between. 1 = an annual-contract shipper (Q30)"
+fallback_now_factor,2.5,DERIVED,Lanes without a published benchmark (from Brazil and the Gulf): October 2026 rate = pre-war distance formula x this factor (median now/pre-war ratio of the benchmark lanes)
+fallback_contract_factor,1.41,DERIVED,"Lanes without a benchmark: long-term contract = pre-war distance formula x this factor (Xeneta long-term uplift on FE-USWC and FE-NEUR, 28 Feb to 12 Aug 2026: +41%)"
+hormuz_closed,1,WEB,"1 = Strait of Hormuz closed to normal shipping (since 28 Feb 2026, still closed in Oct 2026); Gulf cargo goes through Khor Fakkan and trucks to Dubai"
+gulf_surcharge_feu,0,PLACEHOLDER,Extra per FEU on Gulf lanes beyond the benchmark (the SCFI Gulf rate already includes conflict surcharges; carriers quoted 3000 per FEU in March 2026)
+bypass_truck_usd_feu,1200,PLACEHOLDER,Trucking a 40-ft container between Khor Fakkan and Dubai under bypass congestion (Semafor: overland routing 4-5x the cost of sailing to Jebel Ali)
+shortfall_fee_usd,12,PLACEHOLDER,Take-or-pay fee per unit the brand buys below its minimum volume commitment at an ODM line (the ODM's lost margin and fixed-cost absorption)
+odm_op_margin,0.014,WEB,ODM operating margin on revenue that a bought plant saves: Compal FY2025 1.40% (notebook-heavy; Quanta 4.12% with servers). Per laptop = margin x China customs value
+capex_odm_line_usd_per_annual_unit,4.2,WEB / DERIVED,"Fit-out capex per laptop of yearly capacity on an ODM campus extension: Wistron Ha Nam Victory II, USD 24.5M for 5.87M notebooks a year (Jan 2025). Sets the NRE of an ODM line with qualification_usd"
+qualification_usd,400000,PLACEHOLDER,"One-time program qualification at a new ODM line (pilot builds, certification, customer audits)"
+capex_plant_usd_per_annual_unit,13.3,WEB / DERIVED,"Price of a whole electronics plant per laptop of yearly capacity: Quanta Nam Dinh USD 120M for 9M laptops and desktops a year (USD 10.4k per worker); cross-check Tata bought Wistron India for USD 125M with 10,000 workers (USD 12.5k per worker, Nov 2023)"
+plant_life_years,10,PLACEHOLDER,Depreciation life of a bought plant
+capital_rate,0.08,PLACEHOLDER,"Cost of capital on the price of a bought plant, per year"
+buy_overhead_usd_yr,1500000,PLACEHOLDER,"Own overhead of running a bought plant per year: local entity, plant management, engineering and procurement the ODM would otherwise carry"
+labour_share_conversion,0.4,PLACEHOLDER,Share of conversion cost that is direct labour; in a bought plant idle labour below the planned load is still paid
+cn_parts_premium,0.15,PLACEHOLDER,"In the China parts scenario: extra cost of parts for non-China sites as a share of the parts value (licences, delays, second sources outside China)"
+fg_eol_usd_per_unit_week,1.713,DERIVED (Module 4),Extra end-of-life finished-goods cost per unit for each week the factory-to-MGI transit is longer than from China (negative when shorter); src/integrate.py
+urgent_transition_usd_per_weekly_unit,226.5,DERIVED (Modules 1-3),"One-time cost per unit of weekly volume moved out of China in a hurry: cutover at once (holding, relocation, MWD) plus rush expediting; charged when a site is opened only after a tariff arrives"

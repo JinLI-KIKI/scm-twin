@@ -212,7 +212,7 @@ const FGE = (() => {
     const regions = input.regions, L = input.liability;
     const rangeKeys = Object.keys(opts.ranges || {});
     const Tbase = Math.trunc(P0.build_to_mgi_weeks);
-    const launch = input.npi_successor + Tbase;
+    const launch = input.npi_successor + Math.trunc(P0.launch_lag_weeks ?? Tbase);   // optional: hold launch fixed
     const horizon = launch + Math.trunc(P0.tail_weeks) + 1;
     const traj = opts.traj === false ? null : Object.fromEntries(TRAJ_KEYS.map((k) => [k, new Array(horizon).fill(0)]));
     const runsOut = [], byRegion = {};

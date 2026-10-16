@@ -73,6 +73,7 @@
     <p><b>Avoidable cost</b> = price protection and post-launch markdown above the unavoidable floor (units that only sell after launch) + loss on excess finished goods (landed cost minus recovery, re-inspection, carrying, return handling) + EOL MWD + half the margin on lost sales (the other half is assumed to buy the successor).</p>
     <p><b>Dealer leftovers (R30).</b> What dealers still hold at the end comes back through stock rotation up to 10% of their last-quarter purchases, against a new order; the rest the dealer clears itself. Once sold in, most of the risk has left the brand, so the brand view and the brand + dealer view can pick different strategies. Lost goodwill and smaller future orders from dealers left with stock are not modelled.</p>
     <p><b>Sales lock (R28, R31).</b> About 22 weeks before EOL (virtualized; ±2 weeks by region) the brand's sales team, after talking with dealers, locks the remaining volume. The lock is the brand's commitment, not the dealers'. Sales must sell it; what is left the BU either absorbs or resells through other GEOs, shown here as the first two disposition paths. Each GEO and salesperson locks high or low in their own way (Q24), modelled as a ±10% spread between GEOs. Locked is locked (Q25): at the lock the remaining builds are frozen and their material is ordered; material already committed beyond the locked need becomes MWD. The two no-lock strategies are benchmarks that keep adjusting to the end. With the IBP hedge (R32), supply follows the locked volume times one plus a hedge that IBP sets from each GEO's sales history; it corrects about 60% of a GEO's habit (placeholder) and can be negative.</p>
+    <p id="n-link"></p>
     <p><b>Status.</b> Lock timing and the rules are practitioner input, virtualized. All other numbers are placeholders; see <a href="rules.html">Rules register</a> and <code>data/fg_params.csv</code>. Drawback rules: <a href="https://gingercontrol.com/resources/duty-drawback">GingerControl drawback matrix</a>.</p>
   </footer>
 </main>
@@ -300,4 +301,5 @@ function draw() {
 }
 archTable();
 draw();
+if (D.linkage) { const f = D.linkage.finished_goods; R.$('#n-link').innerHTML = `<b>Used in Module 7.</b> With the successor's launch held fixed, each extra week from factory to MGI leaves more stock in the pipeline at launch: avoidable cost per unit sold is ${f.points.map(([T, v]) => `$${R.num(v, 1)} at ${T} weeks`).join(', ')} (${f.strategy} strategy, ${f.runs} runs), a slope of <b>$${R.num(f.usd_per_unit_week, 2)} per unit per week</b>. The <a href="footprint.html">Footprint</a> page charges it against China's transit time for each site and market, so a site closer to the market earns a credit.`; }
 </script>

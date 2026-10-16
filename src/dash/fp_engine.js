@@ -9,35 +9,60 @@ const FPE = (() => {
     for (const k of Object.keys(inp.duties)) d[k] = { ...inp.duties[k] };
     for (const ov of scenario.overrides) {
       const targets = ov.origin === '*' ? inp.origins : [ov.origin];
-      for (const o of targets) d[ov.tkey][o] = ov.duty;
+      for (const o of targets) {
+        if (ov.tkey === '_parts' && o === 'CN') continue;
+        d[ov.tkey][o] = ov.duty;
+      }
     }
     return d;
   }
-  function route(inp, o, mgi, mode, redSea) {
+  function route(inp, o, mgi, mode, redSea, hormuz) {
     for (const v of [redSea, 'any']) {
-      const k = `${o}|${mgi}|${mode}|${v}`;
-      if (k in inp.routes) return inp.routes[k];
+      for (const h of [hormuz, 'any']) {
+        const k = `${o}|${mgi}|${mode}|${v}|${h}`;
+        if (k in inp.routes) return inp.routes[k];
+      }
     }
     throw new Error(`${o}|${mgi}|${mode}`);
   }
+  function feuRate(inp, P, lane, nm) {        // basis 0 = pre-war, 1 = long-term contract, 2 = spot
+    let a, c, b;
+    if (lane in inp.freight) [a, c, b] = inp.freight[lane];
+    else { a = P.sea_feu_base_usd + P.sea_feu_per_nm_usd * nm; c = a * P.fallback_contract_factor; b = a * P.fallback_now_factor; }
+    const x = P.freight_basis;
+    return x <= 1 ? a + x * (c - a) : c + (x - 1) * (b - c);
+  }
+  function siteTerms(P, s) {                  // R35: ODM line on an existing campus, or a bought plant
+    if (s.mode === 'buy') {
+      const conv = s.conv_index - P.odm_op_margin * P.customs_value_cn_usd / P.conversion_cost_cn_usd;
+      return { conv, fee: P.labour_share_conversion * P.conversion_cost_cn_usd * conv,
+        fixed: s.fixed_cost + P.buy_overhead_usd_yr + s.buy_price * (1 / P.plant_life_years + P.capital_rate), ramp: P.ramp_months_buy };
+    }
+    return { conv: s.conv_index, fee: P.shortfall_fee_usd, fixed: s.fixed_cost + s.nre / P.horizon_years, ramp: P.ramp_months_odm };
+  }
+  const oceanExtra = (P, leg) => (leg.gulf ? P.gulf_surcharge_feu : 0) + (leg.bypass ? P.bypass_truck_usd_feu : 0);
   function landed(inp, P, sites, o, m, mode, redSea, duties) {
-    const r = route(inp, o, m.mgi, mode, redSea), s = sites[o];
+    const hz = P.hormuz_closed >= 0.5 ? 'closed' : 'open';
+    const r = route(inp, o, m.mgi, mode, redSea, hz), s = sites[o];
     let parts = 0, plan = 0;
     if (o !== 'CN') {
-      const f = inp.feeds[o];
-      const partsFreight = (P.sea_feu_base_usd + P.sea_feu_per_nm_usd * f.nm) / P.kits_per_feu + P.handling_usd_per_unit;
+      const f = inp.feeds[o][hz];
+      const partsFreight = (feuRate(inp, P, f.lane, f.nm) + oceanExtra(P, f)) / P.kits_per_feu + P.handling_usd_per_unit;
       const partsCarry = P.parts_value_usd * P.carrying_rate_annual * f.days / 365;
-      parts = partsFreight + partsCarry + P.parts_value_usd * s.parts_duty;
+      parts = partsFreight + partsCarry + P.parts_value_usd * s.parts_duty
+        + P.parts_value_usd * P.cn_parts_premium * duties._parts[o];
       plan = P.planning_cost_usd_per_unit_week * (f.days / 7 + 1);
     }
     const board = o === 'CN' || s.board_local;
-    const cv = P.customs_value_cn_usd + P.conversion_cost_cn_usd * (s.conv_index - 1) + parts
+    const cv = P.customs_value_cn_usd + P.conversion_cost_cn_usd * (siteTerms(P, s).conv - 1) + parts
       + (o !== 'CN' && board ? P.board_extra_usd : 0);
     const trucking = P.truck_usd_per_unit_100km * r.truck_km / 100;
     let freight;
     if (r.domestic) freight = trucking + P.handling_usd_per_unit * 0.5;
-    else if (mode === 'sea') freight = (P.sea_feu_base_usd + P.sea_feu_per_nm_usd * r.nm) / P.units_per_feu + P.handling_usd_per_unit + trucking;
+    else if (mode === 'sea') freight = (feuRate(inp, P, r.lane, r.nm) + oceanExtra(P, r)) / P.units_per_feu + P.handling_usd_per_unit + trucking;
     else freight = P.kg_per_unit * (P.air_usd_per_kg_base + P.air_usd_per_kg_per_1000km * r.air_km / 1000) + P.handling_usd_per_unit + trucking;
+    const cnDays = o === 'CN' ? r.days : route(inp, 'CN', m.mgi, mode, redSea, hz).days;   // Module 4 link
+    const fg = P.fg_eol_usd_per_unit_week * (r.days - cnDays) / 7;
     const own = duties[m.tkey][o];
     const w = (board || r.domestic) ? 0 : P.board_origin_weight;
     const rate = (1 - w) * own + w * duties[m.tkey].CN;
@@ -46,8 +71,8 @@ const FPE = (() => {
     const carry = cv * P.carrying_rate_annual * r.days / 365;
     const risky = [...new Set(r.passages.filter((p) => p in RISKY).map((p) => RISKY[p]))].sort();
     const risk = P.chokepoint_premium_usd * risky.length;
-    const total = cv + freight + duty + carry + plan + risk;
-    return { total, factory: cv, parts, freight, duty, duty_rate: rate, own_rate: own, origin_weight: w, duty_base: base, board,
+    const total = cv + freight + duty + carry + plan + fg + risk;
+    return { total, factory: cv, parts, freight, duty, fg, duty_rate: rate, own_rate: own, origin_weight: w, duty_base: base, board,
       carry, plan, risk, days: r.days,
       passages: r.passages, risky, domestic: r.domestic };
   }
@@ -58,8 +83,7 @@ const FPE = (() => {
   }
 
   // ---------------------------------------------------------------- minimum-cost flow
-  const BIG = 1e6;   // cost bonus that makes the solver fill each site's minimum load first
-  function transport(cost, cap, demand, low) {
+  function transport(cost, cap, demand, low, bonus) {   // bonus = fee per unit short of the commitment (one number or one per site)
     const ni = cap.length, nj = demand.length, n = ni + nj + 2, s = 0, t = n - 1;
     const to = [], capv = [], costv = [], adj = Array.from({ length: n }, () => []);
     const add = (u, v, c, w) => {
@@ -68,9 +92,10 @@ const FPE = (() => {
     };
     const need = ssum(demand);
     low = low || new Array(ni).fill(0);
+    const bon = Array.isArray(bonus) ? bonus : new Array(ni).fill(bonus || 0);
     for (let i = 0; i < ni; i++) {
       const lo = Math.min(low[i], cap[i]);
-      if (lo > 0) add(s, 1 + i, lo, -BIG);
+      if (lo > 0) add(s, 1 + i, lo, -bon[i]);
       add(s, 1 + i, cap[i] - lo, 0);
     }
     for (let i = 0; i < ni; i++) for (let j = 0; j < nj; j++) add(1 + i, 1 + ni + j, need, cost[i][j]);
@@ -115,8 +140,10 @@ const FPE = (() => {
     const cap = org.map((o) => sites[o].capacity);
     const low = org.map((o) => sites[o].min_load * sites[o].capacity);
     const dem = inp.markets.map((m) => m.weekly_units);
-    const [flow, unmet] = transport(cost, cap, dem, low);
-    const underload = ssum(org.map((_, i) => Math.max(0, low[i] - ssum(flow[i]))));
+    const fee = org.map((o) => siteTerms(P, sites[o]).fee);
+    const [flow, unmet] = transport(cost, cap, dem, low, fee);
+    const under = org.map((_, i) => Math.max(0, low[i] - ssum(flow[i])));
+    const underload = ssum(under);
     let total = 0, duty = 0, days = 0;
     const exposure = {}, alloc = {};
     org.forEach((o, i) => inp.markets.forEach((m, j) => {
@@ -130,7 +157,9 @@ const FPE = (() => {
     const served = ssum(dem) - unmet;
     const load = {};
     org.forEach((o, i) => { load[o] = ssum(flow[i]); });
-    return { weekly_cost: total, weekly_duty: duty, avg_days: served ? days / served : 0, alloc, unmet, underload, exposure, open: org, load, table: tab };
+    const shortfall = ssum(under.map((u, i) => fee[i] * u));
+    return { weekly_cost: total + shortfall, weekly_landed: total, weekly_shortfall: shortfall, weekly_duty: duty, avg_days: served ? days / served : 0,
+      alloc, unmet, underload, exposure, open: org, load, table: tab };
   }
 
   function withBoards(sites, openSites, board) {
@@ -143,13 +172,15 @@ const FPE = (() => {
     return out;
   }
   function yearlyCosts(inp, P, sites, openSites, redSea, mats) {
-    const fixed = ssum(openSites.map((o) => sites[o].fixed_cost))
+    const fixed = ssum(openSites.map((o) => siteTerms(P, sites[o]).fixed))
       + P.board_fixed_usd_yr * openSites.filter((o) => o !== 'CN' && sites[o].board_local).length;
-    const costs = mats.map((d) => {
+    const costs = [], moved = [];
+    for (const d of mats) {
       const ev = evaluate(inp, P, sites, openSites, redSea, d);
-      return 52 * ev.weekly_cost + fixed + ((ev.unmet > 1e-6 || ev.underload > 1e-6) ? 1e12 : 0);
-    });
-    return [fixed, costs];
+      costs.push(52 * ev.weekly_cost + fixed + (ev.unmet > 1e-6 ? 1e12 : 0));
+      moved.push(ssum(Object.keys(ev.load).filter((o) => o !== 'CN').map((o) => ev.load[o])));
+    }
+    return [fixed, costs, moved];
   }
   function footprints(inp, P, sites, redSea, scenList) {
     const scen = scenList || inp.scenarios, orgs = inp.origins;
@@ -158,12 +189,11 @@ const FPE = (() => {
     const rows = [];
     for (let mask = 1; mask < (1 << orgs.length); mask++) {
       const open = orgs.filter((_, k) => (mask >> k) & 1);
-      if (ssum(open.map((o) => sites[o].capacity)) < demand - 1e-9
-        || ssum(open.map((o) => sites[o].min_load * sites[o].capacity)) > demand + 1e-9) continue;
+      if (ssum(open.map((o) => sites[o].capacity)) < demand - 1e-9) continue;
       for (const board of (open.some((o) => o !== 'CN') ? [false, true] : [null])) {
         const sv = withBoards(sites, open, board);
-        const [fixed, costs] = yearlyCosts(inp, P, sv, open, redSea, mats);
-        rows.push({ open, board: !!board, fixed, costs });
+        const [fixed, costs, moved] = yearlyCosts(inp, P, sv, open, redSea, mats);
+        rows.push({ open, board: !!board, fixed, costs, moved });
       }
     }
     const best = scen.map((_, k) => Math.min(...rows.map((r) => r.costs[k])));
@@ -174,11 +204,16 @@ const FPE = (() => {
     }
     rows.sort((a, b) => (a.expected - b.expected) || (a.open.length - b.open.length) || (a.board - b.board));
     const base = rows.reduce((a, r) => (r.costs[0] < a.costs[0] ? r : a), rows[0]);
-    const H = P.horizon_years, lag = Math.min(P.ramp_months / 12, H);
+    const H = P.horizon_years;
     for (const r of rows) {
+      const fresh = r.open.filter((o) => o !== 'CN' && !base.open.includes(o));
+      const lag = Math.min(Math.max(0, ...fresh.map((o) => siteTerms(P, sites[o]).ramp)) / 12, H);
+      const rush = fresh.length ? P.rush_premium_usd : 0;
+      r.lag = lag;
       const wait = r.costs.map((c, k) => {
         const cb = base.costs[k];
-        return r === base ? H * cb : Math.min(H * cb, lag * cb + (H - lag) * c + P.rush_premium_usd);
+        const urgent = P.urgent_transition_usd_per_weekly_unit * Math.max(0, r.moved[k] - base.moved[k]);
+        return r === base ? H * cb : Math.min(H * cb, lag * cb + (H - lag) * c + rush + urgent);
       });
       r.wait_by = wait;
       r.wait = ssum(scen.map((s, k) => s.probability * wait[k])) / wsum;
@@ -212,8 +247,7 @@ const FPE = (() => {
     const orgs = inp.origins, demand = ssum(inp.markets.map((m) => m.weekly_units)), out = [];
     for (let mask = 1; mask < (1 << orgs.length); mask++) {
       const open = orgs.filter((_, k) => (mask >> k) & 1);
-      if (ssum(open.map((o) => sites[o].capacity)) < demand - 1e-9
-        || ssum(open.map((o) => sites[o].min_load * sites[o].capacity)) > demand + 1e-9) continue;
+      if (ssum(open.map((o) => sites[o].capacity)) < demand - 1e-9) continue;
       for (const board of (open.some((o) => o !== 'CN') ? [false, true] : [null])) {
         out.push({ open, board: !!board, sites: withBoards(sites, open, board) });
       }
@@ -268,6 +302,30 @@ const FPE = (() => {
     rows.sort((a, b) => (a.mean - b.mean) || (a.open.length - b.open.length) || (a.board - b.board));
     return { rows, runs, mean_duty: meanDuty };
   }
+  function backtest(inp, P, sites, redSea) {     // port of footprint.backtest
+    const us = inp.markets.find((m) => m.market === 'US').weekly_units;
+    const d = dutyMatrix(inp, inp.scenarios[0]);
+    d.USA.CN = 0.20;
+    const shift = {};
+    for (const board of [false, true]) {
+      const sv = withBoards(sites, ['CN', 'VN'], board);
+      const ev = evaluate(inp, P, sv, ['CN', 'VN'], redSea, d);
+      shift[board ? 'own_boards' : 'china_boards'] = (ev.alloc['VN|US'] || 0) / us;
+    }
+    const sv = withBoards(sites, ['CN', 'VN'], true);
+    sv.VN = { ...sv.VN, nre: 0, buy_price: 0 };      // already paid
+    const mats = inp.scenarios.map((s) => dutyMatrix(inp, s));
+    const cStay = yearlyCosts(inp, P, sv, ['CN', 'VN'], redSea, mats)[1];
+    const cBack = yearlyCosts(inp, P, sv, ['CN'], redSea, mats)[1];
+    const k = inp.scenarios.findIndex((s) => s.id === 'cn301');
+    const w = inp.scenarios.map((s) => s.probability);
+    const rest = ssum(w.filter((_, i) => i !== k)) || 1;
+    const e = (c, p) => p * c[k] + (1 - p) * ssum(c.map((x, i) => (i !== k ? w[i] * x : 0)).filter((_, i) => i !== k)) / rest;
+    const a0 = e(cStay, 0), a1 = e(cStay, 1), b0 = e(cBack, 0), b1 = e(cBack, 1);
+    const den = (a0 - b0) - (a1 - b1);
+    const implied = Math.abs(den) < 1e-9 ? null : Math.max(0, Math.min(1, (a0 - b0) / den));
+    return { shift_2025: shift, implied_weight_2026: implied, stay: cStay, back: cBack };
+  }
   function breakEven(inp, P, sites, redSea, duties) {
     const tab = landedTable(inp, P, sites, 'sea', redSea, duties), out = {};
     for (const o of inp.origins) {
@@ -283,6 +341,6 @@ const FPE = (() => {
     }
     return out;
   }
-  return { dutyMatrix, landed, landedTable, transport, evaluate, withBoards, yearlyCosts, footprints, tippingWeight, breakEven, makeRng, candidates, drawDuties, dutyMonteCarlo };
+  return { dutyMatrix, feuRate, landed, landedTable, transport, evaluate, withBoards, yearlyCosts, footprints, tippingWeight, breakEven, backtest, route, oceanExtra, siteTerms, makeRng, candidates, drawDuties, dutyMonteCarlo };
 })();
 if (typeof module !== 'undefined') module.exports = FPE;

@@ -54,6 +54,7 @@ MGIS = {  # mgi: (dest port, dest airport, air hub from Asia or None, importing 
     "M_AE": ("P_JEA", "A_DWC", None, "ARE"),
 }
 EUROPE_PORTS = {"P_RTM", "P_FXT"}
+GULF_PORT, BYPASS_PORT = "P_JEA", "P_KFK"   # Jebel Ali inside Hormuz; Khor Fakkan outside it
 
 
 # ----------------------------------------------------------------------------- inputs
@@ -164,7 +165,7 @@ def build():
                     steps.append(("Free-zone exit and customs entry", P["free_zone_exit_days"]))
                 steps.append(("MGI receiving", P["mgi_receiving_days"]))
                 for mode in ("sea", "air"):
-                    routes.append({"origin": o, "mgi": m, "mode": mode, "variant": "any", "domestic": True,
+                    routes.append({"origin": o, "mgi": m, "mode": mode, "variant": "any", "hormuz": "any", "domestic": True,
                                    "lanes": [t_fm], "km": lanes[t_fm]["km"], "nm": 0, "passages": [],
                                    "steps": [[k, r1(d)] for k, d in steps],
                                    "days": r1(sum(d for _, d in steps))})
@@ -176,6 +177,7 @@ def build():
             variants = [("cape", ocean_lane(O["port"], port, "cape")), ("suez", s_open)] \
                 if uses_red_sea else [("any", s_open)]
             for v, s in variants:
+                hz = "open" if "ormuz" in lanes[s]["passages"] else "any"
                 steps = [
                     ("Factory to port (truck)", truck_days(lanes[t_fp]["km"])),
                     ("Export handling & vessel wait", P["origin_sea_handling_days"]),
@@ -184,11 +186,37 @@ def build():
                     ("Port to MGI (truck)", truck_days(lanes[t_pm]["km"])),
                     ("MGI receiving", P["mgi_receiving_days"]),
                 ]
-                routes.append({"origin": o, "mgi": m, "mode": "sea", "variant": v,
+                routes.append({"origin": o, "mgi": m, "mode": "sea", "variant": v, "hormuz": hz,
                                "lanes": [t_fp, s, t_pm], "km": lanes[s]["km"],
                                "nm": lanes[s]["nm"], "passages": lanes[s]["passages"],
+                               "from_port": O["port"], "to_port": port,
                                "steps": [[k, r1(d)] for k, d in steps],
                                "days": r1(sum(d for _, d in steps))})
+                if hz == "open":
+                    # Hormuz closed (since 28 Feb 2026): Gulf cargo lands at Khor Fakkan, outside
+                    # the strait, and trucks to or from Dubai; queues at the bypass ports
+                    if port == GULF_PORT:
+                        s2, a2 = ocean_lane(O["port"], BYPASS_PORT, v if v != "any" else "open"), truck_lane(BYPASS_PORT, m)
+                        legs, fp, tp = [t_fp, s2, a2], O["port"], BYPASS_PORT
+                        st = [("Factory to port (truck)", truck_days(lanes[t_fp]["km"])),
+                              ("Export handling & vessel wait", P["origin_sea_handling_days"]),
+                              ("Ocean voyage", sea_days(lanes[s2]["km"])),
+                              ("Import clearance & discharge", P[f"dest_handling_days_{country}"]),
+                              ("Port to MGI (truck, Hormuz bypass)", truck_days(lanes[a2]["km"]) + P["hormuz_bypass_queue_days"]),
+                              ("MGI receiving", P["mgi_receiving_days"])]
+                    else:
+                        t2, s2 = truck_lane(O["factory"], BYPASS_PORT), ocean_lane(BYPASS_PORT, port, v if v != "any" else "open")
+                        legs, fp, tp = [t2, s2, t_pm], BYPASS_PORT, port
+                        st = [("Factory to port (truck, Hormuz bypass)", truck_days(lanes[t2]["km"]) + P["hormuz_bypass_queue_days"]),
+                              ("Export handling & vessel wait", P["origin_sea_handling_days"]),
+                              ("Ocean voyage", sea_days(lanes[s2]["km"])),
+                              ("Import clearance & discharge", P[f"dest_handling_days_{country}"]),
+                              ("Port to MGI (truck)", truck_days(lanes[t_pm]["km"])),
+                              ("MGI receiving", P["mgi_receiving_days"])]
+                    routes.append({"origin": o, "mgi": m, "mode": "sea", "variant": v, "hormuz": "closed",
+                                   "lanes": legs, "km": lanes[s2]["km"], "nm": lanes[s2]["nm"],
+                                   "passages": lanes[s2]["passages"], "from_port": fp, "to_port": tp,
+                                   "steps": [[k, r1(d)] for k, d in st], "days": r1(sum(d for _, d in st))})
             # air (Asia to Brazil goes through a European hub)
             use_hub = hub if o in ASIA_ORIGINS else None
             legs = [air_lane(O["airport"], use_hub), air_lane(use_hub, apt)] if use_hub else \
@@ -205,7 +233,7 @@ def build():
                 ("Airport to MGI (truck)", truck_days(lanes[t_am]["km"])),
                 ("MGI receiving", P["mgi_receiving_days"]),
             ]
-            routes.append({"origin": o, "mgi": m, "mode": "air", "variant": "any",
+            routes.append({"origin": o, "mgi": m, "mode": "air", "variant": "any", "hormuz": "any",
                            "lanes": [t_fa] + legs + [t_am], "km": km, "nm": round(km / 1.852),
                            "passages": [],
                            "steps": [[k, r1(d)] for k, d in steps],
@@ -229,6 +257,8 @@ def build():
         an = nodes[O["airport"]]["code"]
         feeds[o] = [
             {"name": f"Sea via Shanghai → {pn}", "lanes": [f"T:{C['factory']}>{C['port']}", sea, tpf],
+             "mode": "sea", "hormuz": "open" if "ormuz" in lanes[sea]["passages"] else "any",
+             "from_port": C["port"], "to_port": O["port"], "nm": lanes[sea]["nm"],
              "passages": lanes[sea]["passages"],
              "steps": [["Factory to port (truck)", truck_days(tsh)],
                        ["Export handling & vessel wait", P["origin_sea_handling_days"]],
@@ -236,13 +266,24 @@ def build():
                        ["Import clearance", P[f"dest_handling_days_{country}"]],
                        ["Port to factory (truck)", truck_days(lanes[tpf]["km"])]]},
             {"name": f"Air expedite via Pudong → {an}", "lanes": [f"T:{C['factory']}>{C['airport']}", air, taf],
-             "passages": [],
+             "mode": "air", "hormuz": "any", "passages": [],
              "steps": [["Factory to airport (truck)", truck_days(tpa)],
                        ["Export build-up & clearance", P["origin_air_handling_days"]],
                        ["Flight", max(1.0, math.ceil(lanes[air]["km"] / (800 * 24) * 2) / 2)],
                        ["Import clearance", P.get(f"air_dest_handling_days_{country}", P["air_dest_handling_days"])],
                        ["Airport to factory (truck)", truck_days(lanes[taf]["km"])]]},
         ]
+        if feeds[o][0]["hormuz"] == "open":
+            sea2, t2 = ocean_lane(C["port"], BYPASS_PORT, "open"), truck_lane(BYPASS_PORT, O["factory"])
+            feeds[o].append(
+                {"name": "Sea via Shanghai → Khor Fakkan (Hormuz bypass)", "lanes": [f"T:{C['factory']}>{C['port']}", sea2, t2],
+                 "mode": "sea", "hormuz": "closed", "from_port": C["port"], "to_port": BYPASS_PORT,
+                 "nm": lanes[sea2]["nm"], "passages": lanes[sea2]["passages"],
+                 "steps": [["Factory to port (truck)", truck_days(tsh)],
+                           ["Export handling & vessel wait", P["origin_sea_handling_days"]],
+                           ["Ocean voyage", r1(sea_days(lanes[sea2]["km"]))],
+                           ["Import clearance", P[f"dest_handling_days_{country}"]],
+                           ["Port to factory (truck, Hormuz bypass)", truck_days(lanes[t2]["km"]) + P["hormuz_bypass_queue_days"]]]})
         for f in feeds[o]:
             f["days"] = r1(sum(d for _, d in f["steps"]))
     feed = feeds["ID"]                               # kept for older readers of network.json
@@ -281,7 +322,7 @@ def build():
           f"({os.path.getsize(os.path.join(ROOT, 'docs', 'atlas.html')) / 1e6:.2f} MB)")
     for r in routes:
         if r["mode"] == "sea":
-            print(f"  {r['origin']} -> {r['mgi']:<5} {r['variant']:<5} {r['nm']:>7,} nm "
+            print(f"  {r['origin']} -> {r['mgi']:<5} {r['variant']:<5} {r.get('hormuz', 'any'):<6} {r['nm']:>7,} nm "
                   f"{r['days']:>5} days")
     for o, fs in feeds.items():
         for f in fs:

@@ -250,12 +250,22 @@ def data_lanes():
                    "barrier": t.get("other_barrier") or "", "note": t.get("note") or "",
                    "share": round(weekly.get(m, 0) / tot, 4), "port": net["nodes"][v["port"]]["name"],
                    "airport": net["nodes"][v["airport"]]["code"]}
-    routes = [{k: r[k] for k in ("origin", "mgi", "mode", "variant", "km", "nm", "steps", "days", "passages", "domestic")
-               if k in r} for r in net["routes"]]
-    feeds = {o: [{k: f[k] for k in ("name", "steps", "days", "passages") if k in f} for f in fs]
+    fpi = FP.fp_input()                           # ocean rate per 40-ft on every lane, pre-war and Oct 2026
+    rate = lambda leg, basis: FP.feu_rate(fpi, {**fpi["P"], "freight_basis": basis}, leg["lane"], leg["nm"])
+    routes = []
+    for r in net["routes"]:
+        x = {k: r[k] for k in ("origin", "mgi", "mode", "variant", "hormuz", "km", "nm", "steps", "days", "passages",
+                                "domestic") if k in r}
+        leg = fpi["routes"].get(f"{r['origin']}|{r['mgi']}|{r['mode']}|{r['variant']}|{r['hormuz']}")
+        if r["mode"] == "sea" and leg and leg["lane"]:
+            x.update(lane=leg["lane"], feu_pre=rate(leg, 0.0), feu_contract=rate(leg, 1.0), feu_now=rate(leg, 2.0),
+                     feu_extra=FP.ocean_extra(fpi["P"], leg), benchmark=leg["lane"] in fpi["freight"])
+        routes.append(x)
+    feeds = {o: [{k: f[k] for k in ("name", "steps", "days", "passages", "mode", "hormuz") if k in f} for f in fs]
              for o, fs in net["feeds"].items()}
     return {"mgis": mgis, "routes": routes, "feeds": feeds,
             "origins": {k: v["label"] for k, v in net["origins"].items()},
+            "freight": {k: v for k, v in fpi["freight"].items()},
             "params": read_csv("leadtime_params.csv")}
 
 
@@ -324,12 +334,12 @@ def data_rules():
 # ----------------------------------------------------------------------------- overview
 ROADMAP = [
     ("Modules 1–4 + atlas", "MWD, transfer timing, business case, finished goods, network map", "done"),
-    ("Module 7 · Footprint", "Six sites, nine markets, real duties, origin by main board, build now or wait", "done"),
-    ("A · Core loop", "A2 demand & KPI · A3 ramp & risk board · A4 integrated run", "active"),
+    ("Module 7 · Footprint", "Six ODM sites, nine markets, real duties, 2026 freight and Hormuz, back-tested on US imports", "done"),
+    ("A · Core loop", "A4 first link done (Modules 2–4 price Module 7) · A2 demand & KPI · A3 ramp & risk board", "active"),
     ("B · Breadth", "AI servers, rail and sea-air (more origins and markets done)", "next"),
     ("C · Decision engine", "Inventory policy, forecast module (footprint optimiser done)", "next"),
-    ("D · Risk and cost", "Disruption Monte Carlo, carbon per lane (landed cost done)", "next"),
-    ("E · Calibration", "Replace placeholders, scheduled data refresh", "next"),
+    ("D · Risk and cost", "Disruption Monte Carlo, carbon per lane (landed cost, Hormuz bypass done)", "next"),
+    ("E · Calibration", "US import back-test done · replace placeholders, scheduled data refresh", "active"),
     ("F · Product", "Two live studios done · BI exports, CI", "active"),
     ("G · Packaging", "Case studies, methodology note", "next"),
 ]
@@ -351,7 +361,8 @@ def data_fp_summary():
 def data_overview(mwd, tr, bc, fg, lanes, rules, fp):
     sc = {s["code"]: s["summary"] for s in mwd["scenarios"]}
     route = lambda o, m, v="any": next(r for r in lanes["routes"] if r["origin"] == o and r["mgi"] == m
-                                       and r["mode"] == "sea" and r["variant"] in (v, "any"))
+                                       and r["mode"] == "sea" and r["variant"] in (v, "any")
+                                       and r.get("hormuz", "any") in ("closed", "any"))
     best25 = min(tr["sweeps"]["0.25|1"], key=lambda r: r["total"])
     now25 = tr["sweeps"]["0.25|1"][0]
     fgk = lambda s: fg["cells"][f"{s}|0.15|0.08|base|even"]["s"]
@@ -418,6 +429,8 @@ def main():
             with open(cache, "w", encoding="utf-8") as f:
                 json.dump([fg, bc], f)
     mwd, tr, lanes, rules = data_mwd(), data_transfer(), data_lanes(), data_rules()
+    lk = FP.fp_input()["linkage"]                 # src/integrate.py: what Module 7 takes from Modules 2-4
+    bc, fg, tr = {**bc, "linkage": lk}, {**fg, "linkage": lk}, {**tr, "linkage": lk}
     ov = data_overview(mwd, tr, bc, fg, lanes, rules, data_fp_summary())
     for page_file, key, data in [
         ("index.html", "overview", ov), ("lanes.html", "lanes", lanes), ("mwd.html", "mwd", mwd),
@@ -425,7 +438,8 @@ def main():
         ("finished-goods.html", "fg", fg), ("rules.html", "rules", rules),
         ("fg-live.html", "fglive", {"input": FG.engine_input(), "ranges": read_csv("fg_ranges.csv"),
                                     "params": read_csv("fg_params.csv")}),
-        ("footprint.html", "footprint", {"input": FP.fp_input()}),
+        ("footprint.html", "footprint", {"input": FP.fp_input(), "history": read_csv("us_import_history.csv"),
+                                         "tariff_history": read_csv("us_laptop_tariff_history.csv")}),
     ]:
         n = render(page_file, key, None, data)
         print(f"  docs/{page_file:<22}{n / 1e3:>8.0f} kB")

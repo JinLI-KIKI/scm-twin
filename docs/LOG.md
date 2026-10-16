@@ -138,11 +138,56 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   slides from 0 to 50% in 1% steps (grid recomputed at every step). Finished goods: price drop,
   sales optimism and lock style slide across the computed grid, with the simulator linked for
   values in between.
+- **2026 reality in Module 7.** The Strait of Hormuz has been closed since 28 Feb 2026: Gulf
+  cargo now lands at Khor Fakkan and is trucked to Dubai (new node, bypass routes in the atlas,
+  a Hormuz switch on the atlas, lanes and footprint pages). Ocean rates come from lane
+  benchmarks (SCFI, Drewry WCI, Xeneta) for late February and October 2026, blended by a
+  freight-basis slider; Far East–Brazil is ×6.6 and Far East–Gulf ×5.8, Far East–Japan flat.
+- **ODM structure (R35).** New sites are ODM lines: price index on the China line, one-time
+  NRE spread over the horizon, yearly program cost, and a volume commitment with a take-or-pay
+  fee instead of a hard minimum load.
+- **China parts curbs** as a sixth scenario (R39): non-China sites pay a premium on China
+  parts.
+- **A4, first link (R40).** `src/integrate.py` prices three Module 7 costs from Modules 2–4 and
+  writes `data/linkage.json`: chain $1.29 per unit per extra week (Module 3), end-of-life stock
+  $1.71 per unit per extra week of transit (Module 4, launch held fixed), urgent transfer $226
+  per unit of weekly volume (Modules 1–3). Each Module 2–4 page shows what it feeds.
+- **Back-test (R41)** against US imports by origin (Census, HS 8471): in 2025 the model moves
+  the US to Vietnam only with boards made there (100% vs 0%; actual about 60%), and in 2026
+  staying in Vietnam is rational once a renewed China tariff has more than 15% weight (the
+  model uses 20%). Python and the browser engine agree on 3,404 numbers.
 
-## Next — Day 4
+**Results:**
+- Cheapest under today's duties: China + Brazil ($329.0M a year). Lowest expected cost over the
+  named scenarios: China + Brazil ($339.0M), China + Vietnam with own boards a close second
+  ($339.2M). Lowest worst-case regret: China + Malaysia with own boards ($4.9M a year).
+- Under the duty ranges China + Malaysia with own boards has the lowest mean ($337.0M).
+- At today's duties the Asian hedge lines run below their commitment and pay take-or-pay:
+  China is cheaper per unit by more than the $12 fee. Building a hedge now beats waiting once
+  the China-tariff weight passes about 42–43%.
 
-- **Practitioner check of Module 7**: minimum load of a hedge site (Q28), time to open and
-  qualify a site and its board line (Q29), conversion cost by site.
+**Afternoon — real indices for Q30 and Q31:**
+- **Ocean rates (Q30).** Each lane now has three readings: pre-war (late Feb 2026), long-term
+  contract (Xeneta, Aug 2026: Far East–US West Coast $2,854, Far East–North Europe $2,690, both
+  +41%) and spot (Oct 2026). The plan pays the contract rate by default; the slider runs from
+  pre-war (0) through contract (1) to spot (2).
+- **ODM line or bought plant (Q31).** Each new site is either a line on an ODM's existing campus
+  or a bought electronics plant (switch per site). NRE and the plant price follow capex per
+  laptop of yearly capacity of real Vietnam campuses ($4.2 Wistron Ha Nam Victory II fit-out,
+  $13.3 Quanta Nam Dinh; cross-check Tata–Wistron India $125M for 10,000 workers); a bought plant
+  keeps the ODM's 1.4% operating margin (Compal FY2025) and carries its own overhead,
+  depreciation, capital and idle labour. Ramp-up depends on the mode (6 months on an existing
+  campus, 9 for a bought plant; a campus from scratch took 16–20 months).
+- **Results.** Expected cost: China + Brazil $337.9M, China + Malaysia with own boards $338.5M
+  (lowest regret, $5.2M). With a 6-month ramp on an existing campus, waiting gets cheaper:
+  building a hedge now pays once a China tariff passes about 60% (was 42%). Buying the plants
+  instead of ODM lines costs about $1M a year more at half load. Parity: 3,524 numbers.
+
+## Next — Day 5
+
+- **Jin to judge:** the take-or-pay fee and commitment (Q28), ramp months by mode and rush
+  premium (Q29), own-plant overhead and labour share.
+
 - **Formula and algorithm review with Jin**, module by module (spec in `docs/models/`).
 - Then Roadmap A2, Module 5: demand and KPI view. Q27 answered: the BU's FY shipment target is
   counted in sell-in units (R33).

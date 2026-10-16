@@ -46,6 +46,7 @@
 
   <footer class="notes">
     <p><b>How it is computed.</b> Plans inside the <span id="n-w2"></span>-week liability window are committed. Cutting the US over at week C cancels US builds from C to the end of the window. Loose material is netted first by other regions' plans (R2, R3), then, if moving parts is on, by the new site's US builds after a <span id="n-rw"></span>-week bonded move costing <span id="n-rc"></span> of value. Boards built <span id="n-ba"></span> weeks ahead are origin-locked and can only serve other regions of the same model. Whatever is left is MWD; convertible parts are reworked first (R6).</p>
+    <p id="n-link"></p>
     <p><b>Not in this view.</b> The recurring cost of the longer chain after the move and the slow ramp sit in the <a href="business-case.html">Business case</a>. MWD detail by material is on the <a href="mwd.html">MWD</a> page.</p>
   </footer>
 </main>
@@ -163,4 +164,5 @@ function draw() {
   [cSweep, cBest, cChain].forEach(R.update);
 }
 draw();
+if (D.linkage) { const t = D.linkage.transition; R.$('#n-link').innerHTML = `<b>Used in Module 7.</b> With a 25% tariff the best US cutover is week ${t.urgent_best_week}: $${R.num(t.cutover_usd_per_weekly_unit, 0)} per unit of weekly volume in holding, relocation and MWD, plus $${R.num(t.expedite_usd_per_weekly_unit, 0)} of parts expediting from the <a href="business-case.html">Business case</a>. The <a href="footprint.html">Footprint</a> page charges <b>$${R.num(t.urgent_usd_per_weekly_unit, 0)} per weekly unit</b> moved out of China in a hurry once a tariff has arrived; moved at a model change (best week ${t.planned_best_week} without a tariff) it costs $${R.num(t.planned_usd_per_weekly_unit, 0)}.`; }
 </script>

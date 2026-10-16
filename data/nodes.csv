@@ -30,6 +30,7 @@ A_HAN,airport,"Hanoi Noi Bai",HAN,VNM,21.221,105.807,"Air gateway for northern V
 P_PEN,port,"Penang North Butterworth",MYPEN,MYS,5.410,100.360,"Export seaport for Penang",WEB-KNOWN
 A_PEN,airport,"Penang Intl",PEN,MYS,5.297,100.277,"Air gateway for Penang",WEB-KNOWN
 P_JEA,port,"Jebel Ali",AEJEA,ARE,25.010,55.060,"Gulf gateway",WEB-KNOWN
+P_KFK,port,"Khor Fakkan",AEKLF,ARE,25.345,56.360,"East-coast gateway outside Hormuz; Gulf bypass port since the strait closed on 28 Feb 2026",WEB-KNOWN
 A_DWC,airport,"Dubai World Central",DWC,ARE,24.896,55.161,"UAE air cargo gateway",WEB-KNOWN
 P_SYD,port,"Sydney Port Botany",AUSYD,AUS,-33.970,151.220,"Australia gateway",WEB-KNOWN
 A_SYD,airport,"Sydney Kingsford Smith",SYD,AUS,-33.946,151.177,"Australia air gateway",WEB-KNOWN

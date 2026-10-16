@@ -37,13 +37,18 @@ sales cannot sell the BU absorbs or resells through other GEOs. Compares push se
 sales lock, lock + drain, lock + push and lock + IBP hedge (no-lock strategies kept as benchmarks),
 for the brand alone and for brand + dealers.
 
-**Module 7 — factory footprint** (`src/footprint.py`): six candidate assembly sites (China,
-Indonesia, Vietnam, Malaysia, Brazil, UAE) and nine regional distribution centres (US, EU, UK,
-Japan, Brazil, Australia, Singapore, India, UAE). Landed cost per site and market from freight,
-laptop duties in force in October 2026, carrying, a planning cost for longer chains and an
-optional chokepoint premium; a minimum-cost flow allocates demand within capacity and minimum
-loads; every feasible footprint is scored in every tariff scenario by expected cost and
-worst-case regret, with break-even duties and a build-now-or-wait comparison. Each duty can
+**Module 7 — factory footprint** (`src/footprint.py`): China and five candidate ODM sites
+(Indonesia, Vietnam, Malaysia, Brazil, UAE) and nine regional distribution centres (US, EU, UK,
+Japan, Brazil, Australia, Singapore, India, UAE). Landed cost per site and market from 2026
+ocean rates by lane (pre-war, long-term contract or spot; with the Strait of Hormuz closed, Gulf cargo goes via Khor Fakkan), laptop
+duties in force in October 2026, carrying, and three costs priced by Modules 2–4: the longer
+chain, end-of-life stock and an urgent transfer. Each new site is a line on an ODM's existing
+campus (price index, NRE, program cost, volume commitment with take-or-pay) or a bought
+electronics plant, with NRE and plant price from the capex of real Vietnam campuses; a minimum-cost flow allocates demand within
+capacity; every footprint is scored in every tariff scenario (including China curbing parts
+exports) by expected cost and worst-case regret, with break-even duties and a
+build-now-or-wait comparison. A back-test runs the model on the 2025 and 2026 China-only tariff
+gaps against US imports by origin. Each duty can
 also be stretched into a range, up to the April 2025 US peak by default, and a Monte Carlo
 prices every footprint across the draws. Origin follows the
 main board (US customs rulings), so a site that assembles China-made boards does not escape a
@@ -57,7 +62,7 @@ recompute in the browser with ports of the Python models (`src/dash/fg_engine.js
 
 **Network atlas** (`docs/atlas.html`): a world map of the network — six factory sites, real
 export gateways, nine regional distribution centres (MGI), real ocean lanes (Cape of Good Hope
-vs Suez) with the straits they pass, air lanes, the parts feed from China into each new site,
+vs Suez, Hormuz open or bypassed via Khor Fakkan) with the straits they pass, air lanes, the parts feed from China into each new site,
 door-to-MGI lead-time breakdowns, import duty by market and assembly site, and major highways
 (truck lanes follow them). One complete world, no repeated copies. Open the file in a browser.
 Rebuild after editing `data/nodes.csv`, `data/tariffs.csv` or `data/leadtime_params.csv`:
@@ -71,6 +76,7 @@ python3 src/scenarios.py          # module 1: scenarios A/B/C0/C/D, per-material
 python3 src/transfer.py           # module 2: cutover-week sweep under tariff scenarios
 python3 src/business_case.py      # module 3: annual business case, Monte Carlo
 python3 src/finished_goods.py     # module 4: finished goods around a successor launch
+python3 src/integrate.py          # A4: price Module 7's chain, EOL-stock and transfer costs from modules 2-4
 python3 src/footprint.py          # module 7: landed cost, allocation, footprints across tariff scenarios
 python3 src/build_dashboards.py   # rebuild the report pages in docs/ (about two minutes)
 python3 tests/test_fg_parity.py   # browser engines match Python (needs Node.js)

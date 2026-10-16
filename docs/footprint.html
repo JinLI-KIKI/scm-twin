@@ -339,6 +339,16 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
 .tbl td.dc { padding-top: 5px; padding-bottom: 3px; }
 /* ---------- tables and small things */
 .heat td.cell { cursor: pointer; }
+.site-row .mini[data-k="buy_price"] { opacity: .45; } .site-row.buy .mini[data-k="buy_price"] { opacity: 1; }
+.site-row.buy .mini[data-k="nre"], .site-row.buy .mini[data-k="min_load"] { opacity: .45; }
+.ladder.flat .lr { padding: 9px 0; }
+.ladder.flat .lr .v { font-size: 14px; }
+.lr .v .ok { color: var(--good); } .lr .v .no { color: var(--bad); }
+.lr .l b { color: var(--ink); font-weight: 600; }
+.bt-h { font: 600 12px var(--f-body); color: var(--ink); padding: 10px 0 2px; border-top: 1px solid var(--rule); }
+.bt-h:first-child { border-top: 0; padding-top: 0; }
+.chg { font: 11px var(--f-mono); color: var(--c2); }
+@media (max-width: 1180px) { #v-link, #v-bt { grid-column: span 12; } }
 .heat tbody tr { cursor: pointer; }
 .heat td.best { box-shadow: inset 0 0 0 2px var(--ink); font-weight: 600; }
 .heat td.closed { color: var(--muted); }
@@ -376,7 +386,7 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
     <div>
       <p class="eyebrow">Module 7 · sites, markets and real duties</p>
       <h1>Factory Footprint Studio</h1>
-      <p class="sub">Six candidate assembly sites, nine regional distribution centres and the laptop duties in force in October 2026, with four tariff scenarios and duty ranges you stretch by hand up to the April 2025 peak. A laptop takes the origin of its main board, so a site that only assembles China-made boards does not escape a China tariff. Everything below recomputes as you move an input.</p>
+      <p class="sub">China plus five candidate ODM sites, nine regional distribution centres, and the laptop duties, ocean rates and Hormuz closure of October 2026, with tariff scenarios and duty ranges you stretch by hand up to the April 2025 peak. A laptop takes the origin of its main board, so a site that only assembles China-made boards does not escape a China tariff. Three costs come from Modules 2–4, and the model is checked against where US imports actually moved. Everything below recomputes as you move an input.</p>
     </div>
     <div class="asof">Built 2026-10-16 · duties checked Oct 2026 · <a href="rules.html">sources</a> · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/footprint.md">formulas</a></div>
   </div>
@@ -417,6 +427,7 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
       <section class="ctrl" aria-label="Scenario">
         <div class="slicer"><span class="s-label" id="l-s">Duty scenario</span><div class="seg" role="group" aria-labelledby="l-s" id="f-s"></div></div>
         <div class="slicer"><span class="s-label" id="l-r">Red Sea</span><div class="seg" role="group" aria-labelledby="l-r" id="f-r"></div></div>
+        <div class="slicer"><span class="s-label" id="l-h">Strait of Hormuz</span><div class="seg" role="group" aria-labelledby="l-h" id="f-h"></div></div>
         <div class="slicer"><span class="s-label" id="l-m">Grid mode</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
         <div class="slicer"><span class="s-label" id="l-v">Grid shows</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
         <div class="slicer slider-ctl"><span class="s-label"><label for="runs">Duty draws</label><output id="o-runs"></output></span><input type="range" id="runs" min="50" max="1000" step="50"></div>
@@ -479,7 +490,7 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
           <div class="tbl-wrap"><table class="tbl" id="t-fp"></table></div>
         </div>
 
-        <div class="sec"><span class="n">05</span><h3>Duties and chokepoints</h3><span class="rule"></span><span class="note">Slide a cell to change that duty in the selected scenario; changes to Current also move the centre of every range</span></div>
+        <div class="sec"><span class="n">05</span><h3>Duties, freight and chokepoints</h3><span class="rule"></span><span class="note">Slide a cell to change that duty in the selected scenario; changes to Current also move the centre of every range</span></div>
         <div class="viz w8">
           <div class="viz-h"><h2 id="h-duty">Duties in this scenario</h2><span class="hint">Percent, by where the unit is assembled · black tick: scenario value · double-click a cell to restore it</span></div>
           <div class="tbl-wrap"><table class="tbl" id="t-duty"></table></div>
@@ -488,14 +499,32 @@ details.grp > summary .cnt { font: 500 11px var(--f-mono); color: var(--c2); mar
           <div class="viz-h"><h2>Straits and capes</h2><span class="hint">Units per week on the chosen network</span></div>
           <div id="c-choke" class="chart"></div>
         </div>
+        <div class="viz w8">
+          <div class="viz-h"><h2>Ocean rates by lane</h2><span class="hint" id="h-lanes"></span></div>
+          <div class="tbl-wrap"><table class="tbl" id="t-lanes"></table></div>
+        </div>
+        <div class="viz w4" id="v-link">
+          <div class="viz-h"><h2>Costs linked from Modules 1–4</h2><span class="hint">Recomputed by src/integrate.py</span></div>
+          <div id="linkage"></div>
+        </div>
+
+        <div class="sec"><span class="n">06</span><h3>Does the model match what happened?</h3><span class="rule"></span><span class="note">US imports by origin, Census data, against the China-specific tariff gap</span></div>
+        <div class="viz w7">
+          <div class="viz-h"><h2>Where US computer imports came from</h2><span class="hint">HS 8471, USD bn · laptops and servers together</span></div>
+          <div id="c-hist" class="chart tall"></div>
+        </div>
+        <div class="viz w5" id="v-bt">
+          <div class="viz-h"><h2>Back-test</h2><span class="hint">The model, run on the 2025 and 2026 tariff gaps</span></div>
+          <div id="backtest"></div>
+        </div>
       </section>
 
       <section class="insight" id="insight"></section>
 
       <footer class="notes">
-        <p><b>Landed cost</b> = factory value (China customs value, conversion cost scaled by the site's index and, at other sites, the parts shipped from China: freight, carrying while they sail and import duty on parts; plus the extra cost of making the main board on site) + freight to the market + duty (on CIF where the market values imports that way) + carrying in transit + a planning cost for the longer chain at non-China sites + an optional chokepoint premium. <b>Duty</b> = (1 − w) × the site's own rate + w × the China rate, where w is the board-origin weight for a site that imports China-made boards (1 under the US customs rulings) and 0 for a site that makes its boards or sells in its own country.</p>
-        <p><b>Allocation</b> is a minimum-cost flow from open sites to markets within capacity, with each new site carrying at least its minimum load. <b>Footprints</b> are every set of open sites that can cover demand and whose minimum loads fit, with boards imported or made on site, priced over 52 weeks plus the yearly fixed cost of sites and board lines. <b>Duty ranges</b>: in each draw and market, with the change probability set on the left, the market moves all its duties to the same point of their ranges (as the US did in April 2025); otherwise today's rates stay. Regret is the gap to the cheapest footprint in the same draw or scenario. <b>Build now or wait</b> compares opening today with keeping the footprint that is cheapest under current duties and opening only once a scenario arrives: the old cost runs through the ramp-up and a rush premium is paid.</p>
-        <p><b>Duties</b> are current rates for laptops (HTS 8471.30): the US exempts computers from the July 2026 Section 301 action and China's 2019 list on laptops stays suspended; the EU, UK, Japan, Australia, Singapore and India charge nothing; Brazil charges 16%; the UAE 5%. <b>Ceilings</b> follow the April 2025 peak in the US: China 145% (125% reciprocal + 20% fentanyl; laptops were exempted from the reciprocal part on 11 April and paid 20%), Vietnam 46%, Indonesia 32%, Malaysia 24%, Brazil and the UAE 10% (Brazil later 50%). Scenario weights, the change probability, freight rates, conversion indices, capacities, minimum loads and board costs are placeholders. Sources in the <a href="rules.html">Rules register</a>; code in <code>src/footprint.py</code>, mirrored in <code>src/dash/fp_engine.js</code> and checked number for number by <code>tests/test_fp_parity.py</code>.</p>
+        <p><b>Landed cost</b> = factory value (China customs value, conversion cost scaled by the site's index and, at other sites, the parts shipped from China: freight, carrying while they sail and import duty on parts; plus the extra cost of making the main board on site) + freight to the market + duty (on CIF where the market values imports that way) + carrying in transit + the longer chain at non-China sites (end-of-life material from Module 3, per week of parts feed plus one) + end-of-life stock from Module 4 (per week of transit beyond China's to the same market; a credit when the site is closer) + an optional chokepoint premium. <b>Freight</b> per 40-ft runs from the pre-war rate (basis 0) through the long-term contract rate (1, the default: a shipper on annual contracts) to the October 2026 spot (2), from lane benchmarks by port region; lanes without a benchmark use the distance formula. With Hormuz closed, Gulf cargo lands at Khor Fakkan and is trucked to Dubai. <b>Duty</b> = (1 − w) × the site's own rate + w × the China rate, where w is the board-origin weight for a site that imports China-made boards (1 under the US customs rulings) and 0 for a site that makes its boards or sells in its own country.</p>
+        <p><b>Allocation</b> is a minimum-cost flow from open sites to markets within capacity. A new site is either an ODM line on the ODM's existing campus (price index on the China line, NRE = the line's share of the campus fit-out plus qualification, program cost, and a volume commitment with a take-or-pay fee per unit below it) or a bought electronics plant (price from the capex per laptop of capacity of recent Vietnam campuses; it saves the ODM's operating margin, pays depreciation, capital and its own overhead, and the idle labour below the planned load). The flow fills commitments first when that is cheaper than the fee. <b>Footprints</b> are every set of open sites that can cover demand, with boards imported or made on site, priced over 52 weeks plus the yearly program cost, the set-up (NRE) spread over the horizon, and board lines. <b>Duty ranges</b>: in each draw and market, with the change probability set on the left, the market moves all its duties to the same point of their ranges (as the US did in April 2025); otherwise today's rates stay. Regret is the gap to the cheapest footprint in the same draw or scenario. <b>Build now or wait</b> compares opening today with keeping the footprint that is cheapest under current duties and opening only once a scenario arrives: the old cost runs through the ramp-up, a rush premium is paid, and the volume moved out of China in a hurry pays the urgent transfer cost from Modules 1–3. <b>China parts curbs</b> add a premium to China-made parts at every other site. <b>Back-test</b>: the 2025 China-only gap (20%) and the 2026 gap (0) against US imports by origin from the Census Bureau.</p>
+        <p><b>Duties</b> are current rates for laptops (HTS 8471.30): the US exempts computers from the July 2026 Section 301 action and China's 2019 list on laptops stays suspended; the EU, UK, Japan, Australia, Singapore and India charge nothing; Brazil charges 16%; the UAE 5%. <b>Ceilings</b> follow the April 2025 peak in the US: China 145% (125% reciprocal + 20% fentanyl; laptops were exempted from the reciprocal part on 11 April and paid 20%), Vietnam 46%, Indonesia 32%, Malaysia 24%, Brazil and the UAE 10% (Brazil later 50%). Ocean rates: SCFI, Drewry WCI and Xeneta readings (<code>data/freight_lanes.csv</code>). ODM and plant terms: capex per unit of capacity from the Wistron (Ha Nam) and Quanta (Nam Dinh) campuses, the Tata–Wistron India deal and Compal's operating margin (<code>data/footprint_params.csv</code>). Scenario weights, the change probability, ODM price indices, program cost, capacities, commitments, the take-or-pay fee, qualification, overhead, ramp months and board costs are placeholders. Sources in the <a href="rules.html">Rules register</a>; code in <code>src/footprint.py</code>, mirrored in <code>src/dash/fp_engine.js</code> and checked number for number by <code>tests/test_fp_parity.py</code>.</p>
       </footer>
     </div>
   </div>
@@ -608,35 +637,60 @@ const FPE = (() => {
     for (const k of Object.keys(inp.duties)) d[k] = { ...inp.duties[k] };
     for (const ov of scenario.overrides) {
       const targets = ov.origin === '*' ? inp.origins : [ov.origin];
-      for (const o of targets) d[ov.tkey][o] = ov.duty;
+      for (const o of targets) {
+        if (ov.tkey === '_parts' && o === 'CN') continue;
+        d[ov.tkey][o] = ov.duty;
+      }
     }
     return d;
   }
-  function route(inp, o, mgi, mode, redSea) {
+  function route(inp, o, mgi, mode, redSea, hormuz) {
     for (const v of [redSea, 'any']) {
-      const k = `${o}|${mgi}|${mode}|${v}`;
-      if (k in inp.routes) return inp.routes[k];
+      for (const h of [hormuz, 'any']) {
+        const k = `${o}|${mgi}|${mode}|${v}|${h}`;
+        if (k in inp.routes) return inp.routes[k];
+      }
     }
     throw new Error(`${o}|${mgi}|${mode}`);
   }
+  function feuRate(inp, P, lane, nm) {        // basis 0 = pre-war, 1 = long-term contract, 2 = spot
+    let a, c, b;
+    if (lane in inp.freight) [a, c, b] = inp.freight[lane];
+    else { a = P.sea_feu_base_usd + P.sea_feu_per_nm_usd * nm; c = a * P.fallback_contract_factor; b = a * P.fallback_now_factor; }
+    const x = P.freight_basis;
+    return x <= 1 ? a + x * (c - a) : c + (x - 1) * (b - c);
+  }
+  function siteTerms(P, s) {                  // R35: ODM line on an existing campus, or a bought plant
+    if (s.mode === 'buy') {
+      const conv = s.conv_index - P.odm_op_margin * P.customs_value_cn_usd / P.conversion_cost_cn_usd;
+      return { conv, fee: P.labour_share_conversion * P.conversion_cost_cn_usd * conv,
+        fixed: s.fixed_cost + P.buy_overhead_usd_yr + s.buy_price * (1 / P.plant_life_years + P.capital_rate), ramp: P.ramp_months_buy };
+    }
+    return { conv: s.conv_index, fee: P.shortfall_fee_usd, fixed: s.fixed_cost + s.nre / P.horizon_years, ramp: P.ramp_months_odm };
+  }
+  const oceanExtra = (P, leg) => (leg.gulf ? P.gulf_surcharge_feu : 0) + (leg.bypass ? P.bypass_truck_usd_feu : 0);
   function landed(inp, P, sites, o, m, mode, redSea, duties) {
-    const r = route(inp, o, m.mgi, mode, redSea), s = sites[o];
+    const hz = P.hormuz_closed >= 0.5 ? 'closed' : 'open';
+    const r = route(inp, o, m.mgi, mode, redSea, hz), s = sites[o];
     let parts = 0, plan = 0;
     if (o !== 'CN') {
-      const f = inp.feeds[o];
-      const partsFreight = (P.sea_feu_base_usd + P.sea_feu_per_nm_usd * f.nm) / P.kits_per_feu + P.handling_usd_per_unit;
+      const f = inp.feeds[o][hz];
+      const partsFreight = (feuRate(inp, P, f.lane, f.nm) + oceanExtra(P, f)) / P.kits_per_feu + P.handling_usd_per_unit;
       const partsCarry = P.parts_value_usd * P.carrying_rate_annual * f.days / 365;
-      parts = partsFreight + partsCarry + P.parts_value_usd * s.parts_duty;
+      parts = partsFreight + partsCarry + P.parts_value_usd * s.parts_duty
+        + P.parts_value_usd * P.cn_parts_premium * duties._parts[o];
       plan = P.planning_cost_usd_per_unit_week * (f.days / 7 + 1);
     }
     const board = o === 'CN' || s.board_local;
-    const cv = P.customs_value_cn_usd + P.conversion_cost_cn_usd * (s.conv_index - 1) + parts
+    const cv = P.customs_value_cn_usd + P.conversion_cost_cn_usd * (siteTerms(P, s).conv - 1) + parts
       + (o !== 'CN' && board ? P.board_extra_usd : 0);
     const trucking = P.truck_usd_per_unit_100km * r.truck_km / 100;
     let freight;
     if (r.domestic) freight = trucking + P.handling_usd_per_unit * 0.5;
-    else if (mode === 'sea') freight = (P.sea_feu_base_usd + P.sea_feu_per_nm_usd * r.nm) / P.units_per_feu + P.handling_usd_per_unit + trucking;
+    else if (mode === 'sea') freight = (feuRate(inp, P, r.lane, r.nm) + oceanExtra(P, r)) / P.units_per_feu + P.handling_usd_per_unit + trucking;
     else freight = P.kg_per_unit * (P.air_usd_per_kg_base + P.air_usd_per_kg_per_1000km * r.air_km / 1000) + P.handling_usd_per_unit + trucking;
+    const cnDays = o === 'CN' ? r.days : route(inp, 'CN', m.mgi, mode, redSea, hz).days;   // Module 4 link
+    const fg = P.fg_eol_usd_per_unit_week * (r.days - cnDays) / 7;
     const own = duties[m.tkey][o];
     const w = (board || r.domestic) ? 0 : P.board_origin_weight;
     const rate = (1 - w) * own + w * duties[m.tkey].CN;
@@ -645,8 +699,8 @@ const FPE = (() => {
     const carry = cv * P.carrying_rate_annual * r.days / 365;
     const risky = [...new Set(r.passages.filter((p) => p in RISKY).map((p) => RISKY[p]))].sort();
     const risk = P.chokepoint_premium_usd * risky.length;
-    const total = cv + freight + duty + carry + plan + risk;
-    return { total, factory: cv, parts, freight, duty, duty_rate: rate, own_rate: own, origin_weight: w, duty_base: base, board,
+    const total = cv + freight + duty + carry + plan + fg + risk;
+    return { total, factory: cv, parts, freight, duty, fg, duty_rate: rate, own_rate: own, origin_weight: w, duty_base: base, board,
       carry, plan, risk, days: r.days,
       passages: r.passages, risky, domestic: r.domestic };
   }
@@ -657,8 +711,7 @@ const FPE = (() => {
   }
 
   // ---------------------------------------------------------------- minimum-cost flow
-  const BIG = 1e6;   // cost bonus that makes the solver fill each site's minimum load first
-  function transport(cost, cap, demand, low) {
+  function transport(cost, cap, demand, low, bonus) {   // bonus = fee per unit short of the commitment (one number or one per site)
     const ni = cap.length, nj = demand.length, n = ni + nj + 2, s = 0, t = n - 1;
     const to = [], capv = [], costv = [], adj = Array.from({ length: n }, () => []);
     const add = (u, v, c, w) => {
@@ -667,9 +720,10 @@ const FPE = (() => {
     };
     const need = ssum(demand);
     low = low || new Array(ni).fill(0);
+    const bon = Array.isArray(bonus) ? bonus : new Array(ni).fill(bonus || 0);
     for (let i = 0; i < ni; i++) {
       const lo = Math.min(low[i], cap[i]);
-      if (lo > 0) add(s, 1 + i, lo, -BIG);
+      if (lo > 0) add(s, 1 + i, lo, -bon[i]);
       add(s, 1 + i, cap[i] - lo, 0);
     }
     for (let i = 0; i < ni; i++) for (let j = 0; j < nj; j++) add(1 + i, 1 + ni + j, need, cost[i][j]);
@@ -714,8 +768,10 @@ const FPE = (() => {
     const cap = org.map((o) => sites[o].capacity);
     const low = org.map((o) => sites[o].min_load * sites[o].capacity);
     const dem = inp.markets.map((m) => m.weekly_units);
-    const [flow, unmet] = transport(cost, cap, dem, low);
-    const underload = ssum(org.map((_, i) => Math.max(0, low[i] - ssum(flow[i]))));
+    const fee = org.map((o) => siteTerms(P, sites[o]).fee);
+    const [flow, unmet] = transport(cost, cap, dem, low, fee);
+    const under = org.map((_, i) => Math.max(0, low[i] - ssum(flow[i])));
+    const underload = ssum(under);
     let total = 0, duty = 0, days = 0;
     const exposure = {}, alloc = {};
     org.forEach((o, i) => inp.markets.forEach((m, j) => {
@@ -729,7 +785,9 @@ const FPE = (() => {
     const served = ssum(dem) - unmet;
     const load = {};
     org.forEach((o, i) => { load[o] = ssum(flow[i]); });
-    return { weekly_cost: total, weekly_duty: duty, avg_days: served ? days / served : 0, alloc, unmet, underload, exposure, open: org, load, table: tab };
+    const shortfall = ssum(under.map((u, i) => fee[i] * u));
+    return { weekly_cost: total + shortfall, weekly_landed: total, weekly_shortfall: shortfall, weekly_duty: duty, avg_days: served ? days / served : 0,
+      alloc, unmet, underload, exposure, open: org, load, table: tab };
   }
 
   function withBoards(sites, openSites, board) {
@@ -742,13 +800,15 @@ const FPE = (() => {
     return out;
   }
   function yearlyCosts(inp, P, sites, openSites, redSea, mats) {
-    const fixed = ssum(openSites.map((o) => sites[o].fixed_cost))
+    const fixed = ssum(openSites.map((o) => siteTerms(P, sites[o]).fixed))
       + P.board_fixed_usd_yr * openSites.filter((o) => o !== 'CN' && sites[o].board_local).length;
-    const costs = mats.map((d) => {
+    const costs = [], moved = [];
+    for (const d of mats) {
       const ev = evaluate(inp, P, sites, openSites, redSea, d);
-      return 52 * ev.weekly_cost + fixed + ((ev.unmet > 1e-6 || ev.underload > 1e-6) ? 1e12 : 0);
-    });
-    return [fixed, costs];
+      costs.push(52 * ev.weekly_cost + fixed + (ev.unmet > 1e-6 ? 1e12 : 0));
+      moved.push(ssum(Object.keys(ev.load).filter((o) => o !== 'CN').map((o) => ev.load[o])));
+    }
+    return [fixed, costs, moved];
   }
   function footprints(inp, P, sites, redSea, scenList) {
     const scen = scenList || inp.scenarios, orgs = inp.origins;
@@ -757,12 +817,11 @@ const FPE = (() => {
     const rows = [];
     for (let mask = 1; mask < (1 << orgs.length); mask++) {
       const open = orgs.filter((_, k) => (mask >> k) & 1);
-      if (ssum(open.map((o) => sites[o].capacity)) < demand - 1e-9
-        || ssum(open.map((o) => sites[o].min_load * sites[o].capacity)) > demand + 1e-9) continue;
+      if (ssum(open.map((o) => sites[o].capacity)) < demand - 1e-9) continue;
       for (const board of (open.some((o) => o !== 'CN') ? [false, true] : [null])) {
         const sv = withBoards(sites, open, board);
-        const [fixed, costs] = yearlyCosts(inp, P, sv, open, redSea, mats);
-        rows.push({ open, board: !!board, fixed, costs });
+        const [fixed, costs, moved] = yearlyCosts(inp, P, sv, open, redSea, mats);
+        rows.push({ open, board: !!board, fixed, costs, moved });
       }
     }
     const best = scen.map((_, k) => Math.min(...rows.map((r) => r.costs[k])));
@@ -773,11 +832,16 @@ const FPE = (() => {
     }
     rows.sort((a, b) => (a.expected - b.expected) || (a.open.length - b.open.length) || (a.board - b.board));
     const base = rows.reduce((a, r) => (r.costs[0] < a.costs[0] ? r : a), rows[0]);
-    const H = P.horizon_years, lag = Math.min(P.ramp_months / 12, H);
+    const H = P.horizon_years;
     for (const r of rows) {
+      const fresh = r.open.filter((o) => o !== 'CN' && !base.open.includes(o));
+      const lag = Math.min(Math.max(0, ...fresh.map((o) => siteTerms(P, sites[o]).ramp)) / 12, H);
+      const rush = fresh.length ? P.rush_premium_usd : 0;
+      r.lag = lag;
       const wait = r.costs.map((c, k) => {
         const cb = base.costs[k];
-        return r === base ? H * cb : Math.min(H * cb, lag * cb + (H - lag) * c + P.rush_premium_usd);
+        const urgent = P.urgent_transition_usd_per_weekly_unit * Math.max(0, r.moved[k] - base.moved[k]);
+        return r === base ? H * cb : Math.min(H * cb, lag * cb + (H - lag) * c + rush + urgent);
       });
       r.wait_by = wait;
       r.wait = ssum(scen.map((s, k) => s.probability * wait[k])) / wsum;
@@ -811,8 +875,7 @@ const FPE = (() => {
     const orgs = inp.origins, demand = ssum(inp.markets.map((m) => m.weekly_units)), out = [];
     for (let mask = 1; mask < (1 << orgs.length); mask++) {
       const open = orgs.filter((_, k) => (mask >> k) & 1);
-      if (ssum(open.map((o) => sites[o].capacity)) < demand - 1e-9
-        || ssum(open.map((o) => sites[o].min_load * sites[o].capacity)) > demand + 1e-9) continue;
+      if (ssum(open.map((o) => sites[o].capacity)) < demand - 1e-9) continue;
       for (const board of (open.some((o) => o !== 'CN') ? [false, true] : [null])) {
         out.push({ open, board: !!board, sites: withBoards(sites, open, board) });
       }
@@ -867,6 +930,30 @@ const FPE = (() => {
     rows.sort((a, b) => (a.mean - b.mean) || (a.open.length - b.open.length) || (a.board - b.board));
     return { rows, runs, mean_duty: meanDuty };
   }
+  function backtest(inp, P, sites, redSea) {     // port of footprint.backtest
+    const us = inp.markets.find((m) => m.market === 'US').weekly_units;
+    const d = dutyMatrix(inp, inp.scenarios[0]);
+    d.USA.CN = 0.20;
+    const shift = {};
+    for (const board of [false, true]) {
+      const sv = withBoards(sites, ['CN', 'VN'], board);
+      const ev = evaluate(inp, P, sv, ['CN', 'VN'], redSea, d);
+      shift[board ? 'own_boards' : 'china_boards'] = (ev.alloc['VN|US'] || 0) / us;
+    }
+    const sv = withBoards(sites, ['CN', 'VN'], true);
+    sv.VN = { ...sv.VN, nre: 0, buy_price: 0 };      // already paid
+    const mats = inp.scenarios.map((s) => dutyMatrix(inp, s));
+    const cStay = yearlyCosts(inp, P, sv, ['CN', 'VN'], redSea, mats)[1];
+    const cBack = yearlyCosts(inp, P, sv, ['CN'], redSea, mats)[1];
+    const k = inp.scenarios.findIndex((s) => s.id === 'cn301');
+    const w = inp.scenarios.map((s) => s.probability);
+    const rest = ssum(w.filter((_, i) => i !== k)) || 1;
+    const e = (c, p) => p * c[k] + (1 - p) * ssum(c.map((x, i) => (i !== k ? w[i] * x : 0)).filter((_, i) => i !== k)) / rest;
+    const a0 = e(cStay, 0), a1 = e(cStay, 1), b0 = e(cBack, 0), b1 = e(cBack, 1);
+    const den = (a0 - b0) - (a1 - b1);
+    const implied = Math.abs(den) < 1e-9 ? null : Math.max(0, Math.min(1, (a0 - b0) / den));
+    return { shift_2025: shift, implied_weight_2026: implied, stay: cStay, back: cBack };
+  }
   function breakEven(inp, P, sites, redSea, duties) {
     const tab = landedTable(inp, P, sites, 'sea', redSea, duties), out = {};
     for (const o of inp.origins) {
@@ -882,12 +969,12 @@ const FPE = (() => {
     }
     return out;
   }
-  return { dutyMatrix, landed, landedTable, transport, evaluate, withBoards, yearlyCosts, footprints, tippingWeight, breakEven, makeRng, candidates, drawDuties, dutyMonteCarlo };
+  return { dutyMatrix, feuRate, landed, landedTable, transport, evaluate, withBoards, yearlyCosts, footprints, tippingWeight, breakEven, backtest, route, oceanExtra, siteTerms, makeRng, candidates, drawDuties, dutyMonteCarlo };
 })();
 if (typeof module !== 'undefined') module.exports = FPE;
 </script>
 <script>
-const D = {"input":{"origins":["CN","ID","VN","MY","BR","AE"],"markets":[{"market":"US","mgi":"M_US","tkey":"USA","weekly_units":4000.0,"valuation":"FOB","name":"Inland Empire, California","code":"MGI-US"},{"market":"EU","mgi":"M_EU","tkey":"EU","weekly_units":2400.0,"valuation":"CIF","name":"Venlo, Netherlands","code":"MGI-EU"},{"market":"UK","mgi":"M_UK","tkey":"GBR","weekly_units":700.0,"valuation":"CIF","name":"Daventry, England","code":"MGI-UK"},{"market":"JP","mgi":"M_JP","tkey":"JPN","weekly_units":1300.0,"valuation":"CIF","name":"Atsugi, Kanagawa","code":"MGI-JP"},{"market":"BR","mgi":"M_BR","tkey":"BRA","weekly_units":1500.0,"valuation":"CIF","name":"Campinas, Sao Paulo","code":"MGI-BR"},{"market":"AU","mgi":"M_AU","tkey":"AUS","weekly_units":550.0,"valuation":"FOB","name":"Eastern Creek, Sydney","code":"MGI-AU"},{"market":"SEA","mgi":"M_SG","tkey":"SGP","weekly_units":800.0,"valuation":"CIF","name":"Loyang, Singapore","code":"MGI-SG"},{"market":"IN","mgi":"M_IN","tkey":"IND","weekly_units":900.0,"valuation":"CIF","name":"Bhiwandi, Maharashtra","code":"MGI-IN"},{"market":"ME","mgi":"M_AE","tkey":"ARE","weekly_units":450.0,"valuation":"CIF","name":"Jebel Ali, Dubai","code":"MGI-AE"}],"routes":{"CN|M_US|sea|any":{"days":31.0,"nm":5750,"truck_km":269.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_US|air|any":{"days":8.0,"nm":5624,"truck_km":202.0,"air_km":10415.0,"passages":[],"domestic":false},"CN|M_EU|sea|cape":{"days":53.4,"nm":13834,"truck_km":373.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"CN|M_EU|sea|suez":{"days":44.2,"nm":10514,"truck_km":373.0,"air_km":0.0,"passages":["malacca","babalmandab","suez","gibraltar"],"domestic":false},"CN|M_EU|air|any":{"days":7.5,"nm":4811,"truck_km":304.0,"air_km":8910.0,"passages":[],"domestic":false},"CN|M_UK|sea|cape":{"days":53.3,"nm":13778,"truck_km":416.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"CN|M_UK|sea|suez":{"days":44.1,"nm":10458,"truck_km":416.0,"air_km":0.0,"passages":["malacca","babalmandab","suez","gibraltar"],"domestic":false},"CN|M_UK|air|any":{"days":7.5,"nm":4990,"truck_km":254.0,"air_km":9241.0,"passages":[],"domestic":false},"CN|M_JP|sea|any":{"days":16.8,"nm":1017,"truck_km":242.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_JP|air|any":{"days":7.5,"nm":970,"truck_km":224.0,"air_km":1796.0,"passages":[],"domestic":false},"CN|M_BR|sea|any":{"days":49.7,"nm":11041,"truck_km":393.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"CN|M_BR|air|any":{"days":11.0,"nm":10071,"truck_km":140.0,"air_km":18651.0,"passages":[],"domestic":false},"CN|M_AU|sea|any":{"days":26.8,"nm":4609,"truck_km":217.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_AU|air|any":{"days":7.5,"nm":4247,"truck_km":158.0,"air_km":7865.0,"passages":[],"domestic":false},"CN|M_SG|sea|any":{"days":19.0,"nm":2155,"truck_km":197.0,"air_km":0.0,"passages":[],"domestic":false},"CN|M_SG|air|any":{"days":7.5,"nm":2055,"truck_km":139.0,"air_km":3805.0,"passages":[],"domestic":false},"CN|M_IN|sea|any":{"days":29.9,"nm":4660,"truck_km":233.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"CN|M_IN|air|any":{"days":7.5,"nm":2734,"truck_km":153.0,"air_km":5064.0,"passages":[],"domestic":false},"CN|M_AE|sea|any":{"days":29.7,"nm":5651,"truck_km":182.0,"air_km":0.0,"passages":["malacca","ormuz"],"domestic":false},"CN|M_AE|air|any":{"days":7.5,"nm":3501,"truck_km":132.0,"air_km":6483.0,"passages":[],"domestic":false},"ID|M_US|sea|any":{"days":37.3,"nm":8029,"truck_km":144.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_US|air|any":{"days":8.0,"nm":7802,"truck_km":158.0,"air_km":14450.0,"passages":[],"domestic":false},"ID|M_EU|sea|cape":{"days":46.6,"nm":11392,"truck_km":248.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"ID|M_EU|sea|suez":{"days":39.0,"nm":8642,"truck_km":248.0,"air_km":0.0,"passages":["sunda","suez","gibraltar","babalmandab"],"domestic":false},"ID|M_EU|air|any":{"days":8.0,"nm":6130,"truck_km":260.0,"air_km":11353.0,"passages":[],"domestic":false},"ID|M_UK|sea|cape":{"days":46.5,"nm":11337,"truck_km":291.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"ID|M_UK|sea|suez":{"days":38.8,"nm":8586,"truck_km":291.0,"air_km":0.0,"passages":["sunda","suez","gibraltar","babalmandab"],"domestic":false},"ID|M_UK|air|any":{"days":8.0,"nm":6329,"truck_km":210.0,"air_km":11721.0,"passages":[],"domestic":false},"ID|M_JP|sea|any":{"days":23.0,"nm":3253,"truck_km":117.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_JP|air|any":{"days":7.5,"nm":3153,"truck_km":180.0,"air_km":5840.0,"passages":[],"domestic":false},"ID|M_BR|sea|any":{"days":42.9,"nm":8600,"truck_km":268.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"ID|M_BR|air|any":{"days":11.5,"nm":11285,"truck_km":96.0,"air_km":20900.0,"passages":[],"domestic":false},"ID|M_AU|sea|any":{"days":24.9,"nm":3932,"truck_km":92.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_AU|air|any":{"days":7.5,"nm":2980,"truck_km":114.0,"air_km":5519.0,"passages":[],"domestic":false},"ID|M_SG|sea|any":{"days":14.4,"nm":514,"truck_km":72.0,"air_km":0.0,"passages":[],"domestic":false},"ID|M_SG|air|any":{"days":7.5,"nm":477,"truck_km":95.0,"air_km":884.0,"passages":[],"domestic":false},"ID|M_IN|sea|any":{"days":24.9,"nm":2844,"truck_km":108.0,"air_km":0.0,"passages":["sunda"],"domestic":false},"ID|M_IN|air|any":{"days":7.5,"nm":2507,"truck_km":109.0,"air_km":4643.0,"passages":[],"domestic":false},"ID|M_AE|sea|any":{"days":24.7,"nm":3835,"truck_km":57.0,"air_km":0.0,"passages":["sunda","ormuz"],"domestic":false},"ID|M_AE|air|any":{"days":7.5,"nm":3536,"truck_km":88.0,"air_km":6549.0,"passages":[],"domestic":false},"VN|M_US|sea|any":{"days":34.4,"nm":6973,"truck_km":256.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_US|air|any":{"days":8.0,"nm":6641,"truck_km":139.0,"air_km":12300.0,"passages":[],"domestic":false},"VN|M_EU|sea|cape":{"days":51.2,"nm":13022,"truck_km":360.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"VN|M_EU|sea|suez":{"days":41.9,"nm":9678,"truck_km":360.0,"air_km":0.0,"passages":["malacca","babalmandab","suez","gibraltar"],"domestic":false},"VN|M_EU|air|any":{"days":7.5,"nm":4790,"truck_km":241.0,"air_km":8872.0,"passages":[],"domestic":false},"VN|M_UK|sea|cape":{"days":51.0,"nm":12966,"truck_km":403.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"VN|M_UK|sea|suez":{"days":41.7,"nm":9622,"truck_km":403.0,"air_km":0.0,"passages":["malacca","babalmandab","suez","gibraltar"],"domestic":false},"VN|M_UK|air|any":{"days":7.5,"nm":4988,"truck_km":191.0,"air_km":9238.0,"passages":[],"domestic":false},"VN|M_JP|sea|any":{"days":19.9,"nm":2123,"truck_km":229.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_JP|air|any":{"days":7.5,"nm":2009,"truck_km":161.0,"air_km":3721.0,"passages":[],"domestic":false},"VN|M_BR|sea|any":{"days":47.4,"nm":10229,"truck_km":380.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"VN|M_BR|air|any":{"days":11.0,"nm":9992,"truck_km":77.0,"air_km":18505.0,"passages":[],"domestic":false},"VN|M_AU|sea|any":{"days":27.7,"nm":4927,"truck_km":204.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_AU|air|any":{"days":7.5,"nm":4206,"truck_km":95.0,"air_km":7790.0,"passages":[],"domestic":false},"VN|M_SG|sea|any":{"days":16.7,"nm":1319,"truck_km":184.0,"air_km":0.0,"passages":[],"domestic":false},"VN|M_SG|air|any":{"days":7.5,"nm":1197,"truck_km":76.0,"air_km":2217.0,"passages":[],"domestic":false},"VN|M_IN|sea|any":{"days":27.6,"nm":3824,"truck_km":220.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"VN|M_IN|air|any":{"days":7.5,"nm":1857,"truck_km":90.0,"air_km":3440.0,"passages":[],"domestic":false},"VN|M_AE|sea|any":{"days":27.4,"nm":4815,"truck_km":169.0,"air_km":0.0,"passages":["malacca","ormuz"],"domestic":false},"VN|M_AE|air|any":{"days":7.5,"nm":2791,"truck_km":69.0,"air_km":5169.0,"passages":[],"domestic":false},"MY|M_US|sea|any":{"days":37.8,"nm":8202,"truck_km":113.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_US|air|any":{"days":8.0,"nm":7589,"truck_km":102.0,"air_km":14054.0,"passages":[],"domestic":false},"MY|M_EU|sea|cape":{"days":47.1,"nm":11546,"truck_km":217.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"MY|M_EU|sea|suez":{"days":37.4,"nm":8050,"truck_km":217.0,"air_km":0.0,"passages":["babalmandab","suez","gibraltar"],"domestic":false},"MY|M_EU|air|any":{"days":8.0,"nm":5353,"truck_km":204.0,"air_km":9914.0,"passages":[],"domestic":false},"MY|M_UK|sea|cape":{"days":46.9,"nm":11491,"truck_km":260.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"MY|M_UK|sea|suez":{"days":37.2,"nm":7994,"truck_km":260.0,"air_km":0.0,"passages":["babalmandab","suez","gibraltar"],"domestic":false},"MY|M_UK|air|any":{"days":8.0,"nm":5552,"truck_km":154.0,"air_km":10283.0,"passages":[],"domestic":false},"MY|M_JP|sea|any":{"days":23.3,"nm":3351,"truck_km":86.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_JP|air|any":{"days":7.5,"nm":2870,"truck_km":124.0,"air_km":5315.0,"passages":[],"domestic":false},"MY|M_BR|sea|any":{"days":43.3,"nm":8754,"truck_km":237.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"MY|M_BR|air|any":{"days":11.5,"nm":10514,"truck_km":40.0,"air_km":19472.0,"passages":[],"domestic":false},"MY|M_AU|sea|any":{"days":26.9,"nm":4633,"truck_km":61.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_AU|air|any":{"days":7.5,"nm":3723,"truck_km":58.0,"air_km":6895.0,"passages":[],"domestic":false},"MY|M_SG|sea|any":{"days":14.2,"nm":416,"truck_km":41.0,"air_km":0.0,"passages":["malacca"],"domestic":false},"MY|M_SG|air|any":{"days":7.5,"nm":325,"truck_km":39.0,"air_km":601.0,"passages":[],"domestic":false},"MY|M_IN|sea|any":{"days":23.1,"nm":2196,"truck_km":77.0,"air_km":0.0,"passages":[],"domestic":false},"MY|M_IN|air|any":{"days":7.5,"nm":1805,"truck_km":53.0,"air_km":3342.0,"passages":[],"domestic":false},"MY|M_AE|sea|any":{"days":22.9,"nm":3187,"truck_km":26.0,"air_km":0.0,"passages":["ormuz"],"domestic":false},"MY|M_AE|air|any":{"days":7.5,"nm":2849,"truck_km":32.0,"air_km":5276.0,"passages":[],"domestic":false},"BR|M_US|sea|any":{"days":36.0,"nm":7565,"truck_km":275.0,"air_km":0.0,"passages":["panama"],"domestic":false},"BR|M_US|air|any":{"days":8.0,"nm":5311,"truck_km":142.0,"air_km":9836.0,"passages":[],"domestic":false},"BR|M_EU|sea|any":{"days":30.2,"nm":5481,"truck_km":379.0,"air_km":0.0,"passages":[],"domestic":false},"BR|M_EU|air|any":{"days":8.0,"nm":5273,"truck_km":244.0,"air_km":9766.0,"passages":[],"domestic":false},"BR|M_UK|sea|any":{"days":30.1,"nm":5425,"truck_km":422.0,"air_km":0.0,"passages":[],"domestic":false},"BR|M_UK|air|any":{"days":7.5,"nm":5102,"truck_km":194.0,"air_km":9449.0,"passages":[],"domestic":false},"BR|M_JP|sea|any":{"days":46.2,"nm":11596,"truck_km":248.0,"air_km":0.0,"passages":["chili"],"domestic":false},"BR|M_JP|air|any":{"days":8.0,"nm":9947,"truck_km":164.0,"air_km":18421.0,"passages":[],"domestic":false},"BR|M_BR|sea|any":{"days":2.0,"nm":0,"truck_km":47.0,"air_km":0.0,"passages":[],"domestic":true},"BR|M_BR|air|any":{"days":2.0,"nm":0,"truck_km":47.0,"air_km":0.0,"passages":[],"domestic":true},"BR|M_AU|sea|any":{"days":36.0,"nm":7917,"truck_km":223.0,"air_km":0.0,"passages":["chili"],"domestic":false},"BR|M_AU|air|any":{"days":8.0,"nm":7232,"truck_km":98.0,"air_km":13393.0,"passages":[],"domestic":false},"BR|M_SG|sea|any":{"days":38.2,"nm":9060,"truck_km":203.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false},"BR|M_SG|air|any":{"days":8.0,"nm":8681,"truck_km":79.0,"air_km":16078.0,"passages":[],"domestic":false},"BR|M_IN|sea|any":{"days":39.3,"nm":8037,"truck_km":239.0,"air_km":0.0,"passages":["south_africa"],"domestic":false},"BR|M_IN|air|any":{"days":8.0,"nm":7460,"truck_km":93.0,"air_km":13816.0,"passages":[],"domestic":false},"BR|M_AE|sea|any":{"days":36.9,"nm":8253,"truck_km":188.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false},"BR|M_AE|air|any":{"days":8.0,"nm":6606,"truck_km":72.0,"air_km":12234.0,"passages":[],"domestic":false},"AE|M_US|sea|any":{"days":46.4,"nm":11287,"truck_km":105.0,"air_km":0.0,"passages":["malacca","ormuz"],"domestic":false},"AE|M_US|air|any":{"days":8.0,"nm":7255,"truck_km":111.0,"air_km":13437.0,"passages":[],"domestic":false},"AE|M_EU|sea|cape":{"days":45.7,"nm":11045,"truck_km":209.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false},"AE|M_EU|sea|suez":{"days":32.4,"nm":6262,"truck_km":209.0,"air_km":0.0,"passages":["babalmandab","suez","ormuz","gibraltar"],"domestic":false},"AE|M_EU|air|any":{"days":7.5,"nm":2800,"truck_km":213.0,"air_km":5185.0,"passages":[],"domestic":false},"AE|M_UK|sea|cape":{"days":45.5,"nm":10990,"truck_km":252.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false},"AE|M_UK|sea|suez":{"days":32.2,"nm":6207,"truck_km":252.0,"air_km":0.0,"passages":["babalmandab","suez","ormuz","gibraltar"],"domestic":false},"AE|M_UK|air|any":{"days":7.5,"nm":2977,"truck_km":163.0,"air_km":5513.0,"passages":[],"domestic":false},"AE|M_JP|sea|any":{"days":31.9,"nm":6437,"truck_km":78.0,"air_km":0.0,"passages":["malacca","ormuz"],"domestic":false},"AE|M_JP|air|any":{"days":7.5,"nm":4329,"truck_km":133.0,"air_km":8018.0,"passages":[],"domestic":false},"AE|M_BR|sea|any":{"days":41.9,"nm":8253,"truck_km":229.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false},"AE|M_BR|air|any":{"days":10.0,"nm":6606,"truck_km":49.0,"air_km":12234.0,"passages":[],"domestic":false},"AE|M_AU|sea|any":{"days":33.9,"nm":7161,"truck_km":53.0,"air_km":0.0,"passages":["ormuz"],"domestic":false},"AE|M_AU|air|any":{"days":8.0,"nm":6502,"truck_km":67.0,"air_km":12042.0,"passages":[],"domestic":false},"AE|M_SG|sea|any":{"days":22.7,"nm":3502,"truck_km":33.0,"air_km":0.0,"passages":["malacca","ormuz"],"domestic":false},"AE|M_SG|air|any":{"days":7.5,"nm":3160,"truck_km":48.0,"air_km":5852.0,"passages":[],"domestic":false},"AE|M_IN|sea|any":{"days":20.2,"nm":1169,"truck_km":69.0,"air_km":0.0,"passages":["ormuz"],"domestic":false},"AE|M_IN|air|any":{"days":7.5,"nm":1044,"truck_km":62.0,"air_km":1934.0,"passages":[],"domestic":false},"AE|M_AE|sea|any":{"days":4.0,"nm":0,"truck_km":11.0,"air_km":0.0,"passages":[],"domestic":true},"AE|M_AE|air|any":{"days":4.0,"nm":0,"truck_km":11.0,"air_km":0.0,"passages":[],"domestic":true}},"feeds":{"ID":{"days":21.9,"nm":2495.0,"passages":[],"air_days":7.0},"VN":{"days":17.7,"nm":1318.0,"passages":[],"air_days":7.0},"MY":{"days":20.1,"nm":2565.0,"passages":["malacca"],"air_days":7.0},"BR":{"days":48.7,"nm":11041.0,"passages":["south_africa","sunda"],"air_days":9.0},"AE":{"days":28.7,"nm":5651.0,"passages":["malacca","ormuz"],"air_days":7.0}},"duties":{"USA":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"EU":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"GBR":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"JPN":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"AUS":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"SGP":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"IND":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"BRA":{"CN":0.16,"ID":0.16,"VN":0.16,"MY":0.16,"BR":0.0,"AE":0.16},"ARE":{"CN":0.05,"ID":0.05,"VN":0.05,"MY":0.05,"BR":0.05,"AE":0.05},"MEX":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0}},"scenarios":[{"id":"now","label":"Current duties (Oct 2026)","probability":0.5,"overrides":[],"note":"Duties as in data/tariffs.csv"},{"id":"cn301","label":"US tariffs China-made laptops (25%)","probability":0.2,"overrides":[{"tkey":"USA","origin":"CN","duty":0.25}],"note":"For example China's suspended 2019 list on laptops is brought back"},{"id":"s232","label":"Section 232 phase 2 on laptops (25%, every origin)","probability":0.15,"overrides":[{"tkey":"USA","origin":"*","duty":0.25}],"note":"Proposed scope; rate assumed 25% as for phase 1"},{"id":"asia301","label":"Asia Section 301 without the computer exemption","probability":0.1,"overrides":[{"tkey":"USA","origin":"CN","duty":0.125},{"tkey":"USA","origin":"VN","duty":0.125},{"tkey":"USA","origin":"ID","duty":0.1},{"tkey":"USA","origin":"MY","duty":0.1}],"note":"Rates of the 24 Jul 2026 action applied to laptops"},{"id":"brcut","label":"Brazil removes the 16% on laptops","probability":0.05,"overrides":[{"tkey":"BRA","origin":"*","duty":0.0}],"note":"For example a wider Ex-tarifario"}],"sites":{"CN":{"label":"China · Kunshan","conv_index":1.0,"parts_duty":0.0,"capacity":14000.0,"fixed_cost":0.0,"min_load":0.0,"open":true,"board_local":false,"status":"PLACEHOLDER","note":"Current site; capacity covers all demand"},"ID":{"label":"Indonesia · Cikarang","conv_index":1.08,"parts_duty":0.0,"capacity":5000.0,"fixed_cost":1500000.0,"min_load":0.5,"open":true,"board_local":false,"status":"PRACTITIONER (+5-10% new-site conversion) / PLACEHOLDER","note":"Parts enter a bonded zone duty-free"},"VN":{"label":"Vietnam · Bac Ninh","conv_index":1.06,"parts_duty":0.0,"capacity":5000.0,"fixed_cost":1500000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Parts enter an export processing zone duty-free"},"MY":{"label":"Malaysia · Penang","conv_index":1.12,"parts_duty":0.0,"capacity":4000.0,"fixed_cost":1800000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Free industrial zone; higher wages than VN and ID"},"BR":{"label":"Brazil · Jundiai","conv_index":1.6,"parts_duty":0.08,"capacity":2000.0,"fixed_cost":2500000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Parts pay import duty (average across the BOM); local assembly saves Brazil's 16% on the finished unit"},"AE":{"label":"UAE · Jebel Ali","conv_index":1.35,"parts_duty":0.0,"capacity":1500.0,"fixed_cost":2000000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER","note":"Free zone; mainland sales still pay the GCC 5% unless the unit qualifies as a GCC product"}},"P":{"customs_value_cn_usd":480.0,"conversion_cost_cn_usd":25.0,"parts_value_usd":367.0,"carrying_rate_annual":0.2,"units_per_feu":1800.0,"kits_per_feu":2600.0,"sea_feu_base_usd":900.0,"sea_feu_per_nm_usd":0.2,"handling_usd_per_unit":1.5,"truck_usd_per_unit_100km":0.15,"air_usd_per_kg_base":2.5,"air_usd_per_kg_per_1000km":0.22,"kg_per_unit":3.0,"planning_cost_usd_per_unit_week":1.25,"chokepoint_premium_usd":0.0,"board_origin_weight":1.0,"board_extra_usd":6.0,"board_fixed_usd_yr":1200000.0,"horizon_years":3.0,"ramp_months":12.0,"rush_premium_usd":1000000.0,"duty_change_prob":0.2},"ranges":{"USA|CN":[0.0,1.45],"USA|VN":[0.0,0.46],"USA|ID":[0.0,0.32],"USA|MY":[0.0,0.24],"USA|BR":[0.0,0.1],"USA|AE":[0.0,0.1]},"peaks_2025":{"USA|CN":1.45,"USA|VN":0.46,"USA|ID":0.32,"USA|MY":0.24,"USA|BR":0.1,"USA|AE":0.1}}};
+const D = {"input":{"origins":["CN","ID","VN","MY","BR","AE"],"markets":[{"market":"US","mgi":"M_US","tkey":"USA","weekly_units":4000.0,"valuation":"FOB","name":"Inland Empire, California","code":"MGI-US"},{"market":"EU","mgi":"M_EU","tkey":"EU","weekly_units":2400.0,"valuation":"CIF","name":"Venlo, Netherlands","code":"MGI-EU"},{"market":"UK","mgi":"M_UK","tkey":"GBR","weekly_units":700.0,"valuation":"CIF","name":"Daventry, England","code":"MGI-UK"},{"market":"JP","mgi":"M_JP","tkey":"JPN","weekly_units":1300.0,"valuation":"CIF","name":"Atsugi, Kanagawa","code":"MGI-JP"},{"market":"BR","mgi":"M_BR","tkey":"BRA","weekly_units":1500.0,"valuation":"CIF","name":"Campinas, Sao Paulo","code":"MGI-BR"},{"market":"AU","mgi":"M_AU","tkey":"AUS","weekly_units":550.0,"valuation":"FOB","name":"Eastern Creek, Sydney","code":"MGI-AU"},{"market":"SEA","mgi":"M_SG","tkey":"SGP","weekly_units":800.0,"valuation":"CIF","name":"Loyang, Singapore","code":"MGI-SG"},{"market":"IN","mgi":"M_IN","tkey":"IND","weekly_units":900.0,"valuation":"CIF","name":"Bhiwandi, Maharashtra","code":"MGI-IN"},{"market":"ME","mgi":"M_AE","tkey":"ARE","weekly_units":450.0,"valuation":"CIF","name":"Jebel Ali, Dubai","code":"MGI-AE"}],"routes":{"CN|M_US|sea|any|any":{"days":31.0,"nm":5750,"truck_km":269.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-USWC","gulf":false,"bypass":false},"CN|M_US|air|any|any":{"days":8.0,"nm":5624,"truck_km":202.0,"air_km":10415.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"CN|M_EU|sea|cape|any":{"days":53.4,"nm":13834,"truck_km":373.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"CN|M_EU|sea|suez|any":{"days":44.2,"nm":10514,"truck_km":373.0,"air_km":0.0,"passages":["malacca","suez","gibraltar","babalmandab"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"CN|M_EU|air|any|any":{"days":7.5,"nm":4811,"truck_km":304.0,"air_km":8910.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"CN|M_UK|sea|cape|any":{"days":53.3,"nm":13778,"truck_km":416.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"CN|M_UK|sea|suez|any":{"days":44.1,"nm":10458,"truck_km":416.0,"air_km":0.0,"passages":["malacca","suez","gibraltar","babalmandab"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"CN|M_UK|air|any|any":{"days":7.5,"nm":4990,"truck_km":254.0,"air_km":9241.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"CN|M_JP|sea|any|any":{"days":16.8,"nm":1017,"truck_km":242.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-JP","gulf":false,"bypass":false},"CN|M_JP|air|any|any":{"days":7.5,"nm":970,"truck_km":224.0,"air_km":1796.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"CN|M_BR|sea|any|any":{"days":49.7,"nm":11041,"truck_km":393.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false,"lane":"FE-SAEC","gulf":false,"bypass":false},"CN|M_BR|air|any|any":{"days":11.0,"nm":10071,"truck_km":140.0,"air_km":18651.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"CN|M_AU|sea|any|any":{"days":26.8,"nm":4609,"truck_km":217.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-ANZ","gulf":false,"bypass":false},"CN|M_AU|air|any|any":{"days":7.5,"nm":4247,"truck_km":158.0,"air_km":7865.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"CN|M_SG|sea|any|any":{"days":19.0,"nm":2155,"truck_km":197.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-SEA","gulf":false,"bypass":false},"CN|M_SG|air|any|any":{"days":7.5,"nm":2055,"truck_km":139.0,"air_km":3805.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"CN|M_IN|sea|any|any":{"days":29.9,"nm":4660,"truck_km":233.0,"air_km":0.0,"passages":["malacca"],"domestic":false,"lane":"FE-INDIA","gulf":false,"bypass":false},"CN|M_IN|air|any|any":{"days":7.5,"nm":2734,"truck_km":153.0,"air_km":5064.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"CN|M_AE|sea|any|open":{"days":29.7,"nm":5651,"truck_km":182.0,"air_km":0.0,"passages":["ormuz","malacca"],"domestic":false,"lane":"FE-GULF","gulf":true,"bypass":false},"CN|M_AE|sea|any|closed":{"days":29.8,"nm":5512,"truck_km":363.0,"air_km":0.0,"passages":["malacca"],"domestic":false,"lane":"FE-GULF","gulf":true,"bypass":true},"CN|M_AE|air|any|any":{"days":7.5,"nm":3501,"truck_km":132.0,"air_km":6483.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"ID|M_US|sea|any|any":{"days":37.3,"nm":8029,"truck_km":144.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-USWC","gulf":false,"bypass":false},"ID|M_US|air|any|any":{"days":8.0,"nm":7802,"truck_km":158.0,"air_km":14450.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"ID|M_EU|sea|cape|any":{"days":46.6,"nm":11392,"truck_km":248.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"ID|M_EU|sea|suez|any":{"days":39.0,"nm":8642,"truck_km":248.0,"air_km":0.0,"passages":["suez","gibraltar","babalmandab","sunda"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"ID|M_EU|air|any|any":{"days":8.0,"nm":6130,"truck_km":260.0,"air_km":11353.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"ID|M_UK|sea|cape|any":{"days":46.5,"nm":11337,"truck_km":291.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"ID|M_UK|sea|suez|any":{"days":38.8,"nm":8586,"truck_km":291.0,"air_km":0.0,"passages":["suez","gibraltar","babalmandab","sunda"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"ID|M_UK|air|any|any":{"days":8.0,"nm":6329,"truck_km":210.0,"air_km":11721.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"ID|M_JP|sea|any|any":{"days":23.0,"nm":3253,"truck_km":117.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-JP","gulf":false,"bypass":false},"ID|M_JP|air|any|any":{"days":7.5,"nm":3153,"truck_km":180.0,"air_km":5840.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"ID|M_BR|sea|any|any":{"days":42.9,"nm":8600,"truck_km":268.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false,"lane":"FE-SAEC","gulf":false,"bypass":false},"ID|M_BR|air|any|any":{"days":11.5,"nm":11285,"truck_km":96.0,"air_km":20900.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"ID|M_AU|sea|any|any":{"days":24.9,"nm":3932,"truck_km":92.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-ANZ","gulf":false,"bypass":false},"ID|M_AU|air|any|any":{"days":7.5,"nm":2980,"truck_km":114.0,"air_km":5519.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"ID|M_SG|sea|any|any":{"days":14.4,"nm":514,"truck_km":72.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-SEA","gulf":false,"bypass":false},"ID|M_SG|air|any|any":{"days":7.5,"nm":477,"truck_km":95.0,"air_km":884.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"ID|M_IN|sea|any|any":{"days":24.9,"nm":2844,"truck_km":108.0,"air_km":0.0,"passages":["sunda"],"domestic":false,"lane":"FE-INDIA","gulf":false,"bypass":false},"ID|M_IN|air|any|any":{"days":7.5,"nm":2507,"truck_km":109.0,"air_km":4643.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"ID|M_AE|sea|any|open":{"days":24.7,"nm":3835,"truck_km":57.0,"air_km":0.0,"passages":["ormuz","sunda"],"domestic":false,"lane":"FE-GULF","gulf":true,"bypass":false},"ID|M_AE|sea|any|closed":{"days":24.8,"nm":3696,"truck_km":238.0,"air_km":0.0,"passages":["sunda"],"domestic":false,"lane":"FE-GULF","gulf":true,"bypass":true},"ID|M_AE|air|any|any":{"days":7.5,"nm":3536,"truck_km":88.0,"air_km":6549.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"VN|M_US|sea|any|any":{"days":34.4,"nm":6973,"truck_km":256.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-USWC","gulf":false,"bypass":false},"VN|M_US|air|any|any":{"days":8.0,"nm":6641,"truck_km":139.0,"air_km":12300.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"VN|M_EU|sea|cape|any":{"days":51.2,"nm":13022,"truck_km":360.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"VN|M_EU|sea|suez|any":{"days":41.9,"nm":9678,"truck_km":360.0,"air_km":0.0,"passages":["malacca","suez","gibraltar","babalmandab"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"VN|M_EU|air|any|any":{"days":7.5,"nm":4790,"truck_km":241.0,"air_km":8872.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"VN|M_UK|sea|cape|any":{"days":51.0,"nm":12966,"truck_km":403.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"VN|M_UK|sea|suez|any":{"days":41.7,"nm":9622,"truck_km":403.0,"air_km":0.0,"passages":["malacca","suez","gibraltar","babalmandab"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"VN|M_UK|air|any|any":{"days":7.5,"nm":4988,"truck_km":191.0,"air_km":9238.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"VN|M_JP|sea|any|any":{"days":19.9,"nm":2123,"truck_km":229.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-JP","gulf":false,"bypass":false},"VN|M_JP|air|any|any":{"days":7.5,"nm":2009,"truck_km":161.0,"air_km":3721.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"VN|M_BR|sea|any|any":{"days":47.4,"nm":10229,"truck_km":380.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false,"lane":"FE-SAEC","gulf":false,"bypass":false},"VN|M_BR|air|any|any":{"days":11.0,"nm":9992,"truck_km":77.0,"air_km":18505.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"VN|M_AU|sea|any|any":{"days":27.7,"nm":4927,"truck_km":204.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-ANZ","gulf":false,"bypass":false},"VN|M_AU|air|any|any":{"days":7.5,"nm":4206,"truck_km":95.0,"air_km":7790.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"VN|M_SG|sea|any|any":{"days":16.7,"nm":1319,"truck_km":184.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-SEA","gulf":false,"bypass":false},"VN|M_SG|air|any|any":{"days":7.5,"nm":1197,"truck_km":76.0,"air_km":2217.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"VN|M_IN|sea|any|any":{"days":27.6,"nm":3824,"truck_km":220.0,"air_km":0.0,"passages":["malacca"],"domestic":false,"lane":"FE-INDIA","gulf":false,"bypass":false},"VN|M_IN|air|any|any":{"days":7.5,"nm":1857,"truck_km":90.0,"air_km":3440.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"VN|M_AE|sea|any|open":{"days":27.4,"nm":4815,"truck_km":169.0,"air_km":0.0,"passages":["ormuz","malacca"],"domestic":false,"lane":"FE-GULF","gulf":true,"bypass":false},"VN|M_AE|sea|any|closed":{"days":27.5,"nm":4676,"truck_km":350.0,"air_km":0.0,"passages":["malacca"],"domestic":false,"lane":"FE-GULF","gulf":true,"bypass":true},"VN|M_AE|air|any|any":{"days":7.5,"nm":2791,"truck_km":69.0,"air_km":5169.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"MY|M_US|sea|any|any":{"days":37.8,"nm":8202,"truck_km":113.0,"air_km":0.0,"passages":["malacca"],"domestic":false,"lane":"FE-USWC","gulf":false,"bypass":false},"MY|M_US|air|any|any":{"days":8.0,"nm":7589,"truck_km":102.0,"air_km":14054.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"MY|M_EU|sea|cape|any":{"days":47.1,"nm":11546,"truck_km":217.0,"air_km":0.0,"passages":["south_africa"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"MY|M_EU|sea|suez|any":{"days":37.4,"nm":8050,"truck_km":217.0,"air_km":0.0,"passages":["suez","gibraltar","babalmandab"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"MY|M_EU|air|any|any":{"days":8.0,"nm":5353,"truck_km":204.0,"air_km":9914.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"MY|M_UK|sea|cape|any":{"days":46.9,"nm":11491,"truck_km":260.0,"air_km":0.0,"passages":["south_africa"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"MY|M_UK|sea|suez|any":{"days":37.2,"nm":7994,"truck_km":260.0,"air_km":0.0,"passages":["suez","gibraltar","babalmandab"],"domestic":false,"lane":"FE-NEUR","gulf":false,"bypass":false},"MY|M_UK|air|any|any":{"days":8.0,"nm":5552,"truck_km":154.0,"air_km":10283.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"MY|M_JP|sea|any|any":{"days":23.3,"nm":3351,"truck_km":86.0,"air_km":0.0,"passages":["malacca"],"domestic":false,"lane":"FE-JP","gulf":false,"bypass":false},"MY|M_JP|air|any|any":{"days":7.5,"nm":2870,"truck_km":124.0,"air_km":5315.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"MY|M_BR|sea|any|any":{"days":43.3,"nm":8754,"truck_km":237.0,"air_km":0.0,"passages":["south_africa"],"domestic":false,"lane":"FE-SAEC","gulf":false,"bypass":false},"MY|M_BR|air|any|any":{"days":11.5,"nm":10514,"truck_km":40.0,"air_km":19472.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"MY|M_AU|sea|any|any":{"days":26.9,"nm":4633,"truck_km":61.0,"air_km":0.0,"passages":["malacca"],"domestic":false,"lane":"FE-ANZ","gulf":false,"bypass":false},"MY|M_AU|air|any|any":{"days":7.5,"nm":3723,"truck_km":58.0,"air_km":6895.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"MY|M_SG|sea|any|any":{"days":14.2,"nm":416,"truck_km":41.0,"air_km":0.0,"passages":["malacca"],"domestic":false,"lane":"FE-SEA","gulf":false,"bypass":false},"MY|M_SG|air|any|any":{"days":7.5,"nm":325,"truck_km":39.0,"air_km":601.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"MY|M_IN|sea|any|any":{"days":23.1,"nm":2196,"truck_km":77.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-INDIA","gulf":false,"bypass":false},"MY|M_IN|air|any|any":{"days":7.5,"nm":1805,"truck_km":53.0,"air_km":3342.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"MY|M_AE|sea|any|open":{"days":22.9,"nm":3187,"truck_km":26.0,"air_km":0.0,"passages":["ormuz"],"domestic":false,"lane":"FE-GULF","gulf":true,"bypass":false},"MY|M_AE|sea|any|closed":{"days":23.0,"nm":3048,"truck_km":207.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"FE-GULF","gulf":true,"bypass":true},"MY|M_AE|air|any|any":{"days":7.5,"nm":2849,"truck_km":32.0,"air_km":5276.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"BR|M_US|sea|any|any":{"days":36.0,"nm":7565,"truck_km":275.0,"air_km":0.0,"passages":["panama"],"domestic":false,"lane":"SAEC-USWC","gulf":false,"bypass":false},"BR|M_US|air|any|any":{"days":8.0,"nm":5311,"truck_km":142.0,"air_km":9836.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"BR|M_EU|sea|any|any":{"days":30.2,"nm":5481,"truck_km":379.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"SAEC-NEUR","gulf":false,"bypass":false},"BR|M_EU|air|any|any":{"days":8.0,"nm":5273,"truck_km":244.0,"air_km":9766.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"BR|M_UK|sea|any|any":{"days":30.1,"nm":5425,"truck_km":422.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"SAEC-NEUR","gulf":false,"bypass":false},"BR|M_UK|air|any|any":{"days":7.5,"nm":5102,"truck_km":194.0,"air_km":9449.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"BR|M_JP|sea|any|any":{"days":46.2,"nm":11596,"truck_km":248.0,"air_km":0.0,"passages":["chili"],"domestic":false,"lane":"SAEC-JP","gulf":false,"bypass":false},"BR|M_JP|air|any|any":{"days":8.0,"nm":9947,"truck_km":164.0,"air_km":18421.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"BR|M_BR|sea|any|any":{"days":2.0,"nm":0,"truck_km":47.0,"air_km":0.0,"passages":[],"domestic":true,"lane":"","gulf":false,"bypass":false},"BR|M_BR|air|any|any":{"days":2.0,"nm":0,"truck_km":47.0,"air_km":0.0,"passages":[],"domestic":true,"lane":"","gulf":false,"bypass":false},"BR|M_AU|sea|any|any":{"days":36.0,"nm":7917,"truck_km":223.0,"air_km":0.0,"passages":["chili"],"domestic":false,"lane":"SAEC-ANZ","gulf":false,"bypass":false},"BR|M_AU|air|any|any":{"days":8.0,"nm":7232,"truck_km":98.0,"air_km":13393.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"BR|M_SG|sea|any|any":{"days":38.2,"nm":9060,"truck_km":203.0,"air_km":0.0,"passages":["south_africa","sunda"],"domestic":false,"lane":"SAEC-SEA","gulf":false,"bypass":false},"BR|M_SG|air|any|any":{"days":8.0,"nm":8681,"truck_km":79.0,"air_km":16078.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"BR|M_IN|sea|any|any":{"days":39.3,"nm":8037,"truck_km":239.0,"air_km":0.0,"passages":["south_africa"],"domestic":false,"lane":"SAEC-INDIA","gulf":false,"bypass":false},"BR|M_IN|air|any|any":{"days":8.0,"nm":7460,"truck_km":93.0,"air_km":13816.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"BR|M_AE|sea|any|open":{"days":36.9,"nm":8253,"truck_km":188.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false,"lane":"SAEC-GULF","gulf":true,"bypass":false},"BR|M_AE|sea|any|closed":{"days":37.0,"nm":8113,"truck_km":369.0,"air_km":0.0,"passages":["south_africa"],"domestic":false,"lane":"SAEC-GULF","gulf":true,"bypass":true},"BR|M_AE|air|any|any":{"days":8.0,"nm":6606,"truck_km":72.0,"air_km":12234.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"AE|M_US|sea|any|open":{"days":46.4,"nm":11287,"truck_km":105.0,"air_km":0.0,"passages":["ormuz","malacca"],"domestic":false,"lane":"GULF-USWC","gulf":true,"bypass":false},"AE|M_US|sea|any|closed":{"days":46.5,"nm":11148,"truck_km":285.0,"air_km":0.0,"passages":["malacca"],"domestic":false,"lane":"GULF-USWC","gulf":true,"bypass":true},"AE|M_US|air|any|any":{"days":8.0,"nm":7255,"truck_km":111.0,"air_km":13437.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"AE|M_EU|sea|cape|open":{"days":45.7,"nm":11045,"truck_km":209.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false,"lane":"GULF-NEUR","gulf":true,"bypass":false},"AE|M_EU|sea|cape|closed":{"days":45.8,"nm":10906,"truck_km":389.0,"air_km":0.0,"passages":["south_africa"],"domestic":false,"lane":"GULF-NEUR","gulf":true,"bypass":true},"AE|M_EU|sea|suez|open":{"days":32.4,"nm":6262,"truck_km":209.0,"air_km":0.0,"passages":["ormuz","suez","gibraltar","babalmandab"],"domestic":false,"lane":"GULF-NEUR","gulf":true,"bypass":false},"AE|M_EU|sea|suez|closed":{"days":32.5,"nm":6123,"truck_km":389.0,"air_km":0.0,"passages":["suez","gibraltar","babalmandab"],"domestic":false,"lane":"GULF-NEUR","gulf":true,"bypass":true},"AE|M_EU|air|any|any":{"days":7.5,"nm":2800,"truck_km":213.0,"air_km":5185.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"AE|M_UK|sea|cape|open":{"days":45.5,"nm":10990,"truck_km":252.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false,"lane":"GULF-NEUR","gulf":true,"bypass":false},"AE|M_UK|sea|cape|closed":{"days":45.6,"nm":10850,"truck_km":432.0,"air_km":0.0,"passages":["south_africa"],"domestic":false,"lane":"GULF-NEUR","gulf":true,"bypass":true},"AE|M_UK|sea|suez|open":{"days":32.2,"nm":6207,"truck_km":252.0,"air_km":0.0,"passages":["ormuz","suez","gibraltar","babalmandab"],"domestic":false,"lane":"GULF-NEUR","gulf":true,"bypass":false},"AE|M_UK|sea|suez|closed":{"days":32.4,"nm":6067,"truck_km":432.0,"air_km":0.0,"passages":["suez","gibraltar","babalmandab"],"domestic":false,"lane":"GULF-NEUR","gulf":true,"bypass":true},"AE|M_UK|air|any|any":{"days":7.5,"nm":2977,"truck_km":163.0,"air_km":5513.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"AE|M_JP|sea|any|open":{"days":31.9,"nm":6437,"truck_km":78.0,"air_km":0.0,"passages":["ormuz","malacca"],"domestic":false,"lane":"GULF-JP","gulf":true,"bypass":false},"AE|M_JP|sea|any|closed":{"days":32.0,"nm":6298,"truck_km":258.0,"air_km":0.0,"passages":["malacca"],"domestic":false,"lane":"GULF-JP","gulf":true,"bypass":true},"AE|M_JP|air|any|any":{"days":7.5,"nm":4329,"truck_km":133.0,"air_km":8018.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"AE|M_BR|sea|any|open":{"days":41.9,"nm":8253,"truck_km":229.0,"air_km":0.0,"passages":["south_africa","ormuz"],"domestic":false,"lane":"GULF-SAEC","gulf":true,"bypass":false},"AE|M_BR|sea|any|closed":{"days":42.0,"nm":8113,"truck_km":409.0,"air_km":0.0,"passages":["south_africa"],"domestic":false,"lane":"GULF-SAEC","gulf":true,"bypass":true},"AE|M_BR|air|any|any":{"days":10.0,"nm":6606,"truck_km":49.0,"air_km":12234.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"AE|M_AU|sea|any|open":{"days":33.9,"nm":7161,"truck_km":53.0,"air_km":0.0,"passages":["ormuz"],"domestic":false,"lane":"GULF-ANZ","gulf":true,"bypass":false},"AE|M_AU|sea|any|closed":{"days":34.0,"nm":7022,"truck_km":233.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"GULF-ANZ","gulf":true,"bypass":true},"AE|M_AU|air|any|any":{"days":8.0,"nm":6502,"truck_km":67.0,"air_km":12042.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"AE|M_SG|sea|any|open":{"days":22.7,"nm":3502,"truck_km":33.0,"air_km":0.0,"passages":["ormuz","malacca"],"domestic":false,"lane":"GULF-SEA","gulf":true,"bypass":false},"AE|M_SG|sea|any|closed":{"days":22.8,"nm":3363,"truck_km":213.0,"air_km":0.0,"passages":["malacca"],"domestic":false,"lane":"GULF-SEA","gulf":true,"bypass":true},"AE|M_SG|air|any|any":{"days":7.5,"nm":3160,"truck_km":48.0,"air_km":5852.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"AE|M_IN|sea|any|open":{"days":20.2,"nm":1169,"truck_km":69.0,"air_km":0.0,"passages":["ormuz"],"domestic":false,"lane":"GULF-INDIA","gulf":true,"bypass":false},"AE|M_IN|sea|any|closed":{"days":20.4,"nm":1030,"truck_km":249.0,"air_km":0.0,"passages":[],"domestic":false,"lane":"GULF-INDIA","gulf":true,"bypass":true},"AE|M_IN|air|any|any":{"days":7.5,"nm":1044,"truck_km":62.0,"air_km":1934.0,"passages":[],"domestic":false,"lane":"","gulf":false,"bypass":false},"AE|M_AE|sea|any|any":{"days":4.0,"nm":0,"truck_km":11.0,"air_km":0.0,"passages":[],"domestic":true,"lane":"","gulf":false,"bypass":false},"AE|M_AE|air|any|any":{"days":4.0,"nm":0,"truck_km":11.0,"air_km":0.0,"passages":[],"domestic":true,"lane":"","gulf":false,"bypass":false}},"feeds":{"ID":{"open":{"days":21.9,"nm":2495.0,"passages":[],"air_days":7.0,"lane":"FE-FE","gulf":false,"bypass":false},"closed":{"days":21.9,"nm":2495.0,"passages":[],"air_days":7.0,"lane":"FE-FE","gulf":false,"bypass":false}},"VN":{"open":{"days":17.7,"nm":1318.0,"passages":[],"air_days":7.0,"lane":"FE-FE","gulf":false,"bypass":false},"closed":{"days":17.7,"nm":1318.0,"passages":[],"air_days":7.0,"lane":"FE-FE","gulf":false,"bypass":false}},"MY":{"open":{"days":20.1,"nm":2565.0,"passages":["malacca"],"air_days":7.0,"lane":"FE-FE","gulf":false,"bypass":false},"closed":{"days":20.1,"nm":2565.0,"passages":["malacca"],"air_days":7.0,"lane":"FE-FE","gulf":false,"bypass":false}},"BR":{"open":{"days":48.7,"nm":11041.0,"passages":["south_africa","sunda"],"air_days":9.0,"lane":"FE-SAEC","gulf":false,"bypass":false},"closed":{"days":48.7,"nm":11041.0,"passages":["south_africa","sunda"],"air_days":9.0,"lane":"FE-SAEC","gulf":false,"bypass":false}},"AE":{"open":{"days":28.7,"nm":5651.0,"passages":["ormuz","malacca"],"air_days":7.0,"lane":"FE-GULF","gulf":true,"bypass":false},"closed":{"days":28.8,"nm":5512.0,"passages":["malacca"],"air_days":7.0,"lane":"FE-GULF","gulf":true,"bypass":true}}},"freight":{"FE-USWC":[1857.0,2854.0,7525.0],"FE-NEUR":[2218.0,2690.0,3547.0],"FE-JP":[528.0,530.0,530.0],"FE-SEA":[730.0,1029.0,1850.0],"FE-FE":[730.0,1029.0,1850.0],"FE-ANZ":[1358.0,1915.0,3573.0],"FE-SAEC":[1901.0,2680.0,12488.0],"FE-INDIA":[1450.0,2044.0,3650.0],"FE-GULF":[1568.0,2211.0,9166.0]},"duties":{"USA":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"EU":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"GBR":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"JPN":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"AUS":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"SGP":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"IND":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"BRA":{"CN":0.16,"ID":0.16,"VN":0.16,"MY":0.16,"BR":0.0,"AE":0.16},"ARE":{"CN":0.05,"ID":0.05,"VN":0.05,"MY":0.05,"BR":0.05,"AE":0.05},"MEX":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0},"_parts":{"CN":0.0,"ID":0.0,"VN":0.0,"MY":0.0,"BR":0.0,"AE":0.0}},"scenarios":[{"id":"now","label":"Current duties (Oct 2026)","probability":0.45,"overrides":[],"note":"Duties as in data/tariffs.csv"},{"id":"cn301","label":"US tariffs China-made laptops (25%)","probability":0.2,"overrides":[{"tkey":"USA","origin":"CN","duty":0.25}],"note":"For example China's suspended 2019 list on laptops is brought back"},{"id":"s232","label":"Section 232 phase 2 on laptops (25%, every origin)","probability":0.15,"overrides":[{"tkey":"USA","origin":"*","duty":0.25}],"note":"Proposed scope; rate assumed 25% as for phase 1"},{"id":"asia301","label":"Asia Section 301 without the computer exemption","probability":0.1,"overrides":[{"tkey":"USA","origin":"CN","duty":0.125},{"tkey":"USA","origin":"VN","duty":0.125},{"tkey":"USA","origin":"ID","duty":0.1},{"tkey":"USA","origin":"MY","duty":0.1}],"note":"Rates of the 24 Jul 2026 action applied to laptops"},{"id":"brcut","label":"Brazil removes the 16% on laptops","probability":0.05,"overrides":[{"tkey":"BRA","origin":"*","duty":0.0}],"note":"For example a wider Ex-tarifario"},{"id":"cnparts","label":"China licences parts exports to other sites","probability":0.05,"overrides":[{"tkey":"_parts","origin":"*","duty":1.0}],"note":"As with rare earths and gallium in 2025: non-China sites pay cn_parts_premium on the parts they take from China; China itself is not affected"}],"sites":{"CN":{"label":"China · Kunshan","conv_index":1.0,"parts_duty":0.0,"capacity":14000.0,"fixed_cost":0.0,"nre":0.0,"mode":"odm","buy_price":0.0,"min_load":0.0,"open":true,"board_local":false,"status":"PLACEHOLDER","note":"Current ODM line; capacity covers all demand"},"ID":{"label":"Indonesia · Cikarang","conv_index":1.08,"parts_duty":0.0,"capacity":5000.0,"fixed_cost":600000.0,"nre":1490000.0,"mode":"odm","buy_price":3460000.0,"min_load":0.5,"open":true,"board_local":false,"status":"PRACTITIONER (+5-10% new-site conversion) / PLACEHOLDER · NRE and buy price DERIVED from capex per unit of capacity","note":"ODM campus in a bonded zone; parts enter duty-free"},"VN":{"label":"Vietnam · Bac Ninh","conv_index":1.06,"parts_duty":0.0,"capacity":5000.0,"fixed_cost":600000.0,"nre":1490000.0,"mode":"odm","buy_price":3460000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER · NRE and buy price DERIVED from capex per unit of capacity","note":"ODM campus in northern Vietnam, like the notebook campuses opened in Ha Nam (2021, 2025) and Nam Dinh (2024); parts enter duty-free"},"MY":{"label":"Malaysia · Penang","conv_index":1.12,"parts_duty":0.0,"capacity":4000.0,"fixed_cost":700000.0,"nre":1270000.0,"mode":"odm","buy_price":2770000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER · NRE and buy price DERIVED from capex per unit of capacity","note":"ODM or EMS campus in a free industrial zone; higher wages than VN and ID"},"BR":{"label":"Brazil · Jundiai","conv_index":1.6,"parts_duty":0.08,"capacity":2000.0,"fixed_cost":1000000.0,"nre":840000.0,"mode":"odm","buy_price":1380000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER · NRE and buy price DERIVED from capex per unit of capacity","note":"Contract manufacturer; parts pay import duty (average across the BOM); local assembly saves Brazil 16% on the finished unit"},"AE":{"label":"UAE · Jebel Ali","conv_index":1.35,"parts_duty":0.0,"capacity":1500.0,"fixed_cost":800000.0,"nre":730000.0,"mode":"odm","buy_price":1040000.0,"min_load":0.5,"open":false,"board_local":false,"status":"PLACEHOLDER · NRE and buy price DERIVED from capex per unit of capacity","note":"Free-zone contract line; mainland sales still pay the GCC 5% unless the unit qualifies as a GCC product"}},"P":{"customs_value_cn_usd":480.0,"conversion_cost_cn_usd":25.0,"parts_value_usd":367.0,"carrying_rate_annual":0.2,"units_per_feu":1800.0,"kits_per_feu":2600.0,"sea_feu_base_usd":900.0,"sea_feu_per_nm_usd":0.2,"handling_usd_per_unit":1.5,"truck_usd_per_unit_100km":0.15,"air_usd_per_kg_base":2.5,"air_usd_per_kg_per_1000km":0.22,"kg_per_unit":3.0,"planning_cost_usd_per_unit_week":1.2873394020717317,"chokepoint_premium_usd":0.0,"board_origin_weight":1.0,"board_extra_usd":6.0,"board_fixed_usd_yr":1200000.0,"horizon_years":3.0,"ramp_months_odm":6.0,"ramp_months_buy":9.0,"rush_premium_usd":1000000.0,"duty_change_prob":0.2,"freight_basis":1.0,"fallback_now_factor":2.5,"fallback_contract_factor":1.41,"hormuz_closed":1.0,"gulf_surcharge_feu":0.0,"bypass_truck_usd_feu":1200.0,"shortfall_fee_usd":12.0,"odm_op_margin":0.014,"capex_odm_line_usd_per_annual_unit":4.2,"qualification_usd":400000.0,"capex_plant_usd_per_annual_unit":13.3,"plant_life_years":10.0,"capital_rate":0.08,"buy_overhead_usd_yr":1500000.0,"labour_share_conversion":0.4,"cn_parts_premium":0.15,"fg_eol_usd_per_unit_week":1.7128195151471268,"urgent_transition_usd_per_weekly_unit":226.46153846153845},"ranges":{"USA|CN":[0.0,1.45],"USA|VN":[0.0,0.46],"USA|ID":[0.0,0.32],"USA|MY":[0.0,0.24],"USA|BR":[0.0,0.1],"USA|AE":[0.0,0.1]},"peaks_2025":{"USA|CN":1.45,"USA|VN":0.46,"USA|ID":0.32,"USA|MY":0.24,"USA|BR":0.1,"USA|AE":0.1},"linkage":{"chain":{"usd_per_unit_week":1.2873394020717317,"eol_mwd_per_year":749746.4677665766,"units_per_year":145600.0,"extra_weeks":4.0,"window_old":16,"window_new":20},"finished_goods":{"usd_per_unit_week":1.7128195151471268,"points":[[5,32.623435716866865],[6,34.53109811602006],[7,36.29250530905816],[8,37.94948659820148],[9,39.47833905151179]],"strategy":"lock","runs":300},"transition":{"urgent_usd_per_weekly_unit":226.46153846153845,"cutover_usd_per_weekly_unit":202.46153846153845,"expedite_usd_per_weekly_unit":24.0,"urgent_best_week":0,"planned_usd_per_weekly_unit":0.0,"planned_best_week":16,"weekly_units":2800.0,"parts":{"holding":526572.3076923076,"relocation":40320.0,"rework":0.0,"mwd":0.0}}}},"history":[{"series":"hs8471_value","period":"2023","china":"39.6","vietnam":"8.7","mexico":"27.8","taiwan":"14.3","thailand":"5.9","unit":"USD bn","status":"WEB (Census via import.tax)","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":"All computers (HS 8471), incl. servers; yearly sums of monthly Census values"},{"series":"hs8471_value","period":"2024","china":"35.5","vietnam":"15.3","mexico":"48.3","taiwan":"25.8","thailand":"6.8","unit":"USD bn","status":"WEB (Census via import.tax)","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"hs8471_value","period":"2025","china":"11.3","vietnam":"33.6","mexico":"89.9","taiwan":"85.0","thailand":"20.7","unit":"USD bn","status":"WEB (Census via import.tax)","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"hs8471_value","period":"2026 Jan-Jul","china":"3.2","vietnam":"26.1","mexico":"89.8","taiwan":"82.3","thailand":"25.6","unit":"USD bn","status":"WEB (Census via import.tax)","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"hs8471_share","period":"2023","china":"38.4","vietnam":"8.5","mexico":"26.9","taiwan":"13.9","thailand":"5.7","unit":"% of US HS 8471 imports","status":"WEB / DERIVED","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"hs8471_share","period":"2025 May-Jul","china":"2.1","vietnam":"15.5","mexico":"34.3","taiwan":"38.3","thailand":"6.3","unit":"% of US HS 8471 imports","status":"WEB","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"hs8471_share","period":"2026 May-Jul","china":"1.9","vietnam":"11.4","mexico":"43.7","taiwan":"28.1","thailand":"10.0","unit":"% of US HS 8471 imports","status":"WEB","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"laptop_share","period":"2022","china":"","vietnam":"","mexico":"","taiwan":"","thailand":"","unit":"% of US laptop imports","status":"WEB (CTA via PCMag)","source":"https://finance.yahoo.com/economy/policy/articles/laptop-isnt-made-china-anymore-204113668.html","note":"Nearly all from China"},{"series":"laptop_share","period":"2025","china":"","vietnam":"60","mexico":"","taiwan":"","thailand":"","unit":"% of US laptop and tablet imports","status":"WEB (CTA via PCMag)","source":"https://finance.yahoo.com/economy/policy/articles/laptop-isnt-made-china-anymore-204113668.html","note":"About 60% from Vietnam"},{"series":"laptop_share","period":"2026 May-Jul","china":"","vietnam":"68","mexico":"","taiwan":"","thailand":"","unit":"% of US HS 8471.30 imports","status":"WEB / DERIVED (import.tax)","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":"Vietnam 10.7 of 15.8 USD bn portable machines"}],"tariff_history":[{"from":"2025-02-04","to":"2025-03-03","china_extra_pct":"10","others_extra_pct":"0","status":"WEB","note":"IEEPA fentanyl tariff on China, 10%"},{"from":"2025-03-04","to":"2025-11-09","china_extra_pct":"20","others_extra_pct":"0","status":"WEB","note":"IEEPA fentanyl tariff raised to 20%; laptops exempted from the reciprocal tariffs on 11 Apr 2025, so China-made laptops paid 20%"},{"from":"2025-11-10","to":"2026-02-19","china_extra_pct":"10","others_extra_pct":"0","status":"WEB","note":"Fentanyl tariff cut to 10% after the Trump-Xi deal (Bloomberg, 4 Nov 2025)"},{"from":"2026-02-20","to":"2026-10-16","china_extra_pct":"0","others_extra_pct":"0","status":"WEB","note":"Supreme Court struck down the IEEPA tariffs; a 10% global tariff (Section 122) followed for every origin and expired on 24 Jul 2026, so no China-specific gap"}]};
 const IN = D.input;
 const ORG = IN.origins, MK = IN.markets, NONCN = ORG.filter((o) => o !== 'CN');
 const TKEYS = [...new Set(MK.map((m) => m.tkey))];
@@ -901,8 +988,8 @@ const PEAK = IN.peaks_2025;
 const SCOL = { CN: 0, ID: 2, VN: 1, MY: 3, BR: 4, AE: 5 };
 const scv = (o) => `var(--c${SCOL[o] + 1})`;
 const SNAME = { CN: 'China', ID: 'Indonesia', VN: 'Vietnam', MY: 'Malaysia', BR: 'Brazil', AE: 'UAE' };
-const SHORT = { now: 'Current', cn301: 'China 25% in US', s232: '232 on every origin', asia301: 'Asia 301', brcut: 'Brazil 0%' };
-const SHORT2 = { now: 'Current', cn301: 'CN 25% US', s232: '232 all', asia301: 'Asia 301', brcut: 'BR 0%' };
+const SHORT = { now: 'Current', cn301: 'China 25% in US', s232: '232 on every origin', asia301: 'Asia 301', brcut: 'Brazil 0%', cnparts: 'China parts curbs' };
+const SHORT2 = { now: 'Current', cn301: 'CN 25% US', s232: '232 all', asia301: 'Asia 301', brcut: 'BR 0%', cnparts: 'CN parts' };
 const MKN = { USA: 'US', EU: 'EU', GBR: 'UK', JPN: 'JP', BRA: 'BR', AUS: 'AU', SGP: 'SEA', IND: 'IN', ARE: 'ME' };
 const saved = R.load();
 const S = {
@@ -920,7 +1007,7 @@ const S = {
 for (const k in (saved.P || {})) if (k in P0 && typeof saved.P[k] === 'number') S.P[k] = saved.P[k];
 for (const k in (saved.dem || {})) if (k in DEM0) S.dem[k] = saved.dem[k];
 for (const k in (saved.prob || {})) if (k in PROB0) S.prob[k] = saved.prob[k];
-if (saved.sites) for (const o of ORG) if (saved.sites[o]) for (const k of ['open', 'board_local', 'capacity', 'conv_index', 'parts_duty', 'fixed_cost', 'min_load']) if (k in saved.sites[o]) S.sites[o][k] = saved.sites[o][k];
+if (saved.sites) for (const o of ORG) if (saved.sites[o]) for (const k of ['open', 'board_local', 'mode', 'capacity', 'conv_index', 'parts_duty', 'fixed_cost', 'nre', 'buy_price', 'min_load']) if (k in saved.sites[o]) S.sites[o][k] = saved.sites[o][k];
 const persist = () => R.save({ torwho: typeof TORWHO === 'undefined' ? 'best' : TORWHO, sc: S.sc, rs: S.rs, mode: S.mode, view: S.view, runs: S.runs, P: S.P, sites: S.sites, dem: S.dem, prob: S.prob, ranges: S.ranges, edits: S.edits, selm: S.selm, rm: S.rm });
 const openSites = () => ORG.filter((o) => S.sites[o].open);
 const fpKey = (open, board) => open.join('+') + (board && open.some((o) => o !== 'CN') ? ' · boards' : '');
@@ -961,10 +1048,11 @@ const RANGE = {
   board_extra_usd: ['Extra cost per unit to make the board on site', 0, 30, 0.5, 'usd2', 'Origin and main boards'],
   board_fixed_usd_yr: ['Board line fixed cost per year', 0, 5000000, 100000, 'usdm', 'Origin and main boards'],
   horizon_years: ['Years compared', 1, 6, 1, 'n', 'Build now or wait'],
-  ramp_months: ['Months to open and qualify a site', 3, 30, 1, 'n', 'Build now or wait'],
+  ramp_months_odm: ['Months to qualify a line on an existing ODM campus', 1, 24, 1, 'n', 'Build now or wait'],
+  ramp_months_buy: ['Months to qualify laptops in a bought plant', 1, 24, 1, 'n', 'Build now or wait'],
   rush_premium_usd: ['Rush premium for a late opening', 0, 5000000, 100000, 'usdm', 'Build now or wait'],
-  sea_feu_base_usd: ['Ocean rate per 40-ft, fixed part', 0, 4000, 50, 'usd', 'Freight'],
-  sea_feu_per_nm_usd: ['Ocean rate per 40-ft per nautical mile', 0, 1, 0.01, 'usd2', 'Freight'],
+  sea_feu_base_usd: ['Fallback ocean rate per 40-ft, fixed part', 0, 4000, 50, 'usd', 'Freight'],
+  sea_feu_per_nm_usd: ['Fallback ocean rate per 40-ft per nautical mile', 0, 1, 0.01, 'usd2', 'Freight'],
   units_per_feu: ['Laptops per 40-ft container', 800, 3000, 50, 'n', 'Freight'],
   kits_per_feu: ['Part kits per 40-ft container', 1000, 4000, 50, 'n', 'Freight'],
   handling_usd_per_unit: ['Terminal handling per unit', 0, 6, 0.1, 'usd2', 'Freight'],
@@ -972,14 +1060,43 @@ const RANGE = {
   air_usd_per_kg_base: ['Air freight per kg, fixed part', 0.5, 8, 0.1, 'usd2', 'Freight'],
   air_usd_per_kg_per_1000km: ['Air freight per kg per 1,000 km', 0, 1, 0.01, 'usd2', 'Freight'],
   kg_per_unit: ['Chargeable kg per laptop', 1, 6, 0.1, 'n1', 'Freight'],
-  planning_cost_usd_per_unit_week: ['Planning cost per unit per extra week of chain', 0, 5, 0.05, 'usd2', 'Planning and risk'],
-  chokepoint_premium_usd: ['Premium per unit per risky passage', 0, 30, 0.5, 'usd2', 'Planning and risk'],
+  freight_basis: ['Ocean rates: 0 = pre-war, 1 = long-term contract, 2 = Oct 2026 spot', 0, 2, 0.05, 'n2', 'Freight and routing'],
+  hormuz_closed: ['Strait of Hormuz closed (1) or open (0)', 0, 1, 1, 'n', 'Freight and routing'],
+  bypass_truck_usd_feu: ['Khor Fakkan–Dubai trucking per 40-ft while Hormuz is closed', 0, 4000, 50, 'usd', 'Freight and routing'],
+  gulf_surcharge_feu: ['Extra Gulf surcharge per 40-ft', 0, 6000, 100, 'usd', 'Freight and routing'],
+  fallback_contract_factor: ['Lanes without a benchmark: contract / pre-war', 1, 3, 0.01, 'n2', 'Freight and routing'],
+  fallback_now_factor: ['Lanes without a benchmark: Oct 2026 spot / pre-war', 1, 6, 0.1, 'n1', 'Freight and routing'],
+  shortfall_fee_usd: ['Take-or-pay fee per unit below the commitment', 0, 60, 1, 'usd', 'ODM terms'],
+  capex_odm_line_usd_per_annual_unit: ['Line fit-out capex per laptop of yearly capacity (sets NRE)', 0, 20, 0.1, 'usd2', 'ODM terms'],
+  qualification_usd: ['Program qualification at a new line (in NRE)', 0, 3000000, 50000, 'usdm', 'ODM terms'],
+  capex_plant_usd_per_annual_unit: ['Plant price per laptop of yearly capacity (sets buy price)', 0, 60, 0.5, 'usd2', 'Own plant (buy)'],
+  odm_op_margin: ['ODM operating margin a bought plant saves', 0, 0.08, 0.001, 'pct1', 'Own plant (buy)'],
+  buy_overhead_usd_yr: ['Own overhead of a bought plant per year', 0, 6000000, 100000, 'usdm', 'Own plant (buy)'],
+  plant_life_years: ['Depreciation life of a bought plant, years', 3, 25, 1, 'n', 'Own plant (buy)'],
+  capital_rate: ['Cost of capital on the plant price', 0, 0.2, 0.005, 'pct1', 'Own plant (buy)'],
+  labour_share_conversion: ['Direct labour share of conversion (idle labour below load)', 0, 1, 0.05, 'pct', 'Own plant (buy)'],
+  cn_parts_premium: ['China parts scenario: extra cost on China parts', 0, 0.6, 0.01, 'pct', 'Supply risk'],
+  planning_cost_usd_per_unit_week: ['Chain: EOL material per unit per extra week (Module 3)', 0, 5, 0.01, 'usd2', 'Linked from Modules 1–4'],
+  fg_eol_usd_per_unit_week: ['Finished goods: EOL cost per unit per extra transit week (Module 4)', 0, 6, 0.01, 'usd2', 'Linked from Modules 1–4'],
+  urgent_transition_usd_per_weekly_unit: ['Urgent transfer per unit of weekly volume (Modules 1–3)', 0, 800, 5, 'usd', 'Linked from Modules 1–4'],
+  chokepoint_premium_usd: ['Premium per unit per risky passage', 0, 30, 0.5, 'usd2', 'Supply risk'],
 };
-const fmtR = (kind, v) => ({ usd: () => '$' + R.num(v), usd2: () => '$' + R.num(v, 2), usdm: () => R.usd(v, 1), pct: () => R.pct(v), n1: () => R.num(v, 1), n2: () => R.num(v, 2) }[kind] || (() => R.num(v)))();
+const fmtR = (kind, v) => ({ usd: () => '$' + R.num(v), usd2: () => '$' + R.num(v, 2), usdm: () => R.usd(v, 1), pct: () => R.pct(v), pct1: () => R.pct(v, 1), n1: () => R.num(v, 1), n2: () => R.num(v, 2) }[kind] || (() => R.num(v)))();
 const prmHtml = (k) => `<div class="prm" data-key="${k}"><div class="prm-h"><label for="p-${k}">${RANGE[k][0]}</label><output id="o-${k}"></output></div>
       <input type="range" id="p-${k}" min="${RANGE[k][1]}" max="${RANGE[k][2]}" step="${RANGE[k][3]}" value="${S.P[k]}"></div>`;
-const SITE_SL = [['cap', 'capacity', 'Capacity, units/week', 0, 15000, 250], ['ml', 'min_load', 'Minimum load', 0, 0.9, 0.05], ['ci', 'conv_index', 'Conversion cost vs China', 0.7, 2, 0.01],
-  ['pd', 'parts_duty', 'Import duty on parts', 0, 0.2, 0.005], ['fc', 'fixed_cost', 'Fixed cost per year if open', 0, 6000000, 100000]];
+const SITE_SL = [['cap', 'capacity', 'Line capacity, units/week', 0, 15000, 250], ['ml', 'min_load', 'Minimum volume commitment (take-or-pay)', 0, 0.9, 0.05], ['ci', 'conv_index', 'ODM price vs the China line', 0.7, 2, 0.01],
+  ['pd', 'parts_duty', 'Import duty on parts', 0, 0.2, 0.005], ['nr', 'nre', 'ODM line: one-time NRE (fit-out share + qualification)', 0, 8000000, 10000], ['bp', 'buy_price', 'Own plant: price to buy it', 0, 30000000, 10000],
+  ['fc', 'fixed_cost', 'Program cost per year: team, audits, test sets', 0, 4000000, 50000]];
+// NRE and buy price follow the capex indices (ODM campus fit-out, whole-plant price) times yearly capacity.
+const CAPEX_KEYS = ['capex_odm_line_usd_per_annual_unit', 'qualification_usd', 'capex_plant_usd_per_annual_unit'];
+function rederive() {
+  NONCN.forEach((o) => {
+    const y = S.sites[o].capacity * 52;
+    S.sites[o].nre = Math.round((S.P.capex_odm_line_usd_per_annual_unit * y + S.P.qualification_usd) / 1e4) * 1e4;
+    S.sites[o].buy_price = Math.round(S.P.capex_plant_usd_per_annual_unit * y / 1e4) * 1e4;
+    ['nr', 'bp'].forEach((id) => { const el = R.$(`#${id}-${o}`); if (el) el.value = S.sites[o][id === 'nr' ? 'nre' : 'buy_price']; });
+  });
+}
 const siteFmt = (k, v) => k === 'capacity' ? R.num(v) : k === 'min_load' || k === 'parts_duty' ? R.pct(v, k === 'parts_duty' ? 1 : 0) : k === 'conv_index' ? v.toFixed(2) + '×' : R.usd(v, 1);
 
 function buildRanges() {
@@ -1035,13 +1152,16 @@ function buildInputs() {
       `<div class="mini" data-k="${k}"><span>${lab}</span><output id="o-${id}-${o}"></output><input type="range" id="${id}-${o}" min="${mn}" max="${mx}" step="${st}" value="${s[k]}" aria-label="${R.esc(s.label)}: ${lab}"></div>`).join('');
     return `<div class="site-row" data-o="${o}">
       <div class="site-hd"><label><input type="checkbox" id="open-${o}" ${s.open ? 'checked' : ''}><span class="sw" style="background:${scv(o)}"></span>${R.esc(s.label)}</label></div>
-      ${o === 'CN' ? '' : `<label class="tog"><input type="checkbox" id="board-${o}" ${s.board_local ? 'checked' : ''}>Main board made here (takes this origin)</label>`}
+      ${o === 'CN' ? '' : `<label class="tog"><input type="checkbox" id="board-${o}" ${s.board_local ? 'checked' : ''}>Main board made here (takes this origin)</label>
+      <label class="tog"><input type="checkbox" id="buy-${o}" ${s.mode === 'buy' ? 'checked' : ''}>Buy an electronics plant instead of an ODM line</label>`}
       ${sl}</div>`;
   }).join('');
   ORG.forEach((o) => {
     R.$('#open-' + o).addEventListener('change', (e) => { S.sites[o].open = e.target.checked; paint(); schedule(); });
     const b = R.$('#board-' + o);
     if (b) b.addEventListener('change', (e) => { S.sites[o].board_local = e.target.checked; paint(); schedule(); });
+    const bu = R.$('#buy-' + o);
+    if (bu) bu.addEventListener('change', (e) => { S.sites[o].mode = e.target.checked ? 'buy' : 'odm'; paint(); schedule(); });
     SITE_SL.forEach(([id, k]) => { const el = R.$(`#${id}-${o}`); if (el) el.addEventListener('input', () => { S.sites[o][k] = +el.value; paint(); schedule(); }); });
   });
   const groups = {};
@@ -1056,7 +1176,7 @@ function buildInputs() {
     '<p class="hint" style="margin:6px 0 0">Shown as shares of the total, so they always add up to 100%.</p></details>';
   R.$('#groups').innerHTML = html;
   R.$('#rng-prob').innerHTML = prmHtml('duty_change_prob');
-  Object.keys(RANGE).forEach((k) => R.$('#p-' + k).addEventListener('input', (e) => { S.P[k] = +e.target.value; paint(); schedule(); }));
+  Object.keys(RANGE).forEach((k) => R.$('#p-' + k).addEventListener('input', (e) => { S.P[k] = +e.target.value; if (CAPEX_KEYS.includes(k)) rederive(); paint(); schedule(); }));
   MK.forEach((m) => R.$('#d-' + m.market).addEventListener('input', (e) => { S.dem[m.market] = +e.target.value; paint(); schedule(); }));
   IN.scenarios.forEach((s) => R.$('#pr-' + s.id).addEventListener('input', (e) => { S.prob[s.id] = +e.target.value; paint(); schedule(); }));
   buildRanges();
@@ -1070,12 +1190,14 @@ function paint() {
     R.$(`.site-row[data-o="${o}"]`).classList.toggle('closed', !s.open);
     R.$('#open-' + o).checked = s.open;
     if (R.$('#board-' + o)) R.$('#board-' + o).checked = !!s.board_local;
+    if (R.$('#buy-' + o)) R.$('#buy-' + o).checked = s.mode === 'buy';
+    R.$(`.site-row[data-o="${o}"]`).classList.toggle('buy', s.mode === 'buy');
     SITE_SL.forEach(([id, k]) => {
       const out = R.$(`#o-${id}-${o}`); if (!out) return;
       out.textContent = siteFmt(k, s[k]);
       const ch = Math.abs(s[k] - s0[k]) > 1e-12; out.parentElement.classList.toggle('changed', ch); nSite += ch;
     });
-    nSite += (s.open !== s0.open) + (!!s.board_local !== !!s0.board_local);
+    nSite += (s.open !== s0.open) + (!!s.board_local !== !!s0.board_local) + ((s.mode || 'odm') !== (s0.mode || 'odm'));
   });
   R.$('#cnt-sites').textContent = (openSites().join('+') || 'none open') + (nSite ? ` · ${nSite} changed` : '');
   Object.keys(RANGE).forEach((k) => {
@@ -1097,6 +1219,7 @@ if (matchMedia('(max-width: 980px)').matches) R.$('#inputs').classList.add('fold
 // ---------------------------------------------------------------- controls
 R.seg(R.$('#f-s'), IN.scenarios.map((s) => [s.id, SHORT[s.id] || s.id]), S.sc, (v) => { S.sc = v; buildRates(); buildDutyTable(); schedule(); });
 R.seg(R.$('#f-r'), [['cape', 'Avoid (Cape)'], ['suez', 'Through Suez']], S.rs, (v) => { S.rs = v; schedule(); });
+const segH = R.seg(R.$('#f-h'), [['1', 'Closed (since Feb 2026)'], ['0', 'Open']], String(S.P.hormuz_closed >= 0.5 ? 1 : 0), (v) => { S.P.hormuz_closed = +v; R.$('#p-hormuz_closed').value = +v; paint(); schedule(); });
 R.seg(R.$('#f-m'), [['sea', 'Ocean'], ['air', 'Air']], S.mode, (v) => { S.mode = v; persist(); draw(); });
 R.seg(R.$('#f-v'), [['total', 'Landed $'], ['duty', 'Duty $'], ['freight', 'Freight $'], ['days', 'Days']], S.view, (v) => { S.view = v; persist(); draw(); });
 R.$('#runs').value = S.runs; R.$('#o-runs').textContent = S.runs;
@@ -1116,16 +1239,20 @@ function compute() {
   const evNow = open.length ? FPE.evaluate(inp, P, sites, open, S.rs, mats[0]) : null;
   const cn = FPE.evaluate(inp, P, sites, ['CN'], S.rs, duties);
   const fps = FPE.footprints(inp, P, sites, S.rs, inp.scenarios);
-  const [fixed, curCosts] = open.length ? FPE.yearlyCosts(inp, P, sites, open, S.rs, mats) : [0, mats.map(() => 1e12)];
+  const [fixed, curCosts, curMoved] = open.length ? FPE.yearlyCosts(inp, P, sites, open, S.rs, mats) : [0, mats.map(() => 1e12), mats.map(() => 0)];
   const wsum = inp.scenarios.reduce((a, s) => a + s.probability, 0) || 1;
   const best = mats.map((_, k) => Math.min(...fps.map((r) => r.costs[k]), curCosts[k]));
   const base = fps.find((r) => r.is_base);
-  const H = P.horizon_years, lag = Math.min(P.ramp_months / 12, H);
+  const H = P.horizon_years;
+  const fresh = base ? open.filter((o) => o !== 'CN' && !base.open.includes(o)) : [];
+  const lag = Math.min(Math.max(0, ...fresh.map((o) => FPE.siteTerms(P, sites[o]).ramp)) / 12, H);
   const cur = { costs: curCosts, fixed,
     expected: inp.scenarios.reduce((a, s, k) => a + s.probability * curCosts[k], 0) / wsum,
     regret: Math.max(...curCosts.map((c, k) => c - best[k])) };
   const same = base && fpKey(base.open, base.board) === curKey();
-  cur.wait = !base || same ? H * cur.expected : inp.scenarios.reduce((a, s, k) => { const cb = base.costs[k]; return a + s.probability * Math.min(H * cb, lag * cb + (H - lag) * curCosts[k] + P.rush_premium_usd); }, 0) / wsum;
+  cur.wait = !base || same ? H * cur.expected : inp.scenarios.reduce((a, s, k) => {
+    const cb = base.costs[k], urgent = P.urgent_transition_usd_per_weekly_unit * Math.max(0, curMoved[k] - base.moved[k]);
+    return a + s.probability * Math.min(H * cb, lag * cb + (H - lag) * curCosts[k] + (fresh.length ? P.rush_premium_usd : 0) + urgent); }, 0) / wsum;
   cur.build_now_value = cur.wait - H * cur.expected;
   RES = { inp, mats, duties, si, ev, evNow, cn, fps, cur, base, ms: performance.now() - t0 };
   draw();
@@ -1174,7 +1301,7 @@ function runMC() {
 // ---------------------------------------------------------------- hero + ladder
 function hero() {
   const rows = RES.fps;
-  if (!rows.length) { R.$('#hero-main').innerHTML = '<p class="empty">No set of sites can cover demand within capacity and minimum loads.</p>'; R.$('#ladder').innerHTML = ''; return; }
+  if (!rows.length) { R.$('#hero-main').innerHTML = '<p class="empty">No set of sites can cover demand within capacity.</p>'; R.$('#ladder').innerHTML = ''; return; }
   const top = MC ? MC.rows[0] : null;
   const rob = rows.reduce((a, r) => (r.regret < a.regret ? r : a), rows[0]);
   const cnOnly = MC ? MC.rows.find((r) => r.open.length === 1 && r.open[0] === 'CN') : null;
@@ -1202,7 +1329,7 @@ function hero() {
     ['Cheapest at today’s duties', chips(base.open, base.board), `${M$(base.costs[0])} a year`],
     ['Lowest worst-case regret, named scenarios', chips(rob.open, rob.board), `never more than ${M$(rob.regret, 1)} a year off`],
     ['China alone is the cheapest', cnOnly ? `<b>${R.pct(cnOnly.win)}</b>` : '–', cnOnly ? `of the draws · mean ${M$(cnOnly.mean)}, P90 ${M$(cnOnly.p90)}` : ''],
-    ['Build a hedge now once a China tariff is more likely than', easiest ? `<b>${R.pct(easiest[1])}</b>` : 'never', easiest ? `${fpKey(easiest[0].open, easiest[0].board)} · ${R.num(S.P.ramp_months)}-month ramp-up` : ''],
+    ['Build a hedge now once a China tariff is more likely than', easiest ? `<b>${R.pct(easiest[1])}</b>` : 'never', easiest ? `${fpKey(easiest[0].open, easiest[0].board)} · ${R.num(easiest[0].lag * 12)}-month ramp-up` : ''],
   ].map(([l, v, s]) => `<div class="lr"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></div>`).join('');
 }
 
@@ -1215,11 +1342,11 @@ function strip() {
     const s = S.sites[o], load = ev && ev.load[o] ? ev.load[o] : 0, cap = s.capacity || 1;
     const serves = ev ? MK.filter((m) => (ev.alloc[`${o}|${m.market}`] || 0) > 0.5).map((m) => m.market) : [];
     const c = tabUS[o][usJ];
-    const board = o === 'CN' ? 'Home base' : s.board_local ? 'Own boards' : 'CN boards';
+    const board = (o === 'CN' ? 'Home base' : (s.mode === 'buy' ? 'Own plant · ' : 'ODM line · ') + (s.board_local ? 'own boards' : 'CN boards'));
     return `<article class="sc${s.open ? '' : ' closed'}" style="--sc:${scv(o)}">
       <div class="sc-h"><span class="sc-name">${SNAME[o]}<small>${R.esc(s.label.split(' · ')[1] || '')}</small></span>
         <button type="button" class="tgl" data-o="${o}" aria-pressed="${s.open}">${s.open ? 'Open' : 'Closed'}</button></div>
-      <div class="meter" title="Load ${R.num(load)} of ${R.num(cap)} units/week; minimum load ${R.pct(s.min_load)}"><i style="width:${Math.min(100, 100 * load / cap).toFixed(1)}%"></i>${o === 'CN' || !s.min_load ? '' : `<b style="left:${(100 * s.min_load).toFixed(1)}%"></b>`}</div>
+      <div class="meter" title="Load ${R.num(load)} of ${R.num(cap)} units/week; commitment ${R.pct(s.min_load)} (take-or-pay below it)"><i style="width:${Math.min(100, 100 * load / cap).toFixed(1)}%"></i>${o === 'CN' || !s.min_load ? '' : `<b style="left:${(100 * s.min_load).toFixed(1)}%"></b>`}</div>
       <div class="sc-load"><span>${R.num(load)} / ${R.num(cap)}</span><span>${R.pct(load / cap)}</span></div>
       <div class="sc-serves"><b style="font-weight:600">${board}</b> · ${s.open ? (serves.length ? serves.join(' · ') : 'idle') : 'not in the footprint'}</div>
       <div class="sc-kv"><span>US landed</span><span>$${R.num(c.total, 0)}</span>
@@ -1239,7 +1366,7 @@ function kpis() {
   const year = 52 * ev.weekly_cost + cur.fixed, yearCN = 52 * cn.weekly_cost;
   const served = MK.reduce((a, m) => a + S.dem[m.market], 0) - ev.unmet;
   const d = year - yearCN;
-  const warn = ev.unmet > 1e-6 ? `<b class="neg">${R.num(ev.unmet)} units/week not covered</b>` : ev.underload > 1e-6 ? `<b class="neg">${R.num(ev.underload)} units/week short of minimum loads</b>` : `$${R.num(year / Math.max(1, 52 * served), 2)} per unit · fixed ${R.usd(cur.fixed, 1)}`;
+  const warn = ev.unmet > 1e-6 ? `<b class="neg">${R.num(ev.unmet)} units/week not covered</b>` : ev.underload > 1e-6 ? `<b class="neg">${R.num(ev.underload)} units/week below commitments · take-or-pay ${R.usd(52 * ev.weekly_shortfall, 1)} a year</b>` : `$${R.num(year / Math.max(1, 52 * served), 2)} per unit · fixed ${R.usd(cur.fixed, 1)}`;
   const bn = cur.build_now_value, H = S.P.horizon_years, small = Math.abs(bn) < 5e4;
   R.$('#kpis').innerHTML = [
     card(`Yearly cost · ${SHORT[S.sc]}`, R.usd(year), warn),
@@ -1247,7 +1374,7 @@ function kpis() {
     card('Duty per year', R.usd(52 * ev.weekly_duty), `${R.pct(ev.weekly_duty / Math.max(1, ev.weekly_cost), 1)} of landed cost`),
     card('Expected, named scenarios', cur.expected > 1e11 ? '–' : R.usd(cur.expected), cur.expected > 1e11 ? 'not feasible in some scenario' : `worst regret ${R.usd(cur.regret, 1)}`),
     card('Build now or wait', small ? '–' : (bn > 0 ? 'Build now' : 'Wait'), small ? 'this is the cheapest footprint today' : `${bn > 0 ? 'building now saves' : 'waiting saves'} ${R.usd(Math.abs(bn), 1)} over ${H} years`, bn > 5e4 ? 'pos' : ''),
-    card('Red Sea or Hormuz', R.kunits((ev.exposure['Red Sea'] || 0) + (ev.exposure['Hormuz'] || 0)) + '/wk', `average ${R.num(ev.avg_days, 1)} days to the MGI`),
+    card('Red Sea or Hormuz', R.kunits((ev.exposure['Red Sea'] || 0) + (ev.exposure['Hormuz'] || 0)) + '/wk', `${S.P.hormuz_closed >= 0.5 ? 'Hormuz closed (bypass) · ' : ''}avg ${R.num(ev.avg_days, 1)} days to the MGI`),
   ].join('');
 }
 
@@ -1295,7 +1422,10 @@ function heat() {
 }
 
 // ---------------------------------------------------------------- cost drill-down
-const PARTS = [['factory', 'Factory value', 6], ['freight', 'Freight', 0], ['duty', 'Duty', 1], ['carry', 'Carrying in transit', 2], ['plan', 'Planning (longer chain)', 3], ['risk', 'Chokepoint premium', 5]];
+const PARTS = [['factory', 'Factory value', 6], ['freight', 'Freight', 0], ['duty', 'Duty', 1], ['carry', 'Carrying in transit', 2], ['plan', 'Chain: EOL material (M3)', 3], ['fg', 'End-of-life stock (M4)', 3], ['risk', 'Chokepoint premium', 5]];
+// Bars: the Module 3 and Module 4 terms share one segment (Module 4 is a credit for sites closer than China).
+const BARS = [['factory', 'Factory value', 6, (c) => c.factory], ['freight', 'Freight', 0, (c) => c.freight], ['duty', 'Duty', 1, (c) => c.duty],
+  ['carry', 'Carrying in transit', 2, (c) => c.carry], ['chain', 'Longer chain (M3 + M4)', 3, (c) => Math.max(0, c.plan + c.fg)], ['risk', 'Chokepoint premium', 5, (c) => c.risk]];
 const cDrill = R.chart('c-drill', (t) => {
   const o = R.base(t);
   if (!RES) return { ...o };
@@ -1306,12 +1436,12 @@ const cDrill = R.chart('c-drill', (t) => {
   return {
     ...o,
     tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const s = ORG[ps[0].dataIndex], c = tab[s][j]; return R.tip(t, PARTS.map(([k, n, ci]) => [t.c[ci], n, '$' + R.num(c[k], 2)]).concat([[t.ink, 'Landed', '$' + R.num(c.total, 2)]]), S.sites[s].label + ' → ' + S.selm); } },
-    legend: { ...o.legend, type: 'plain', data: PARTS.map((p) => p[1]) },
+    legend: { ...o.legend, type: 'plain', data: BARS.map((p) => p[1]) },
     grid: { ...o.grid, top: (document.getElementById('c-drill').clientWidth < 520 ? 86 : 62) },
     xAxis: R.axis(t, { type: 'category', data: ORG, splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 12 } }),
     yAxis: R.axis(t, { type: 'value', min: Math.max(0, Math.floor((minF - 40) / 50) * 50), axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true, formatter: (v) => '$' + v } }),
-    series: PARTS.map(([k, n, ci], pi) => ({ type: 'bar', stack: 'c', name: n, barMaxWidth: 24, itemStyle: { color: t.c[ci], borderColor: t.panel, borderWidth: 1, borderRadius: pi === PARTS.length - 1 ? [4, 4, 0, 0] : 0 },
-      data: ORG.map((s) => ({ value: +tab[s][j][k].toFixed(4), itemStyle: { opacity: S.sites[s].open ? 1 : 0.4 } })) })),
+    series: BARS.map(([k, n, ci, f], pi) => ({ type: 'bar', stack: 'c', name: n, barMaxWidth: 24, itemStyle: { color: t.c[ci], borderColor: t.panel, borderWidth: 1, borderRadius: pi === BARS.length - 1 ? [4, 4, 0, 0] : 0 },
+      data: ORG.map((s) => ({ value: +f(tab[s][j]).toFixed(4), itemStyle: { opacity: S.sites[s].open ? 1 : 0.4 } })) })),
   };
 });
 
@@ -1463,7 +1593,7 @@ const tip = (r) => RES.inp.scenarios.some((s) => s.id === 'cn301') ? FPE.tipping
 const tipTxt = (r) => { const w = tip(r); return w === null ? 'never' : w === 0 ? 'any' : R.pct(w); };
 function fpTable() {
   const rows = RES.fps, scen = RES.inp.scenarios, ck = curKey();
-  if (!rows.length) { R.$('#t-fp').innerHTML = '<tbody><tr><td class="empty">No set of sites can cover demand within capacity and minimum loads. Raise capacities or lower minimum loads on the left.</td></tr></tbody>'; R.$('#h-fp').textContent = ''; return; }
+  if (!rows.length) { R.$('#t-fp').innerHTML = '<tbody><tr><td class="empty">No set of sites can cover demand within capacity. Raise capacities on the left.</td></tr></tbody>'; R.$('#h-fp').textContent = ''; return; }
   const rob = rows.reduce((a, r) => (r.regret < a.regret ? r : a), rows[0]);
   const bnow = rows.reduce((a, r) => (r.build_now_value > a.build_now_value ? r : a), rows[0]);
   const top = rows.slice(0, 10);
@@ -1604,11 +1734,127 @@ function insight() {
     ${top ? `<p><b>Under the duty ranges, ${fpLabel(top.open, top.board)} has the lowest mean cost</b> (${M$(top.mean)} a year, P90 ${M$(top.p90)}). If the US repeats April 2025 it hits every Asian site at once, scaled to its own peak, so the site with the lowest peak rate is the better hedge, not the cheapest site today.</p>` : ''}`;
 }
 
+// ---------------------------------------------------------------- ocean lanes (2026 market rates)
+const LNAME = { FE: 'Far East', USWC: 'US West Coast', NEUR: 'North Europe', JP: 'Japan', SEA: 'Singapore', ANZ: 'Australia', SAEC: 'Brazil', INDIA: 'India', GULF: 'Gulf' };
+const laneName = (l) => l.split('-').map((x) => LNAME[x] || x).join(' → ');
+function lanesTable() {
+  const inp = RES.inp, P = S.P, hz = P.hormuz_closed >= 0.5 ? 'closed' : 'open';
+  const L = {};
+  const add = (leg) => {
+    if (!leg.lane) return null;
+    const x = L[leg.lane] || (L[leg.lane] = { bench: leg.lane in inp.freight, pre: [], con: [], spot: [], used: [], fin: 0, kits: 0, extra: false });
+    const pre = leg.lane in inp.freight ? inp.freight[leg.lane][0] : P.sea_feu_base_usd + P.sea_feu_per_nm_usd * leg.nm;
+    const con = leg.lane in inp.freight ? inp.freight[leg.lane][1] : pre * P.fallback_contract_factor;
+    const spot = leg.lane in inp.freight ? inp.freight[leg.lane][2] : pre * P.fallback_now_factor;
+    const ex = FPE.oceanExtra(P, leg);
+    x.pre.push(pre); x.con.push(con); x.spot.push(spot); x.used.push(FPE.feuRate(inp, P, leg.lane, leg.nm) + ex);
+    if (ex > 0) x.extra = true;
+    return x;
+  };
+  ORG.forEach((o) => MK.forEach((m) => add(FPE.route(inp, o, m.mgi, 'sea', S.rs, hz))));
+  NONCN.forEach((o) => add(inp.feeds[o][hz]));
+  if (RES.ev) {
+    Object.entries(RES.ev.alloc).forEach(([k, q]) => {
+      const [o, mk] = k.split('|'), r = FPE.route(inp, o, MK.find((m) => m.market === mk).mgi, 'sea', S.rs, hz);
+      if (r.lane) L[r.lane].fin += q;
+    });
+    Object.entries(RES.ev.load).forEach(([o, q]) => { if (o !== 'CN' && q > 1e-9 && inp.feeds[o][hz].lane) L[inp.feeds[o][hz].lane].kits += q; });
+  }
+  const rng = (a, d = 0) => { const lo = Math.min(...a), hi = Math.max(...a); return Math.abs(hi - lo) < 0.5 ? '$' + R.num(lo, d) : `$${R.num(lo, d)}–${R.num(hi, d)}`; };
+  const keys = Object.keys(L).sort((a, b) => (L[b].bench - L[a].bench) || (L[b].fin + L[b].kits - L[a].fin - L[a].kits) || a.localeCompare(b));
+  const used = keys.filter((k) => L[k].bench || L[k].fin + L[k].kits > 0);
+  const rest = keys.length - used.length;
+  R.$('#h-lanes').textContent = `USD per 40-ft · freight basis ${R.num(P.freight_basis, 2)} (0 = pre-war, 1 = long-term contract, 2 = Oct 2026 spot) · Hormuz ${hz === 'closed' ? 'closed: Gulf cargo lands at Khor Fakkan and is trucked' : 'open'}`;
+  R.$('#t-lanes').innerHTML = '<thead><tr><th class="txt">Lane</th><th>Pre-war<small>late Feb 2026</small></th><th>Contract<small>long-term, Aug 2026</small></th><th>Spot<small>Oct 2026</small></th><th>Model uses<small>incl. Gulf extras</small></th><th>Per laptop<small>' + R.num(P.units_per_feu) + ' a box</small></th><th>Laptops<small>per week</small></th><th>Parts kits<small>per week</small></th></tr></thead><tbody>' +
+    used.map((k) => { const x = L[k]; return `<tr><td class="txt"><b>${laneName(k)}</b><small>${x.bench ? 'benchmark index' : 'no benchmark: distance formula × ' + R.num(P.fallback_contract_factor, 2) + ' / × ' + R.num(P.fallback_now_factor, 1)}${x.extra ? ' · + Gulf extras' : ''}</small></td>` +
+      `<td>${rng(x.pre)}</td><td>${rng(x.con)}</td><td>${rng(x.spot)}</td><td><b>${rng(x.used)}</b></td><td>${rng(x.used.map((v) => v / P.units_per_feu), 2)}</td><td>${x.fin ? R.num(x.fin) : '–'}</td><td>${x.kits ? R.num(x.kits) : '–'}</td></tr>`; }).join('') +
+    (rest ? `<tr><td class="txt" colspan="8"><small>${rest} more lane${rest > 1 ? 's' : ''} without a benchmark carr${rest > 1 ? 'y' : 'ies'} no volume in this network.</small></td></tr>` : '') + '</tbody>';
+}
+
+// ---------------------------------------------------------------- costs from Modules 1–4 (src/integrate.py)
+function linkagePanel() {
+  const Lk = IN.linkage, P = S.P;
+  if (!Lk) { R.$('#linkage').innerHTML = '<p class="hint">Run src/integrate.py to link the modules.</p>'; return; }
+  const c = Lk.chain, f = Lk.finished_goods, tr = Lk.transition;
+  const tag = (k, v, d) => Math.abs(P[k] - v) > 1e-9 ? ` <span class="chg">slider $${R.num(P[k], d)}</span>` : '';
+  const j = MK.findIndex((m) => m.market === 'US');
+  const tab = FPE.landedTable(RES.inp, P, S.sites, 'sea', S.rs, RES.duties);
+  const per = NONCN.map((o) => `${o} $${R.num(tab[o][j].plan, 2)} + ${tab[o][j].fg < 0 ? '−' : ''}$${R.num(Math.abs(tab[o][j].fg), 2)}`).join(' · ');
+  R.$('#linkage').innerHTML = `<div class="ladder flat">
+    <div class="lr"><span class="l"><b>Chain, Module 3</b> · per laptop, each extra week of commitment</span><span class="v">$${R.num(c.usd_per_unit_week, 2)}${tag('planning_cost_usd_per_unit_week', c.usd_per_unit_week, 2)}</span>
+      <span class="s">EOL material without demand ${M$(c.eol_mwd_per_year)} a year on ${R.num(c.units_per_year)} units when the window grows ${c.window_old} → ${c.window_new} weeks</span></div>
+    <div class="lr"><span class="l"><b>End-of-life stock, Module 4</b> · per laptop, each extra week of transit</span><span class="v">$${R.num(f.usd_per_unit_week, 2)}${tag('fg_eol_usd_per_unit_week', f.usd_per_unit_week, 2)}</span>
+      <span class="s">Avoidable cost per laptop: ${f.points.map(([T, v]) => `${T} wk $${R.num(v, 1)}`).join(', ')} · launch held fixed, ${f.runs} runs</span></div>
+    <div class="lr"><span class="l"><b>Urgent transfer, Modules 1–3</b> · per laptop of weekly volume moved</span><span class="v">$${R.num(tr.urgent_usd_per_weekly_unit, 0)}${tag('urgent_transition_usd_per_weekly_unit', tr.urgent_usd_per_weekly_unit, 0)}</span>
+      <span class="s">Cut over at week ${tr.urgent_best_week}: $${R.num(tr.cutover_usd_per_weekly_unit, 0)} holding, relocation and MWD, + $${R.num(tr.expedite_usd_per_weekly_unit, 0)} expediting. Planned at a model change (week ${tr.planned_best_week}): $${R.num(tr.planned_usd_per_weekly_unit, 0)}. Charged in "wait" when a tariff forces the move.</span></div>
+    <div class="lr"><span class="l">Per laptop to the US: chain + stock</span><span class="v"></span><span class="s">${per}</span></div>
+  </div>`;
+}
+
+// ---------------------------------------------------------------- history and back-test
+const HPER = [['2023', '2023', 12, '2023-01-01', '2023-12-31'], ['2024', '2024', 12, '2024-01-01', '2024-12-31'], ['2025', '2025', 12, '2025-01-01', '2025-12-31'], ['2026 Jan-Jul', '2026 Jan–Jul', 7, '2026-01-01', '2026-07-31']];
+// China and Vietnam keep their site colours; the three origins that are not sites stay in greys of different lightness.
+const HSER = [['china', 'China', (t) => t.c[0], 1], ['vietnam', 'Vietnam', (t) => t.c[1], 1], ['mexico', 'Mexico', (t) => t.c[6], 1], ['taiwan', 'Taiwan', (t) => t.ink2, 1], ['thailand', 'Thailand', (t) => t.c[6], 0.45]];
+function chinaGap(from, to) {          // average China-only extra US tariff on laptops over [from, to], days weighted
+  const day = 864e5, a = Date.parse(from), b = Date.parse(to) + day;
+  let s = 0;
+  (D.tariff_history || []).forEach((r) => { const lo = Math.max(a, Date.parse(r.from)), hi = Math.min(b, Date.parse(r.to) + day); if (hi > lo) s += (hi - lo) * (+r.china_extra_pct); });
+  return s / (b - a);
+}
+const cHist = R.chart('c-hist', (t) => {
+  const o = R.base(t);
+  const rows = (D.history || []).filter((r) => r.series === 'hs8471_value');
+  const by = Object.fromEntries(rows.map((r) => [r.period, r]));
+  const per = HPER.filter(([k]) => by[k]);
+  return {
+    ...o, legend: { ...o.legend, data: HSER.map((x) => x[1]).concat(['China-only extra tariff']) },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => R.tip(t, ps.map((p) => [p.color, p.seriesName, p.seriesIndex === HSER.length ? R.num(p.value, 1) + '%' : '$' + R.num(p.value, 2) + 'B a month']), per[ps[0].dataIndex][1]) },
+    grid: { ...o.grid, top: 58, right: 8 },
+    xAxis: R.axis(t, { type: 'category', data: per.map((p) => p[1]), splitLine: { show: false }, axisLabel: { color: t.ink2, fontFamily: t.fMono, fontSize: 12 } }),
+    yAxis: [R.axis(t, { type: 'value', name: 'USD bn a month', nameGap: 10, nameTextStyle: { color: t.muted, fontSize: 11, align: 'left' }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + v } }),
+      R.axis(t, { type: 'value', name: 'China-only tariff', min: 0, max: 25, nameGap: 10, nameTextStyle: { color: t.muted, fontSize: 11, align: 'right' }, splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => v + '%' } })],
+    series: HSER.map(([k, n, col, op]) => ({ type: 'bar', name: n, barMaxWidth: 16, itemStyle: { color: col(t), opacity: op, borderRadius: [3, 3, 0, 0] },
+      data: per.map(([p, , mo]) => +(+by[p][k] / mo).toFixed(3)) }))
+      .concat([{ type: 'line', name: 'China-only extra tariff', yAxisIndex: 1, symbol: 'circle', symbolSize: 7, lineStyle: { color: t.bad, width: 2 }, itemStyle: { color: t.bad },
+        data: per.map(([, , , a, b]) => +chinaGap(a, b).toFixed(2)) }]),
+  };
+});
+function backtest() {
+  const inp = RES.inp, b = FPE.backtest(inp, S.P, S.sites, S.rs);
+  const us = MK.find((m) => m.market === 'US').weekly_units;
+  const d = FPE.dutyMatrix(inp, inp.scenarios[0]); d.USA.CN = 0.20;
+  const sv = FPE.withBoards(S.sites, ['CN', 'VN'], false);
+  const share = (w) => (FPE.evaluate(inp, { ...S.P, board_origin_weight: w }, sv, ['CN', 'VN'], S.rs, d).alloc['VN|US'] || 0) / us;
+  let wStar = null;
+  if (share(1) > 0.5) wStar = 1;
+  else if (share(0) > 0.5) { let lo = 0, hi = 1; for (let i = 0; i < 24; i++) { const m = (lo + hi) / 2; if (share(m) > 0.5) lo = m; else hi = m; } wStar = lo; }
+  const lap = (D.history || []).filter((r) => r.series === 'laptop_share' && r.vietnam);
+  const act = lap.map((r) => `${R.num(+r.vietnam)}% (${r.period.replace('-', '–')})`).join(' · ');
+  const k = inp.scenarios.findIndex((s) => s.id === 'cn301'), wsum = inp.scenarios.reduce((a, s) => a + s.probability, 0) || 1;
+  const pNow = inp.scenarios[k].probability / wsum, iw = b.implied_weight_2026;
+  const ok = iw !== null && pNow >= iw - 1e-9;
+  const own = b.shift_2025.own_boards, imp = b.shift_2025.china_boards;
+  R.$('#backtest').innerHTML = `<div class="ladder flat">
+    <div class="bt-h">Mar–Nov 2025: China-made laptops paid 20% more in the US, Vietnam-made paid nothing</div>
+    <div class="lr"><span class="l">Model: US volume a Vietnam line takes, <b>boards from China</b></span><span class="v">${R.pct(imp)}</span>
+      <span class="s">Board-origin weight ${R.num(S.P.board_origin_weight, 2)}: ${wStar === null ? 'even at weight 0 the line does not win' : wStar >= 1 ? 'the line wins at any weight' : `the line wins only below weight ${R.num(wStar, 2)}`}</span></div>
+    <div class="lr"><span class="l">Model: the same line with <b>boards made in Vietnam</b></span><span class="v">${R.pct(own)}</span></div>
+    <div class="lr"><span class="l">Actual: US laptop imports from Vietnam</span><span class="v">${act || '–'}</span>
+      <span class="s">${own > 0.5 && imp < 0.5 ? 'The move happened, so in the model it needs the boards to move too, or customs that do not follow the board.' : 'The model and the data agree on the direction.'} The model has one product and moves it whole; buyers in fact split by model and ODM.</span></div>
+    <div class="bt-h">Since 20 Feb 2026: no China-only gap, yet Vietnam kept its share</div>
+    <div class="lr"><span class="l">Model: with the Vietnam set-up already paid, staying beats moving back once a renewed China tariff has weight</span><span class="v">${iw === null ? 'never' : '≥ ' + R.pct(iw, 1)}</span></div>
+    <div class="lr"><span class="l">This page: weight on "${SHORT.cn301}"</span><span class="v"><span class="${ok ? 'ok' : 'no'}">${R.pct(pNow, 1)} ${ok ? '✓ consistent' : '✗ the model would move back'}</span></span>
+      <span class="s">Firms that stayed act as if they put at least this weight on a new China tariff.</span></div>
+  </div>`;
+}
+
 function draw() {
   if (!RES) return;
   hero(); strip(); kpis(); heat(); beTable(); fpTable(); paintDutyTable(document.activeElement); paintRates(document.activeElement); insight(); tornado(); mcTable();
+  lanesTable(); linkagePanel(); backtest();
+  segH.set(String(S.P.hormuz_closed >= 0.5 ? 1 : 0));
   R.$('#h-sankey').textContent = `${IN.scenarios[RES.si].label} · ocean · units per week`;
-  [cSankey, cDrill, cSweep, cChoke, cFan, cTor].forEach(R.update);
+  [cSankey, cDrill, cSweep, cChoke, cFan, cTor, cHist].forEach(R.update);
   setStatus();
 }
 buildInputs();
