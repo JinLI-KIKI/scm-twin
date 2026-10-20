@@ -259,6 +259,8 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   every China week dearer for the company); the BU's pick costs $0.45M in expectation.
 - Parity: 3,483 values identical.
 
+- Q36 answered: the new price lands in about 2 weeks, as Acer's in Feb 2025 (kept).
+
 ## Next — Day 6
 
 - **Jin to judge:** the take-or-pay fee and commitment (Q28), ramp months by mode and rush
