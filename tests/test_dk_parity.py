@@ -22,7 +22,8 @@ VARIANTS = [{}, {"passthrough": 0.4, "reprice_lag_weeks": 5, "ramp_weeks": 20, "
             {"max_promo_discount": 0.2, "catchup_from_week": 13, "target_tolerance": 1.02},
             {"company_holds_target": 0, "max_promo_discount": 0.0},
             {"bu_funds_support": 0.3, "target_tolerance": 0.99, "max_promo_discount": 0.15},
-            {"mwd_transferability": 0.2, "mwd_cost_rate": 0.4, "points_effect": 0.6, "max_promo_discount": 0.25}]
+            {"mwd_transferability": 0.2, "mwd_cost_rate": 0.4, "points_effect": 0.6, "max_promo_discount": 0.25},
+            {"absorb_prob": 0.0, "passthrough": 1.0}, {"absorb_prob": 0.6, "passthrough": 0.7, "tariff_cn": 0.35}]
 BG = ("mwd_cost_rate", [0.0, 0.5, 1.0, 1.5], "mwd_transferability", [0.0, 0.5, 1.0])
 TS, PS = [0.0, 0.15, 0.3, 0.5], [0.0, 0.5, 1.0]
 

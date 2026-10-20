@@ -238,13 +238,33 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   migrating, or MWD at $0.50 per $ or less, the BU picks the company's week.
 - Parity: 2,709 values identical.
 
+**Late — migration share and MWD price from public data (Q34):**
+- No public source gives a migration share. Bounded by part type instead: industry-standard
+  parts (CPU + DRAM + SSD: 45% of a mainstream notebook BOM in 1Q25, 68% in 3Q26, TrendForce)
+  are the supplier's to re-use; customized, single-customer, EOL and MOQ parts are NCNR. Excess
+  components resell at 5–15% of cost.
+- Transfers move one region while the same models stay in China for other regions (Q34), so only
+  region-specific parts stay: default 90% migrates (range 45–95%), $0.90 per $1 of MWD that
+  stays. A "transfer pattern" switch sets one region (90%) or a whole model/platform (55%).
+- Result: at a 25% tariff in the price the BU and the company now both pick week 9; the BU's pick
+  flips back to week 16 below about 70% migration. They still disagree when the company absorbs
+  the tariff (BU stays, company moves in week 0).
+
+**Last — negotiated pass-through (Q35):**
+- Pass-through is negotiated; the company absorbing the tariff is possible but unlikely. Each
+  option is now scored on expected costs over two cases: 85% of the tariff in the price (90%)
+  and absorbed by the company (10%). Units, weeks and the catch-up are those of the negotiated
+  case; the target must be made in both.
+- Result at a 25% tariff: the BU picks week 11, the company week 0 (the 10% absorb chance makes
+  every China week dearer for the company); the BU's pick costs $0.45M in expectation.
+- Parity: 3,483 values identical.
+
 ## Next — Day 6
 
 - **Jin to judge:** the take-or-pay fee and commitment (Q28), ramp months by mode and rush
   premium (Q29), own-plant overhead and labour share.
 
 - **Formula and algorithm review with Jin**, module by module (spec in `docs/models/`).
-- **Jin to judge Module 5:** share of claimed MWD that migrates and what MWD finally costs the
-  BU (Q34), how far the plan beats the target (Q33), pass-through and the repricing lag,
-  elasticity by model (Q17).
+- **Jin to judge Module 5:** how far the plan beats the target (Q33), pass-through and the
+  repricing lag, elasticity by model (Q17).
 - Then Roadmap A3, Module 6: new-site ramp and risk board hedge.

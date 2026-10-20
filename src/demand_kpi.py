@@ -193,12 +193,32 @@ def evaluate(inp, P, opt):
             "parts": parts, "company_cost": sum(parts.values()), "weekly": weekly}
 
 
+def evaluate_mix(inp, P, opt):
+    """Pass-through is negotiated (R44): with probability absorb_prob the company ends up absorbing
+    the tariff itself (no price rise), otherwise the negotiated share goes into the price. The
+    cutover is chosen before the outcome, so costs are expected values over the two cases; units,
+    weeks and the catch-up are those of the negotiated case, and the target must be made in both."""
+    neg = evaluate(inp, P, opt)
+    p = P["absorb_prob"]
+    if p <= 0:
+        return {**neg, "cases": None}
+    ab = evaluate(inp, {**P, "passthrough": 0.0}, opt)
+    parts = {k: (1 - p) * neg["parts"][k] + p * ab["parts"][k] for k in neg["parts"]}
+    mix = lambda k: (1 - p) * neg[k] + p * ab[k]
+    return {**neg, "parts": parts, "company_cost": sum(parts.values()),
+            "bu_mwd_cost": mix("bu_mwd_cost"), "bu_support": mix("bu_support"), "bu_cost": mix("bu_cost"),
+            "tariff_paid": mix("tariff_paid"), "recovered": mix("recovered"),
+            "attainment": min(neg["attainment"], ab["attainment"]),
+            "cases": {"negotiated": {"company_cost": neg["company_cost"], "bu_cost": neg["bu_cost"]},
+                      "absorbed": {"company_cost": ab["company_cost"], "bu_cost": ab["bu_cost"]}}}
+
+
 def score(inp, P):
     """BU: among the options that reach the target after the catch-up, the lowest MWD plus the
     price support the BU funds (ties: the latest); none does -> the target is lowered to the best
     reachable. Company: lowest cost, among the
     options that reach the target when it holds the fiscal-year target too (R42)."""
-    rows = [evaluate(inp, P, o) for o in inp["options"]]
+    rows = [evaluate_mix(inp, P, o) for o in inp["options"]]
     order = lambda r: inp["weeks"] + 1 if r["cutover"] is None else r["cutover"]
     hit = [r for r in rows if r["attainment"] >= P["target_tolerance"] - 1e-9]
     if hit:
@@ -237,7 +257,8 @@ def main():
     P = inp["P"]
     s = score(inp, P)
     print(f"== Fiscal year with a {P['tariff_cn']:.0%} US tariff on China-made laptops, "
-          f"{P['passthrough']:.0%} passed into the price from week {P['reprice_lag_weeks']:.0f}; target "
+          f"{P['passthrough']:.0%} negotiated into the price from week {P['reprice_lag_weeks']:.0f} "
+          f"({P['absorb_prob']:.0%} chance the company absorbs it); target "
           f"{P['target_tolerance']:.0%}, catch-up from week {P['catchup_from_week']:.0f} with up to "
           f"{P['max_promo_discount']:.0%} off")
     print(f"  {'option':<8}{'units':>9}{'before':>8}{'disc':>6}{'attain':>8}{'BU MWD':>10}{'absorbed':>10}"

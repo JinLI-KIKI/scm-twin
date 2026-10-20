@@ -50,7 +50,18 @@ promotion = Σ_{w ≥ catchup} q × d × price
 `d` = cap and the year ends below target. Paid tariff, recovered tariff and lost margin are summed
 on the units after the discount (lost margin turns negative when the year sells above plan).
 
-## 4. Two scorecards
+## 4. Negotiated pass-through (R44)
+
+```
+case N (probability 1 − absorb_prob): passthrough = negotiated share
+case A (probability absorb_prob):     passthrough = 0 (the company absorbs the tariff)
+cost(option)       = (1 − p) × cost_N + p × cost_A          every company part, BU MWD cost, BU points
+attainment(option) = min(attainment_N, attainment_A)        the target must be made in both
+```
+
+Units, weekly sell-in, quarters and the catch-up discount shown are those of case N.
+
+## 5. Two scorecards
 
 ```
 company cost = absorbed + lost + promotion + transfer + expedite + chain + conversion

@@ -75,8 +75,21 @@ const DKE = (() => {
       tariff_paid: paid, recovered, bu_mwd: buMwd, bu_mwd_cost: buMwdCost, bu_support: buSupport, bu_cost: buMwdCost + buSupport, claimed_mwd: opt.claimed_mwd, physical_mwd: opt.mwd, eol_mwd: eol,
       parts, company_cost: companyCost, weekly };
   }
+  function evaluateMix(inp, P, opt) {          // R44: negotiated pass-through, small chance of absorbing
+    const neg = evaluate(inp, P, opt), p = P.absorb_prob;
+    if (p <= 0) return { ...neg, cases: null };
+    const ab = evaluate(inp, { ...P, passthrough: 0 }, opt);
+    const parts = {};
+    for (const k of Object.keys(neg.parts)) parts[k] = (1 - p) * neg.parts[k] + p * ab.parts[k];
+    const mix = (k) => (1 - p) * neg[k] + p * ab[k];
+    let companyCost = 0;
+    for (const k of Object.keys(parts)) companyCost += parts[k];
+    return { ...neg, parts, company_cost: companyCost, bu_mwd_cost: mix('bu_mwd_cost'), bu_support: mix('bu_support'), bu_cost: mix('bu_cost'),
+      tariff_paid: mix('tariff_paid'), recovered: mix('recovered'), attainment: Math.min(neg.attainment, ab.attainment),
+      cases: { negotiated: { company_cost: neg.company_cost, bu_cost: neg.bu_cost }, absorbed: { company_cost: ab.company_cost, bu_cost: ab.bu_cost } } };
+  }
   function score(inp, P) {
-    const rows = inp.options.map((o) => evaluate(inp, P, o));
+    const rows = inp.options.map((o) => evaluateMix(inp, P, o));
     const order = (r) => (r.cutover === null ? inp.weeks + 1 : r.cutover);
     const hit = rows.filter((r) => r.attainment >= P.target_tolerance - 1e-9);
     let bu = null;
@@ -99,6 +112,6 @@ const DKE = (() => {
       return { bu: s.bu, company: s.company, gap: s.gap };
     }));
   }
-  return { chinaShare, evaluate, score, grid, buGrid };
+  return { chinaShare, evaluate, evaluateMix, score, grid, buGrid };
 })();
 if (typeof module !== 'undefined') module.exports = DKE;

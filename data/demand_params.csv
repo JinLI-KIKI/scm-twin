@@ -1,6 +1,7 @@
 key,value,status,note
 tariff_cn,0.25,PLACEHOLDER,Extra US tariff on China-made laptops from week 0 of the fiscal year (scenario; 20% was paid Mar-Nov 2025)
-passthrough,1.0,WEB-DERIVED,Share of the tariff the brand puts into its channel price (Acer raised US list prices 10% for the 10% China tariff of Feb 2025; Asus 6.7-9% in Mar 2025)
+passthrough,0.85,PRACTITIONER (negotiated) / WEB-DERIVED (size),"Negotiated share of the tariff that goes into the channel price. Pass-through is negotiated (Q35); 2025 outcomes ran from 67-90% (Asus, Mar 2025) to 100% (Acer, Feb 2025), so 85%"
+absorb_prob,0.1,PRACTITIONER (small) / PLACEHOLDER (size),"Chance that the negotiation ends with the company absorbing the tariff itself (no price rise); possible but unlikely (Q35). The cutover is chosen before the outcome, so costs are expected over the two cases"
 reprice_lag_weeks,2,WEB-DERIVED,"Weeks from the tariff to the new channel price; the brand absorbs the tariff until then (10% tariff on 4 Feb 2025, Acer price rise reported 18 Feb)"
 exporter_absorb,0.04,WEB,Share of a US tariff absorbed by foreign exporters through lower prices; the importer pays the rest (Kiel Institute: about 4%)
 ramp_weeks,12,PLACEHOLDER,"Weeks for the new site to cover the region's volume after cutover, linear; China builds the rest and pays the tariff (Module 3, strong GSM 8-16)"
@@ -10,7 +11,7 @@ max_promo_discount,0.10,PLACEHOLDER (Q33),"Largest channel price discount (price
 bu_funds_support,1,PRACTITIONER,"Share of the catch-up price points the BU has to fund (the points may need to come from the BU), so the BU weighs it against its MWD"
 points_effect,1.0,PLACEHOLDER,Share of the price points that reaches the shelf price and moves units (the channel may keep part); the BU pays the full points
 company_holds_target,1,PRACTITIONER,"1 = the company also holds the fiscal-year target (the fiscal year concerns all of the company), so it only picks among options that reach it; 0 = pure cost"
-mwd_transferability,0.5,PLACEHOLDER (rule PRACTITIONER),"Share of the claimed MWD (plans cancelled inside the window, R1) that the BU expects to migrate before the year-end reconciliation: netted into other plans, other regions or moved to the new site (R8). 0 = all claimed MWD stays, 1 = down to the physical MWD of Module 2"
-mwd_cost_rate,1.0,PLACEHOLDER (rule PRACTITIONER),"What one dollar of MWD (at BOM value) costs the BU after settlement with the ODM, salvage or resale; the BU weighs it against the price points"
+mwd_transferability,0.9,PRACTITIONER (pattern) / WEB-DERIVED (size),"Share of the claimed MWD that migrates before the year-end reconciliation (netted into other regions' builds of the same model, other models, the new site), down to the physical MWD of Module 2. Transfers move one region while the same models keep being built for other regions (Q34): only region-specific parts stay (keyboards, cords, packaging: 8% of the cancelled BOM here), so 85-95%; if a whole model or platform moved, only industry-standard parts would migrate: 45-70% by value (CPU + DRAM + SSD = 45% of a mainstream notebook BOM in 1Q25, 68% in 3Q26, TrendForce)"
+mwd_cost_rate,0.9,WEB-DERIVED,"What one dollar of MWD that stays costs the BU after resale: brokers pay 5-15% of cost for excess components (Circuits Assembly 2025; liquidation about 12 cents on the dollar, Inbound Logistics)"
 conv_uplift,0.075,PRACTITIONER,"New-site conversion cost uplift, midpoint of 5-10% (R20)"
 expedite_usd_per_unit,6,PLACEHOLDER,"Parts expediting per unit while the +4 week lead time is not yet covered, strong GSM (Module 3)"

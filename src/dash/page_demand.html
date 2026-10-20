@@ -39,7 +39,7 @@
     <div>
       <p class="eyebrow">Module 5 · demand and KPI view</p>
       <h1>Two Scorecards for One Transfer</h1>
-      <p class="sub">A US tariff on China-made laptops starts at week 0 of the fiscal year. The brand passes part of it into the channel price, the price costs units, and the US volume can leave China in any week. The BU scores each choice on its KPIs, the shipment target in sell-in units and MWD; the company scores it on the total cost of the year. They do not always agree.</p>
+      <p class="sub">A US tariff on China-made laptops starts at week 0 of the fiscal year. How much of it goes into the channel price is negotiated, and now and then the company ends up absorbing it; the price costs units, and the US volume can leave China in any week. The BU scores each choice on its KPIs, the shipment target in sell-in units and MWD; the company scores it on the total cost of the year. They do not always agree.</p>
     </div>
     <div class="asof">Model run __TODAY__ · US region · fiscal year of 52 weeks · <a href="rules.html">rules R1, R8, R33, R42–R45</a></div>
   </div>
@@ -47,6 +47,7 @@
   <section class="slicers" aria-label="Inputs">
     <div class="ctl-grid" id="ctl"></div>
     <div class="ctl-foot">
+      <div class="slicer"><span class="s-label" id="l-m">Transfer pattern</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
       <div class="slicer"><span class="s-label" id="l-c">Company also holds the fiscal-year target</span><div class="seg" role="group" aria-labelledby="l-c" id="f-c"></div></div>
       <button type="button" class="btn" id="reset">Reset all</button>
       <span class="status" id="status"></span>
@@ -61,7 +62,7 @@
 
   <section class="canvas">
     <div class="viz w7">
-      <div class="viz-h"><h2>Company view: cost of the year</h2><span class="hint">Against a year with no tariff · by transfer option</span></div>
+      <div class="viz-h"><h2>Company view: cost of the year</h2><span class="hint" id="h-co">Against a year with no tariff · by transfer option</span></div>
       <div id="c-co" class="chart tall"></div>
     </div>
     <div class="viz w5">
@@ -69,11 +70,11 @@
       <div id="c-bu" class="chart tall"></div>
     </div>
     <div class="viz w7">
-      <div class="viz-h"><h2>Sell-in week by week</h2><span class="hint">US units · plan before the tariff against the two picks</span></div>
+      <div class="viz-h"><h2>Sell-in week by week</h2><span class="hint">US units · plan before the tariff against the two picks, negotiated price</span></div>
       <div id="c-wk" class="chart"></div>
     </div>
     <div class="viz w5">
-      <div class="viz-h"><h2>Where the two views disagree</h2><span class="hint">What the BU's pick costs the company, $M · click a cell</span></div>
+      <div class="viz-h"><h2>Where the two views disagree</h2><span class="hint">What the BU's pick costs the company, $M · columns: negotiated share · click a cell</span></div>
       <div id="c-map" class="chart"></div>
     </div>
     <div class="viz w7">
@@ -95,6 +96,7 @@
   <section class="insight" id="insight"></section>
 
   <footer class="notes">
+    <p><b>Negotiated pass-through (R44).</b> How much of the tariff goes into the channel price is negotiated; the company absorbing all of it is possible but unlikely. The cutover is chosen before the outcome, so every cost is an expected value over two cases: the negotiated share in the price (probability 1 − absorb chance) and no price rise (absorb chance). Units, weeks and the catch-up shown are those of the negotiated case; the target must be made in both.</p>
     <p><b>Demand.</b> Each week the US plan of each model (lifecycle curve of Module 1, 40% US share) meets a price rise: pass-through × tariff × the share of the week's units still made in China, from the repricing week on. Units follow a constant elasticity: q = plan × (1 + rise / channel price)<sup>elasticity</sup>. The tariff is the rate × customs value, less the share foreign exporters absorb. After the cutover the new site takes over linearly over the ramp weeks; China builds the rest and pays the tariff.</p>
     <p><b>BU view (R33, R1, R8, R42).</b> The fiscal-year target is in sell-in units and must be shipped in full; the pre-tariff plan sits above it, since the BU usually beats it. A first-half shortfall is not written off: Q1 and Q2 come in lower and Q3–Q4 catch up with a channel discount from the catch-up week, as large as needed up to the cap (R45). MWD as the BU weighs it: claimed MWD, every plan cancelled inside the 16-week liability window at full BOM value (Module 2), less the share that migrates before the year-end reconciliation (netted into other plans or regions, moved to the new site, down to the physical MWD), plus the extra end-of-life MWD of the longer window (Module 3) for the rest of the year, at what a dollar of MWD really costs the BU. Only if no option can make the target is it lowered. Sales negotiate the catch-up price points with the channel and the BU usually funds them, so the BU picks the option with the least MWD cost plus the points it pays. It is a balance, not a one-way rule: which side wins depends on the price of MWD, the price of the points (how much the BU funds, how much reaches the shelf, the elasticity) and how much of the MWD migrates. Tariffs are not a BU KPI.</p>
     <p><b>Company view.</b> The company holds the fiscal-year target too (switch above) and picks the cheapest option that makes it. Cost = tariff the brand absorbs (paid on China-made units minus what the price rise recovers) + gross margin on the units the price rise loses (net of the catch-up) + the catch-up discount + physical MWD, holding, relocation and rework of the cutover (Module 2) + parts expediting and the longer chain (end-of-life MWD and pipeline carrying, Module 3, for the rest of the year) + the new site's conversion uplift on its units. One fiscal year only: the tariff saved in later years is on the <a href="business-case.html">Business case</a> page.</p>
@@ -116,7 +118,8 @@ const M$ = (v, d = 2) => (v < 0 ? '−' : '') + '$' + R.num(Math.abs(v) / 1e6, d
 // [key, label, min, max, step, scale shown, format]
 const CTL = [
   ['tariff_cn', 'Extra US tariff on China-made laptops', 0, 0.5, 0.01, 'pct'],
-  ['passthrough', 'Share of the tariff put into the price', 0, 1, 0.05, 'pct'],
+  ['passthrough', 'Negotiated share of the tariff in the price', 0, 1, 0.05, 'pct'],
+  ['absorb_prob', 'Chance the company absorbs the tariff itself', 0, 1, 0.05, 'pct'],
   ['reprice_lag_weeks', 'Weeks until the new price', 0, 12, 1, 'wk'],
   ['elasticity', 'Price elasticity of units', -2, 0, 0.05, 'n2'],
   ['ramp_weeks', 'New-site ramp after cutover', 0, 30, 1, 'wk'],
@@ -126,7 +129,7 @@ const CTL = [
   ['bu_funds_support', 'Share of the price points the BU funds', 0, 1, 0.05, 'pct'],
   ['points_effect', 'Share of the points that reaches the shelf', 0, 1, 0.05, 'pct'],
   ['mwd_cost_rate', 'What $1 of MWD costs the BU', 0, 1.5, 0.05, 'usd2'],
-  ['mwd_transferability', 'Share of claimed MWD that migrates', 0, 1, 0.05, 'pct'],
+  ['mwd_transferability', 'Share of claimed MWD that migrates (public range 45–95%)', 0.45, 0.95, 0.01, 'pct'],
   ['gross_margin', 'Gross margin on the channel price', 0.05, 0.45, 0.01, 'pct'],
   ['exporter_absorb', 'Tariff absorbed by the exporter', 0, 0.2, 0.01, 'pct'],
   ['conv_uplift', 'New-site conversion uplift', 0, 0.2, 0.005, 'pct1'],
@@ -145,17 +148,25 @@ function inputFor(P) {      // elasticity and margin sliders apply to every mode
 R.$('#ctl').innerHTML = CTL.map(([k, l, mn, mx, st]) => `<div class="sl" data-k="${k}"><span class="s-label"><label for="p-${k}">${l}</label><output id="o-${k}"></output></span>
   <input type="range" id="p-${k}" min="${mn}" max="${mx}" step="${st}" value="${S.P[k]}"></div>`).join('');
 CTL.forEach(([k]) => R.$('#p-' + k).addEventListener('input', (e) => { S.P[k] = +e.target.value; paintCtl(); schedule(); }));
+// Q34: one region moves while the same models stay in China for other regions -> most claimed MWD
+// migrates (only region-specific parts stay); a whole model or platform -> only standard parts do.
+const PATTERN = [['0.9', 'One region moves (90% migrates)'], ['0.55', 'Whole model or platform (55%)']];
+const patOf = (v) => (Math.abs(v - 0.9) < 1e-9 ? '0.9' : Math.abs(v - 0.55) < 1e-9 ? '0.55' : '');
+const segM = R.seg(R.$('#f-m'), PATTERN, patOf(S.P.mwd_transferability), (v) => { S.P.mwd_transferability = +v; R.$('#p-mwd_transferability').value = +v; paintCtl(); schedule(); });
 const segC = R.seg(R.$('#f-c'), [['1', 'Yes'], ['0', 'No, cost only']], String(S.P.company_holds_target >= 0.5 ? 1 : 0), (v) => { S.P.company_holds_target = +v; schedule(); });
-R.$('#reset').addEventListener('click', () => { S.P = { ...DEF }; CTL.forEach(([k]) => { R.$('#p-' + k).value = S.P[k]; }); segC.set(String(S.P.company_holds_target)); paintCtl(); schedule(); });
+R.$('#reset').addEventListener('click', () => { S.P = { ...DEF }; CTL.forEach(([k]) => { R.$('#p-' + k).value = S.P[k]; }); segC.set(String(S.P.company_holds_target)); segM.set(patOf(S.P.mwd_transferability)); paintCtl(); schedule(); });
 function paintCtl() {
+  if (typeof segM !== 'undefined') segM.set(patOf(S.P.mwd_transferability));
   CTL.forEach(([k, , , , , f]) => { R.$('#o-' + k).textContent = fmt(f, S.P[k]); R.$(`.sl[data-k="${k}"]`).classList.toggle('changed', Math.abs(S.P[k] - DEF[k]) > 1e-12); });
 }
 function schedule() { try { R.save({ P: S.P, bx: S.bx }); } catch (e) { /* storage blocked */ } clearTimeout(timer); timer = setTimeout(compute, 40); }
 
-const MR = [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5], XC = Array.from({ length: 11 }, (_, i) => i / 10);
+const MR = [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5];
+const XCOL = (k) => (k === 'mwd_transferability' ? Array.from({ length: 11 }, (_, i) => 0.45 + i * 0.05) : Array.from({ length: 11 }, (_, i) => i / 10));
+let XC = XCOL('mwd_transferability');
 const XK = { mwd_transferability: 'Share of claimed MWD that migrates', bu_funds_support: 'Share of the points the BU funds', points_effect: 'Share of the points that reaches the shelf' };
 S.bx = XK[saved.bx] ? saved.bx : 'mwd_transferability';
-let BG = null;
+let BG = null, FLIP = null;
 R.seg(R.$('#f-x'), Object.entries(XK).map(([k, l]) => [k, l.replace('Share of ', '')]), S.bx, (v) => { S.bx = v; try { R.save({ P: S.P, bx: S.bx }); } catch (e) { /* storage blocked */ } compute(); });
 function compute() {
   const t0 = performance.now();
@@ -163,7 +174,13 @@ function compute() {
   const s = DKE.score(inp, S.P);
   const by = Object.fromEntries(s.rows.map((r) => [r.id, r]));
   MAP = DKE.grid(inp, S.P, TS, PS);
+  XC = XCOL(S.bx);
   BG = DKE.buGrid(inp, S.P, 'mwd_cost_rate', MR, S.bx, XC);
+  // the lowest migration share (public range) from which the BU picks the company's week
+  const low = DKE.score(inp, { ...S.P, mwd_transferability: 0.45 }).bu;
+  let at = null;
+  for (let i = 45; i <= 95; i++) if (DKE.score(inp, { ...S.P, mwd_transferability: i / 100 }).bu === s.company) { at = i / 100; break; }
+  FLIP = { low, at };
   RES = { inp, s, by, bu: by[s.bu], co: by[s.company], ms: performance.now() - t0 };
   draw();
 }
@@ -183,7 +200,7 @@ function cards() {
     <div class="qrow">${qrow(bu)}</div>`;
   R.$('#card-co').innerHTML = `<span class="eye">Company view · total cost of the year</span>
     <span class="pick">${longLab(co)}</span>
-    <p class="why">The lowest cost against a year with no tariff${P.company_holds_target >= 0.5 && s.any_hit ? ', among the options that still make the fiscal-year target' : ''}: tariff absorbed, margin on lost units, the catch-up discount, the cutover, expediting, the longer chain and conversion.</p>
+    <p class="why">The lowest expected cost against a year with no tariff (${R.pct(1 - P.absorb_prob)} negotiated price, ${R.pct(P.absorb_prob)} absorbed)${P.company_holds_target >= 0.5 && s.any_hit ? ', among the options that still make the fiscal-year target' : ''}: tariff absorbed, margin on lost units, the catch-up discount, the cutover, expediting, the longer chain and conversion.</p>
     <div class="row"><div><span class="l">Of the FY target</span><span class="v">${R.pct(co.attainment / P.target_tolerance, 1)}</span></div>
       <div><span class="l">MWD cost to the BU</span><span class="v">${M$(co.bu_mwd_cost)}</span></div>
       <div><span class="l">Points the BU funds</span><span class="v">${M$(co.bu_support)}</span></div>
@@ -206,6 +223,7 @@ const cCo = R.chart('c-co', (t) => {
   const o = R.base(t);
   if (!RES) return o;
   const rows = RES.s.rows, top = Math.max(...rows.map((r) => r.company_cost));
+  R.$('#h-co').textContent = S.P.absorb_prob > 0 ? `Expected over the negotiation: ${R.pct(1 - S.P.absorb_prob)} at ${R.pct(S.P.passthrough)} in the price, ${R.pct(S.P.absorb_prob)} absorbed` : 'Against a year with no tariff · by transfer option';
   return {
     ...o, legend: { ...o.legend, type: 'plain', itemGap: 10, data: PARTS.map((p) => p[1]) }, grid: { ...o.grid, top: (document.getElementById('c-co').clientWidth < 640 ? 112 : 86) },
     tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const r = rows[ps[0].dataIndex]; return R.tip(t, PARTS.map(([k, n, c]) => [c(t), n, M$(r.parts[k])]).concat([[t.ink, 'Total', M$(r.company_cost)]]), longLab(r)); } },
@@ -265,7 +283,7 @@ const cMap = R.chart('c-map', (t) => {
   return {
     ...o, grid: { left: 6, right: 8, top: 8, bottom: 52, containLabel: true },
     tooltip: { ...o.tooltip, trigger: 'item', formatter: (p) => R.tip(t, [[t.c[0], 'BU pick', p.data.c.bu === 'stay' ? 'no transfer' : 'week ' + p.data.c.bu.slice(1)], [t.ink, 'Company pick', p.data.c.company === 'stay' ? 'no transfer' : 'week ' + p.data.c.company.slice(1)], [t.bad, 'Cost of the BU pick', M$(p.data.c.gap)]], `Tariff ${R.pct(TS[p.value[1]])} · ${R.pct(PS[p.value[0]])} passed on`) },
-    xAxis: R.axis(t, { type: 'category', name: 'share put into the price', nameLocation: 'middle', nameGap: 26, data: PS.map((x) => R.pct(x)), splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 10, interval: 1 } }),
+    xAxis: R.axis(t, { type: 'category', name: 'negotiated share in the price', nameLocation: 'middle', nameGap: 26, data: PS.map((x) => R.pct(x)), splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 10, interval: 1 } }),
     yAxis: R.axis(t, { type: 'category', name: 'tariff', data: TS.map((x) => R.pct(x)), splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 10 } }),
     visualMap: { show: false, min: 0, max: mx, inRange: { color: [t.chip, t.c[1]] } },
     series: [{ type: 'heatmap', data, itemStyle: { borderColor: t.panel, borderWidth: 1 },
@@ -279,12 +297,12 @@ const cBg = R.chart('c-bg', (t) => {
   if (!BG) return o;
   const data = [];
   BG.forEach((row, i) => row.forEach((id, j) => data.push({ value: [j, i, wk(id)], id })));
-  const ci = MR.findIndex((x) => Math.abs(x - S.P.mwd_cost_rate) < 0.125), cj = XC.findIndex((x) => Math.abs(x - S.P[S.bx]) < 0.05);
+  const ci = MR.findIndex((x) => Math.abs(x - S.P.mwd_cost_rate) < 0.125), cj = XC.findIndex((x) => Math.abs(x - S.P[S.bx]) < 0.025 + 1e-9);
   const coWk = wk(RES.s.company);
   return {
     ...o, grid: { left: 6, right: 8, top: 8, bottom: 52, containLabel: true },
     tooltip: { ...o.tooltip, trigger: 'item', formatter: (p) => R.tip(t, [[t.c[0], 'BU picks', p.data.id === 'stay' ? 'no transfer' : 'week ' + p.data.id.slice(1)], [t.ink, 'Company picks', RES.s.company === 'stay' ? 'no transfer' : 'week ' + RES.s.company.slice(1)]], `$1 of MWD costs $${R.num(MR[p.value[1]], 2)} · ${lc1(XK[S.bx])} ${R.pct(XC[p.value[0]])}`) },
-    xAxis: R.axis(t, { type: 'category', name: lc1(XK[S.bx]), nameLocation: 'middle', nameGap: 26, data: XC.map((x) => R.pct(x)), splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 10, interval: 1 } }),
+    xAxis: R.axis(t, { type: 'category', name: lc1(XK[S.bx]) + (S.bx === 'mwd_transferability' ? ' (public range)' : ''), nameLocation: 'middle', nameGap: 26, data: XC.map((x) => R.pct(x)), splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 10, interval: 1 } }),
     yAxis: R.axis(t, { type: 'category', data: MR.map((x) => '$' + R.num(x, 2)), splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 10 } }),
     visualMap: { show: false, min: 0, max: 52, inRange: { color: [t.chip, t.c[0]] } },
     series: [{ type: 'heatmap', data, itemStyle: { borderColor: t.panel, borderWidth: 1 },
@@ -304,8 +322,13 @@ function balance() {
     ids.map((id) => { const r = by[id]; const tag = (id === s.bu ? '<span class="tag bu">BU</span>' : '') + (id === s.company ? '<span class="tag co">CO</span>' : '');
       return `<tr><td class="txt"><b>${r.cutover === null ? 'No transfer' : 'Week ' + r.cutover}</b>${tag}</td><td>${M$(r.claimed_mwd)}</td><td>${M$(P.mwd_transferability * (r.claimed_mwd - r.physical_mwd))}</td><td>${M$(r.bu_mwd_cost)}</td><td>${r.attainment < P.target_tolerance - 1e-9 ? '<span class="miss">misses target</span>' : M$(r.bu_support)}</td><td><b>${M$(r.bu_cost)}</b></td></tr>`; }).join('') + '</tbody>';
   const mwdD = co.bu_mwd_cost - bu.bu_mwd_cost, ptsD = bu.bu_support - co.bu_support;
+  const wl = (id) => (id === 'stay' ? 'no transfer' : 'week ' + id.slice(1));
+  const flipTxt = FLIP.at === null ? ` Across the public range of migration (45–95%) the BU never picks the company's ${wl(s.company)}.`
+    : FLIP.at <= 0.45 ? ` Across the whole public range of migration (45–95%) the BU picks the company's ${wl(s.company)}.`
+    : ` From ${R.pct(FLIP.at)} of the claimed MWD migrating the BU picks the company's ${wl(s.company)}; at 45% it picks ${wl(FLIP.low)}.`;
   R.$('#h-bal').innerHTML = s.bu === s.company ? 'The BU and the company pick the same week: moving later would cost the BU more in points than it saves in MWD.'
     : `Against the company's week, the BU's pick saves it ${M$(mwdD)} of MWD cost and costs it ${M$(ptsD)} of points. A cheaper MWD dollar, more migration or dearer points tip it back to the company's week (map on the left).`;
+  R.$('#h-bal').innerHTML += flipTxt;
 }
 cMap.inst && cMap.inst.on('click', (p) => {
   if (p.componentType !== 'series') return;

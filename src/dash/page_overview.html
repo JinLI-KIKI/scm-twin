@@ -77,7 +77,7 @@ R.$('#kpis').innerHTML = [
   card('mwd.html', 'Late transfer vs early transfer', R.usd(D.mwd.D.total), `8 weeks before EOL · ${R.usd(D.mwd.B.total)} with 30 weeks left`),
   card('lanes.html', 'Ocean, factory door to US MGI', R.num(D.lead.cn_us, 1) + ' days', `China · ${R.num(D.lead.id_us, 1)} days from Indonesia`),
   card('finished-goods.html', 'Price-protection bill at launch', R.usd(fg.plan.protection), `sales plan · ${R.usd(fg.lock_drain.protection)} with lock + drain`),
-  card('demand.html', "What the BU's KPIs cost the company", R.usd(D.dk.absorb_gap, 1), `${R.pct(D.dk.tariff)} tariff absorbed: BU ${D.dk.absorb_bu === 'stay' ? 'stays' : 'moves in week ' + D.dk.absorb_bu.slice(1)}, company ${D.dk.absorb_company === 'stay' ? 'stays' : 'moves in week ' + D.dk.absorb_company.slice(1)} · ${R.usd(D.dk.gap, 1)} with the tariff in the price`),
+  card('demand.html', "What the BU's KPIs cost the company", R.usd(D.dk.absorb_gap, 1), `${R.pct(D.dk.tariff)} tariff absorbed: BU ${D.dk.absorb_bu === 'stay' ? 'stays' : 'moves in week ' + D.dk.absorb_bu.slice(1)}, company ${D.dk.absorb_company === 'stay' ? 'stays' : 'moves in week ' + D.dk.absorb_company.slice(1)} · ${D.dk.bu === D.dk.company ? 'they agree when the tariff is in the price' : R.usd(D.dk.gap, 1) + ' with the tariff in the price'}`),
   card('footprint.html', 'Most robust factory footprint', D.fp.robust.replace(' · own boards', ''), `${D.fp.robust.includes('own boards') ? 'boards made on site · ' : ''}never more than ${R.usd(D.fp.robust_regret, 1)} a year off`),
 ].join('');
 
