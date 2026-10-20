@@ -261,6 +261,23 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
 
 - Q36 answered: the new price lands in about 2 weeks, as Acer's in Feb 2025 (kept).
 
+**Module 6 — new-site ramp and risk board hedge (Roadmap A3):**
+- Q12 answered: about three months from the first trial build to full volume, and it can be
+  pulled in; material rhythm, yield and supplier readiness are all problems (R46).
+- `src/ramp_board.py`, Part A: an S-curve ramp over 13 weeks less the weeks pulled in, plus a
+  random slip from each of the three gates (chances lower with a strong GSM). China builds the
+  gap and pays the tariff; failed units consume material; pulling in costs more for every
+  further week. At a 25% tariff the median ramp is 14.7 weeks; pulling in 7 weeks (the most the
+  line allows) brings it to 7.7 and saves $0.9M (leakage $2.86M → $1.63M).
+- Part B (R47): boards per SMT run of 1–8 weeks of forecast. Boards strand at full value when a
+  model ends or is cut, loose parts migrate; short runs cost setups and the SMT capacity the ODM
+  keeps back. With the capacity cut set so a steady model keeps the standard 4 weeks (R19),
+  the model returns: P1-14 4 weeks, P1-16 (sold below plan) 3 weeks, P2-14 (new) 3 weeks. With
+  a weak GSM no model is stretched.
+- `src/dash/rb_engine.js` + `tests/test_rb_parity.py` (726 values identical); new page
+  `docs/ramp.html` with every input as a slider, per-model risk sliders, the ramp band, cost
+  by pull-in, the gates, cost by cover per model and the board ledger.
+
 ## Next — Day 6
 
 - **Jin to judge:** the take-or-pay fee and commitment (Q28), ramp months by mode and rush
@@ -269,4 +286,6 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
 - **Formula and algorithm review with Jin**, module by module (spec in `docs/models/`).
 - **Jin to judge Module 5:** how far the plan beats the target (Q33), pass-through and the
   repricing lag, elasticity by model (Q17).
-- Then Roadmap A3, Module 6: new-site ramp and risk board hedge.
+- **Jin to judge Module 6:** ODM standard board cover and capacity response (Q37), slip sizes,
+  pull-in cost, yield ramp.
+- Then Roadmap A4: the full week-by-week run across Modules 1–6.

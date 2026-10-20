@@ -78,6 +78,7 @@ R.$('#kpis').innerHTML = [
   card('lanes.html', 'Ocean, factory door to US MGI', R.num(D.lead.cn_us, 1) + ' days', `China · ${R.num(D.lead.id_us, 1)} days from Indonesia`),
   card('finished-goods.html', 'Price-protection bill at launch', R.usd(fg.plan.protection), `sales plan · ${R.usd(fg.lock_drain.protection)} with lock + drain`),
   card('demand.html', "What the BU's KPIs cost the company", R.usd(D.dk.absorb_gap, 1), `${R.pct(D.dk.tariff)} tariff absorbed: BU ${D.dk.absorb_bu === 'stay' ? 'stays' : 'moves in week ' + D.dk.absorb_bu.slice(1)}, company ${D.dk.absorb_company === 'stay' ? 'stays' : 'moves in week ' + D.dk.absorb_company.slice(1)} · ${D.dk.bu === D.dk.company ? 'they agree when the tariff is in the price' : R.usd(D.dk.gap, 1) + ' with the tariff in the price'}`),
+  card('ramp.html', 'New-site ramp, pulled in', R.num(D.rb.tb, 1) + ' weeks', `median, from ${R.num(D.rb.t0, 1)} without pull-in · board runs: ${Object.entries(D.rb.covers).map(([m, c]) => m + ' ' + c + ' wk').join(', ')}`),
   card('footprint.html', 'Most robust factory footprint', D.fp.robust.replace(' · own boards', ''), `${D.fp.robust.includes('own boards') ? 'boards made on site · ' : ''}never more than ${R.usd(D.fp.robust_regret, 1)} a year off`),
 ].join('');
 
@@ -89,7 +90,7 @@ const MODS = [
   { href: 'finished-goods.html', id: 'Module 4', name: 'Finished goods', q: 'What does old stock cost when the successor launches?', num: R.usd(fg.lock.avoidable), sub: 'avoidable cost, sales lock' },
   { href: 'footprint.html', id: 'Module 7', name: 'Factory footprint', q: 'Which sites should build for which markets under real duties, and is a second site worth opening before a tariff?', num: D.fp.robust.replace(' · own boards', ''), sub: `robust choice · build now only if a China tariff is over ${R.pct(D.fp.hedge_weight)} likely` },
   { href: 'demand.html', id: 'Module 5', name: 'Demand and KPI view', q: 'A tariff raises the price and costs units: does the BU, scored on shipments and MWD, move when the company would?', num: D.dk.absorb_bu === D.dk.absorb_company ? 'Agree' : R.usd(D.dk.absorb_gap, 1), sub: D.dk.absorb_bu === D.dk.absorb_company ? 'BU and company pick the same' : `cost of the BU's pick when the company absorbs a ${R.pct(D.dk.tariff)} tariff` },
-  { href: null, id: 'Module 6', name: 'Ramp and risk board', q: 'How fast does the new site ramp, and when should boards be built?', num: 'Planned', sub: '' },
+  { href: 'ramp.html', id: 'Module 6', name: 'Ramp and risk board', q: 'How fast does the new site ramp, is pulling it in worth it, and how many weeks of boards should each SMT run build?', num: D.rb.pull + ' wk', sub: `pulled in · median ramp ${R.num(D.rb.t0, 1)} → ${R.num(D.rb.tb, 1)} weeks` },
 ];
 R.$('#flow').innerHTML = MODS.map((m) => {
   const inner = `<div class="m-top"><span class="m-id">${m.id}</span>${m.href ? '' : '<span class="chip">planned</span>'}</div><span class="m-name">${m.name}</span><span class="m-q">${m.q}</span><span class="m-num">${m.num}${m.sub ? '<small>' + m.sub + '</small>' : ''}</span>`;

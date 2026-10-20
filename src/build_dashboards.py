@@ -10,13 +10,14 @@ Build the linked report pages in docs/ from the model modules.
   docs/finished-goods.html   Module 4: sales volume lock, price protection, excess disposition
   docs/fg-live.html          Module 4 simulator: every input as a slider or a range, re-run live
   docs/demand.html           Module 5: tariff -> price -> units; BU scorecard vs company cost, live
+  docs/ramp.html             Module 6: new-site ramp with pull-in, board-build cover per model, live
   docs/footprint.html        Module 7: six sites, nine markets, real duties, footprints live
   docs/rules.html            Rules register, numbers and question log from ASSUMPTIONS.md
 
 Each page is one self-contained HTML file: data embedded as JSON, charts drawn with
 ECharts from cdnjs. Scenario grids are precomputed here, so slicers on most pages only
-filter (as in a BI report). The three studio pages (fg-live, demand, footprint) embed a
-JavaScript port of their model and recompute in the browser; tests/ check the ports match Python.
+filter (as in a BI report). The four studio pages (fg-live, demand, ramp, footprint)
+embed a JavaScript port of their model and recompute in the browser; tests/ check the ports match Python.
 
 Run:  python3 src/build_dashboards.py            (about two minutes; Module 4 grid dominates)
       PREVIEW_DIR=/some/dir python3 src/build_dashboards.py   also writes the overview as a
@@ -33,6 +34,7 @@ from multiprocessing import Pool
 import business_case as BC
 import finished_goods as FG
 import demand_kpi as DK
+import ramp_board as RB
 import footprint as FP
 import mwd_engine as E
 import scenarios as SC
@@ -338,7 +340,8 @@ ROADMAP = [
     ("Modules 1–4 + atlas", "MWD, transfer timing, business case, finished goods, network map", "done"),
     ("Module 7 · Footprint", "Six ODM sites, nine markets, real duties, 2026 freight and Hormuz, back-tested on US imports", "done"),
     ("Module 5 · Demand & KPI", "Tariff → price → units → shipment gap; BU scorecard vs company cost", "done"),
-    ("A · Core loop", "A2 done · A4 first link done (Modules 2–4 price Module 7) · A3 ramp & risk board next", "active"),
+    ("Module 6 · Ramp & boards", "Three-month ramp with pull-in and three gates; board-build cover per model", "done"),
+    ("A · Core loop", "A2, A3 done · A4 first link done (Modules 2–4 price Module 7) · full weekly run next", "active"),
     ("B · Breadth", "AI servers, rail and sea-air (more origins and markets done)", "next"),
     ("C · Decision engine", "Inventory policy, forecast module (footprint optimiser done)", "next"),
     ("D · Risk and cost", "Disruption Monte Carlo, carbon per lane (landed cost, Hormuz bypass done)", "next"),
@@ -371,7 +374,16 @@ def data_dk_summary():
             "absorb_bu": g["bu"], "absorb_company": g["company"], "absorb_gap": g["gap"]}
 
 
-def data_overview(mwd, tr, bc, fg, lanes, rules, fp, dk=None):
+def data_rb_summary():
+    inp = RB.rb_input()
+    r = RB.ramp_sweep(inp, inp["P"])
+    r0, rb = r["rows"][0], next(x for x in r["rows"] if x["pull"] == r["best"])
+    return {"pull": r["best"], "t0": r0["T_p50"], "tb": rb["T_p50"], "saved": r0["total"] - rb["total"],
+            "covers": {b["model"]: b["best"] for b in RB.boards(inp, inp["P"])},
+            "std": inp["P"]["board_cover_std_weeks"]}
+
+
+def data_overview(mwd, tr, bc, fg, lanes, rules, fp, dk=None, rb=None):
     sc = {s["code"]: s["summary"] for s in mwd["scenarios"]}
     route = lambda o, m, v="any": next(r for r in lanes["routes"] if r["origin"] == o and r["mgi"] == m
                                        and r["mode"] == "sea" and r["variant"] in (v, "any")
@@ -397,7 +409,7 @@ def data_overview(mwd, tr, bc, fg, lanes, rules, fp, dk=None):
         "fg": {s: {"avoidable": fgk(s)["avoidable_cost_usd"][0], "protection": fgk(s)["price_protection_usd"][0],
                    "excess": fgk(s)["excess_units"][0], "lost": fgk(s)["lost_units"][0],
                    "mwd": fgk(s)["mwd_usd"][0]} for s in fg["strategies"]},
-        "fp": fp, "dk": dk,
+        "fp": fp, "dk": dk, "rb": rb,
         "status_counts": counts, "open_questions": open_q[:3],
         "roadmap": [{"name": a, "scope": b, "state": c} for a, b, c in ROADMAP],
     }
@@ -414,6 +426,7 @@ def render(page_file, key, title_tag, data, extra_head=""):
             .replace("/*__ENGINE__*/", S.read("fg_engine.js"))
             .replace("/*__FPENGINE__*/", S.read("fp_engine.js"))
             .replace("/*__DKENGINE__*/", S.read("dk_engine.js"))
+            .replace("/*__RBENGINE__*/", S.read("rb_engine.js"))
             .replace("/*__DATA__*/null", json.dumps(data, separators=(",", ":"), ensure_ascii=False)
                      .replace("</", "<\\/"))
             .replace("__TODAY__", TODAY))
@@ -445,7 +458,7 @@ def main():
     mwd, tr, lanes, rules = data_mwd(), data_transfer(), data_lanes(), data_rules()
     lk = FP.fp_input()["linkage"]                 # src/integrate.py: what Module 7 takes from Modules 2-4
     bc, fg, tr = {**bc, "linkage": lk}, {**fg, "linkage": lk}, {**tr, "linkage": lk}
-    ov = data_overview(mwd, tr, bc, fg, lanes, rules, data_fp_summary(), data_dk_summary())
+    ov = data_overview(mwd, tr, bc, fg, lanes, rules, data_fp_summary(), data_dk_summary(), data_rb_summary())
     for page_file, key, data in [
         ("index.html", "overview", ov), ("lanes.html", "lanes", lanes), ("mwd.html", "mwd", mwd),
         ("transfer.html", "transfer", tr), ("business-case.html", "business", bc),
@@ -453,6 +466,7 @@ def main():
         ("fg-live.html", "fglive", {"input": FG.engine_input(), "ranges": read_csv("fg_ranges.csv"),
                                     "params": read_csv("fg_params.csv")}),
         ("demand.html", "demand", {"input": DK.dk_input()}),
+        ("ramp.html", "ramp", {"input": RB.rb_input()}),
         ("footprint.html", "footprint", {"input": FP.fp_input(), "history": read_csv("us_import_history.csv"),
                                          "tariff_history": read_csv("us_laptop_tariff_history.csv")}),
     ]:

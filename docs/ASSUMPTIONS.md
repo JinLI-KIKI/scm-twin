@@ -40,7 +40,7 @@ Last updated: 2026-10-15 (v0.7: Module 7 footprint — six sites, nine markets, 
 | R32 | **IBP hedge at the lock.** IBP sets a hedge on the locked volume from each GEO's sales history. It can be negative: sales are sometimes too optimistic, and IBP buys less than they lock. Modelled: supply (final material buy and frozen builds) = locked need × (1 + hedge); IBP corrects 60% of a GEO's habitual lock bias, with ±3% error of its own. | PRACTITIONER (rule) · PLACEHOLDER (size) |
 | R33 | **The BU's fiscal-year shipment target is counted in sell-in units.** Units shipped into the channel count when they are sold in, whether or not they have sold through. | PRACTITIONER |
 | R29 | **EOL means the last build week** of a model. Sell-through continues after it, until the successor reaches the market and the old stock fades out. | Design choice — to confirm |
-| R16 | New factories ramp slowly — capacity, yield and certification lag — so transfer is a gradual curve, not a switch. The old factory keeps covering the gap (still paying China-origin tariff); yield loss at the new site consumes material without output. | PRACTITIONER (direction); ramp shape OPEN — Q12 |
+| R16 | New factories ramp slowly — capacity, yield and certification lag — so transfer is a gradual curve, not a switch. The old factory keeps covering the gap (still paying China-origin tariff); yield loss at the new site consumes material without output. | PRACTITIONER (direction); ramp shape and gates R46 (Q12) |
 | R13 | **Origin lock at the motherboard.** US customs mostly judges origin by the motherboard; once the board is built (SMT done) its origin is fixed — final assembly elsewhere does not change it. A built board that cannot be used is scrapped. Only pre-SMT components can be moved to a new factory and change origin. | PRACTITIONER · WEB: CBP NY N305378 (Chinese subassemblies assembled in Taiwan → China origin) |
 
 ## Network atlas (map) — added 2026-10-13
@@ -139,6 +139,25 @@ Last updated: 2026-10-15 (v0.7: Module 7 footprint — six sites, nine markets, 
 | What $1 of MWD that stays costs the BU | $0.90: brokers pay 5–15% of cost for excess components; liquidation about 12 cents on the dollar | WEB-DERIVED — [Circuits Assembly 2025](https://circuitsassembly.com/ca/editorial/menu-features/42355-the-hidden-potential-of-excess-and-obsolete-component-inventory.html), [Inbound Logistics](https://www.inboundlogistics.com/articles/bid-farewell-to-12-cents-on-the-dollar/) |
 | Cutover options | Week 0–16 (inside the liability window), weeks 20, 26 (model change) and 39, or no transfer this year; MWD, holding and relocation per week from Module 2 | DERIVED |
 
+## New-site ramp and risk board hedge (Module 6) — added 2026-10-20
+
+| ID | Rule | Status |
+|---|---|---|
+| R46 | **The ramp takes about three months and can be pulled in.** From the first trial build to full volume a new site takes about 13 weeks; it can be pulled in at a cost (expediting, overtime, extra engineers) down to a fastest ramp. Three gates slip it: material rhythm (parts on the longer lead time arrive late or out of step), yield learning and supplier readiness, each with a chance and a size, smaller with a strong GSM. While the site ramps (S-curve), China builds the rest and pays the tariff (R16); failed units consume material. | PRACTITIONER (Q12) · sizes PLACEHOLDER |
+| R47 | **Board-build cover per SMT run.** Each SMT run builds boards for the next N weeks of forecast. A board locks CPU and memory to the model and the site's origin (R13): left over when the model ends or is cut, it is MWD at full board value, while loose parts would mostly migrate. Shorter runs than the ODM's standard keep material loose and use fresher forecasts, but cost setups and SMT capacity, which the ODM keeps back when it is not loaded (R19), less with a strong GSM. The cover with the lowest expected cost over the year is recommended per model. | PRACTITIONER (R19) · design choice · sizes PLACEHOLDER |
+
+| Item | Value | Status |
+|---|---|---|
+| Ramp, trial build to full volume | 13 weeks (about three months), can be pulled in to 6 weeks | PRACTITIONER (Q12) · PLACEHOLDER (fastest) |
+| Gates (chance, weeks) | Material rhythm 40%, 1–4 · yield 30%, 1–3 · supplier readiness 50%, 2–6; chances × 0.6 with a strong GSM, × 1.4 with a weak one. Context: Vietnam's electronics localization rate about 36%, so most parts still come from China on the longer lead time; Quanta's Nam Dinh plant shipped its first laptops for customer qualification in Sep 2024, 16 months after its licence, planning 2.6M units in 2025 | PRACTITIONER (gates) · PLACEHOLDER (sizes) · WEB — [Vietnam Briefing](https://www.vietnam-briefing.com/news/how-vietnams-supply-chains-differ-from-its-peers-and-participation-in-global-value-chains.html), [ITPC HCMC](https://itpc.hochiminhcity.gov.vn/web/en/-/quanta-exports-first-two-batches-of-laptops-from-nam-dinh-factory) |
+| Pull-in cost | $6 per unit of weekly volume for the first week pulled, +50% for each further week | PLACEHOLDER |
+| Yield during the ramp | First-pass yield 85% at the first build to 98%, learning time 4 weeks; a failed unit costs 30% of its BOM after rework | PLACEHOLDER |
+| ODM standard board cover | 4 weeks of demand per SMT run of a model | PLACEHOLDER (Q37) |
+| Capacity the ODM keeps back | 35% × (standard − cover) / standard with a strong GSM (set so a steady model keeps the standard cover and uncertain models are stretched, as in R19); 80% with a weak GSM (no model is stretched) | PRACTITIONER (R19) · CALIBRATED / PLACEHOLDER |
+| Board risk by model | P1-14 steady; P1-16 sold below plan before (forecast 10% high at 16 weeks, error ×1.5, 15% chance of an early cut); P2-14 new (5% high, ×1.3, 10%) — `data/board_models.csv` | PRACTITIONER (rule) · PLACEHOLDER (sizes) |
+| SMT run costs | Setup $1,500 per run; rush boards up to 20% of the run's plan at $8 each; half of the units still short are lost at gross margin | PLACEHOLDER |
+| Board value | CPU + memory on the board + board extra (P1-14 $195, P1-16 $198, P2-14 $211); loose CPU and memory migrate at 90% (Module 5) | DERIVED |
+
 ## Ageing while waiting
 
 | Item | Value | Status |
@@ -230,5 +249,6 @@ Last updated: 2026-10-15 (v0.7: Module 7 footprint — six sites, nine markets, 
 | Q34 | When a transfer cancels plans inside the window, roughly what share of that claimed MWD usually migrates (other models, other regions, the new site) before the year-end reconciliation, and what does a dollar of the MWD that remains finally cost the BU? | Share not known; transfers move one region while the same models continue for other regions. Modelled from public data: 90% migrates (85–95% for that pattern; 45–70% if a whole model moved), $0.90 per $1 that stays (R43) |
 | Q35 | When a tariff arrives, does the company pass all of it into the price, or absorb part of it itself? | Usually negotiated; absorbing it is possible but unlikely. Modelled: 85% in the price, 10% chance of absorbing all (R44) |
 | Q36 | After a tariff, how many weeks until the new channel price is in place? | Use Acer's 2025 pace: about 2 weeks (R44) |
-| Q12 | From first trial build to full volume, how long does a new factory take; what holds it back most? | OPEN |
+| Q12 | From first trial build to full volume, how long does a new factory take; what holds it back most? | About three months, and it can be pulled in; material rhythm, yield and supplier readiness are all problems (R46) |
+| Q37 | How many weeks of boards does the ODM usually build per SMT run of a model, and how much SMT capacity does it take back when a model's board runs are stretched? | OPEN — modelled 4 weeks standard; 35% × the shortfall in cover with a strong GSM |
 | Q7 | How many weeks before delivery does a PO become non-cancellable, standard vs custom parts? | QUEUED |

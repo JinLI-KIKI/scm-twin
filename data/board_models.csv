@@ -1,0 +1,4 @@
+model,risk,forecast_bias,sigma_mult,cut_prob,status,note
+P1-14,normal,0.0,1.0,0.0,PLACEHOLDER,"Steady seller; boards on the standard cadence"
+P1-16,risky,0.10,1.5,0.15,PRACTITIONER (rule R19) / PLACEHOLDER (size),"Sold below plan before: sales forecasts run 10% high at 16 weeks, noisier, 15% chance the model is cut early"
+P2-14,new,0.05,1.3,0.10,PRACTITIONER (rule R19) / PLACEHOLDER (size),"New successor from week 26: uncertain first months"

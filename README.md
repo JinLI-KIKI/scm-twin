@@ -44,6 +44,13 @@ twice: by the BU's KPIs (shipment target in sell-in units, claimed MWD) and by t
 cost (tariff absorbed, margin on lost units, MWD, holding, relocation, longer chain). The page
 maps where the two picks differ across tariff and pass-through.
 
+**Module 6 — new-site ramp and risk board hedge** (`src/ramp_board.py`): a new site ramps over
+about three months on an S-curve, slipped at random by material rhythm, yield and supplier
+readiness, and can be pulled in at a rising cost; China pays the tariff on the gap. On the board
+side, each SMT run builds boards for N weeks of forecast: boards strand at full value when a
+model ends, loose parts migrate, and the ODM keeps back capacity it is not loaded with. The model
+returns the pull-in worth paying for and the board-build cover per model.
+
 **Module 7 — factory footprint** (`src/footprint.py`): China and five candidate ODM sites
 (Indonesia, Vietnam, Malaysia, Brazil, UAE) and nine regional distribution centres (US, EU, UK,
 Japan, Brazil, Australia, Singapore, India, UAE). Landed cost per site and market from 2026
@@ -84,12 +91,14 @@ python3 src/transfer.py           # module 2: cutover-week sweep under tariff sc
 python3 src/business_case.py      # module 3: annual business case, Monte Carlo
 python3 src/finished_goods.py     # module 4: finished goods around a successor launch
 python3 src/demand_kpi.py         # module 5: BU scorecard vs company cost for each transfer week
+python3 src/ramp_board.py         # module 6: ramp pull-in and board-build cover per model
 python3 src/integrate.py          # A4: price Module 7's chain, EOL-stock and transfer costs from modules 2-4
 python3 src/footprint.py          # module 7: landed cost, allocation, footprints across tariff scenarios
 python3 src/build_dashboards.py   # rebuild the report pages in docs/ (about two minutes)
 python3 tests/test_fg_parity.py   # browser engines match Python (needs Node.js)
 python3 tests/test_fp_parity.py
 python3 tests/test_dk_parity.py
+python3 tests/test_rb_parity.py
 ```
 
 All rules and numbers, and whether each is practitioner input, web-sourced or a placeholder:

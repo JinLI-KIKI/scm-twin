@@ -21,6 +21,7 @@ PAGES = [
     ("finished-goods.html", "fg", "Finished goods", "finished-goods.html"),
     ("fg-live.html", "fglive", "FG simulator", "fg-live.html"),
     ("demand.html", "demand", "Demand & KPI", "demand.html"),
+    ("ramp.html", "ramp", "Ramp & boards", "ramp.html"),
     ("footprint.html", "footprint", "Footprint", "footprint.html"),
     ("rules.html", "rules", "Rules register", "rules.html"),
 ]

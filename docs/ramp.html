@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Ramp and Board Hedge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
+<style>/* Layout: a BI-style report. Sticky page tabs on top; under them a header, a slicer bar,
+   a row of KPI cards, then a 12-column canvas of visual containers. One column on phones.
+   Tokens match the network atlas so every page reads as one product. */
+:root {
+  --paper: #f6f7f5; --panel: #fbfcfb; --ink: #14181c; --ink-2: #4a525a; --muted: #6f777e;
+  --rule: #d9dde0; --chip: #eceeec; --hl: #fff3c4;
+  --sea: #2a78d6; --air: #eb6834; --inland: #1baf7a;
+  --d0: #9d90e6; --d5: #7464d9; --d16: #4a3aa7;
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #7464d9; --c5: #c9940f; --c6: #c2417a; --c7: #8a939a;
+  --good: #16794c; --warn: #9a6408; --bad: #b8322a;
+  --good-bg: #e3f2ea; --warn-bg: #f7eedb; --bad-bg: #f8e4e1;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+    --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+    --sea: #3987e5; --air: #d95926; --inland: #199e70;
+    --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+    --c1: #4a93ea; --c2: #de6d35; --c3: #00ad79; --c4: #8d83e2; --c5: #b88a00; --c6: #d96496; --c7: #858e95;
+    --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+    --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+  --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+  --sea: #3987e5; --air: #d95926; --inland: #199e70;
+  --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+  --c1: #4a93ea; --c2: #de6d35; --c3: #00ad79; --c4: #8d83e2; --c5: #b88a00; --c6: #d96496; --c7: #858e95;
+  --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+  --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font: 14px/1.5 var(--f-body); margin: 0; }
+a { color: inherit; }
+
+.report { max-width: 1440px; margin: 0 auto; display: grid; gap: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 40px; }
+.report-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 6px 24px; }
+.report-head > div { min-width: 0; }
+.eyebrow { font: 500 12px var(--f-mono); color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin: 0 0 4px; }
+h1 { font: 600 34px/1.02 var(--f-display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--ink-2); margin: 6px 0 0; max-width: 78ch; }
+.asof { font: 12px var(--f-mono); color: var(--muted); text-align: right; }
+
+/* slicers */
+.slicers { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end;
+  padding: 10px 14px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+.slicer { display: grid; gap: 4px; min-width: 0; }
+.slicer > .s-label { font-size: 12px; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-body); color: var(--ink-2); background: transparent; border: 0;
+  padding: 5px 11px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button:hover { background: var(--chip); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.range { display: flex; align-items: center; gap: 10px; }
+.range input[type="range"] { width: min(260px, 60vw); accent-color: var(--sea); }
+.range output { font: 600 18px var(--f-display); min-width: 3.4em; font-variant-numeric: tabular-nums; }
+input[type="search"] { font: 13px var(--f-body); color: var(--ink); background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 5px 10px; width: min(280px, 70vw); }
+button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+
+/* KPI cards */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .k-value { font-size: 24px; } .kpi { padding: 8px 10px 10px; } }
+.kpi { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px 12px;
+  display: grid; gap: 2px; align-content: start; min-width: 0; }
+.k-label { font-size: 12px; color: var(--muted); }
+.k-value { font: 600 30px/1.08 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.k-sub { font: 12px/1.4 var(--f-mono); color: var(--ink-2); overflow-wrap: anywhere; }
+.k-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+/* canvas of visuals */
+.canvas { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+.viz { grid-column: span 6; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.viz.w3 { grid-column: span 3; } .viz.w4 { grid-column: span 4; } .viz.w5 { grid-column: span 5; } .viz.w6 { grid-column: span 6; }
+.viz.w7 { grid-column: span 7; } .viz.w8 { grid-column: span 8; } .viz.w12 { grid-column: span 12; }
+.viz-h { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.viz-h h2 { font: 600 15px/1.2 var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.hint { font-size: 12px; color: var(--muted); }
+.chart { width: 100%; height: 300px; min-width: 0; }
+.chart.short { height: 230px; } .chart.tall { height: 380px; } .chart.xtall { height: 460px; }
+.chart .nolib { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 13px; text-align: center; padding: 12px; }
+@media (max-width: 1180px) { .viz.w3, .viz.w4, .viz.w5 { grid-column: span 6; } .viz.w7, .viz.w8 { grid-column: span 12; } }
+@media (max-width: 860px) { .viz, .viz.w3, .viz.w4, .viz.w5, .viz.w6, .viz.w7, .viz.w8 { grid-column: span 12; } h1 { font-size: 28px; } .asof { text-align: left; } }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; min-width: 0; }
+table.tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.tbl th { font: 500 11px var(--f-body); color: var(--muted); text-align: right; padding: 0 8px 6px; border-bottom: 1px solid var(--rule);
+  letter-spacing: .03em; white-space: nowrap; }
+.tbl td { padding: 7px 8px; border-bottom: 1px solid var(--rule); text-align: right; font: 13px var(--f-mono); vertical-align: top; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; padding-left: 0; }
+.tbl td.txt, .tbl th.txt { text-align: left; font-family: var(--f-body); }
+.tbl tr.sel td { background: var(--hl); }
+.tbl tr.click { cursor: pointer; }
+.tbl tr.click:hover td { background: var(--chip); }
+.tbl td small { display: block; font: 12px var(--f-body); color: var(--muted); }
+.bar-cell { position: relative; }
+.bar-cell i { position: absolute; left: 0; top: 4px; bottom: 4px; background: var(--chip); border-radius: 2px; z-index: 0; }
+.bar-cell span { position: relative; z-index: 1; }
+
+/* chips and notes */
+.chip { display: inline-block; font: 500 11px/1.6 var(--f-body); padding: 0 7px; border-radius: 10px; white-space: nowrap;
+  border: 1px solid var(--rule); color: var(--ink-2); background: var(--paper); }
+.chip.good { color: var(--good); background: var(--good-bg); border-color: transparent; }
+.chip.warn { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.bad { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.prac { color: var(--c1); border-color: var(--c1); }
+.chip.web { color: var(--c3); border-color: var(--c3); }
+.chip.ph { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.open { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.ill, .chip.design { color: var(--muted); }
+.insight { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--ink-2);
+  background: var(--panel); display: grid; gap: 4px; }
+.insight b { color: var(--ink); font-weight: 600; }
+.insight p { margin: 0; }
+.notes { font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.notes p { margin: 0; max-width: 100ch; }
+.notes a, .tbl a, .insight a { color: var(--ink-2); overflow-wrap: anywhere; }
+code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border-radius: 3px; }
+.legend-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.sw { width: 12px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+
+/* Top navigation shared by every page, including the atlas. Uses the page's own tokens. */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1200; display: flex; align-items: stretch; gap: 14px;
+  height: 46px; background: var(--panel); border-bottom: 1px solid var(--rule); box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topbar .brand { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; flex: none;
+  font: 500 13px var(--f-mono); }
+.topbar .brand-mark { width: 12px; height: 12px; background: var(--ink); border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--ink); box-sizing: border-box; }
+.topbar .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
+.topbar .tabs::-webkit-scrollbar { display: none; }
+.topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
+  font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
+.topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
+.topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }
+.topbar .repo:hover { color: var(--ink); }
+@media (max-width: 560px) { .topbar .repo { display: none; } .topbar .brand-name { display: none; } }
+
+.ctl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 22px; align-items: end; width: 100%; }
+.ctl-h { grid-column: 1 / -1; font: 600 12px var(--f-body); color: var(--ink); text-transform: uppercase; letter-spacing: .06em; border-top: 1px dashed var(--rule); padding-top: 8px; margin-top: 2px; }
+.ctl-h:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
+.sl { display: grid; gap: 2px; min-width: 0; }
+.sl .s-label { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+.sl .s-label output { font: 600 12.5px var(--f-mono); color: var(--ink); white-space: nowrap; }
+.sl.changed .s-label output { color: var(--c2); }
+.sl input[type="range"] { width: 100%; accent-color: var(--ink); margin: 3px 0 0; }
+.ctl-foot { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; width: 100%; padding-top: 4px; border-top: 1px dashed var(--rule); }
+.btn { font: 500 12px var(--f-body); color: var(--ink-2); background: transparent; border: 1px solid var(--rule); border-radius: 5px; padding: 3px 9px; cursor: pointer; }
+.btn:hover { background: var(--chip); color: var(--ink); }
+.status { font: 12px var(--f-mono); color: var(--muted); margin-left: auto; }
+.sec { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; margin: 8px 0 -4px; min-width: 0; }
+.sec .n { font: 500 12px var(--f-mono); color: var(--muted); }
+.sec h3 { font: 600 21px/1.1 var(--f-display); letter-spacing: .02em; margin: 0; }
+.sec .rule { flex: 1 1 40px; border-bottom: 1px solid var(--rule); transform: translateY(-5px); min-width: 24px; }
+.sec .note { font-size: 12px; color: var(--muted); text-align: right; max-width: 52ch; }
+.cards { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 16px 12px 20px; display: grid; gap: 4px; position: relative; overflow: hidden; }
+.card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--acc, var(--ink)); }
+.card .eye { font: 500 11px var(--f-mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.card .big { font: 600 28px/1.1 var(--f-body); }
+.card .why { font-size: 12.5px; color: var(--ink-2); margin: 0; }
+.mrow { display: grid; grid-template-columns: 110px repeat(3, minmax(0, 1fr)); gap: 6px 14px; align-items: end; }
+.mrow .mname { font: 600 13px var(--f-body); align-self: center; }
+.mrow .mname small { display: block; font: 400 11.5px var(--f-body); color: var(--muted); }
+.tbl th small { display: block; font: 400 11px var(--f-body); color: var(--muted); }
+.tbl td.best { box-shadow: inset 0 0 0 2px var(--ink); font-weight: 600; }
+@media (max-width: 860px) { .mrow { grid-template-columns: 1fr; } }</style>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
+  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html">Overview</a><a class="tab" href="atlas.html">Network atlas</a><a class="tab" href="lanes.html">Lanes & lead time</a><a class="tab" href="mwd.html">MWD</a><a class="tab" href="transfer.html">Transfer timing</a><a class="tab" href="business-case.html">Business case</a><a class="tab" href="finished-goods.html">Finished goods</a><a class="tab" href="fg-live.html">FG simulator</a><a class="tab" href="demand.html">Demand & KPI</a><a class="tab" href="ramp.html" aria-current="page">Ramp & boards</a><a class="tab" href="footprint.html">Footprint</a><a class="tab" href="rules.html">Rules register</a></nav>
+  <a class="repo" href="https://github.com/jinli-kiki/scm-twin">GitHub</a>
+</header>
+<script>(function(){var a=document.querySelector(".topbar .tab[aria-current]");if(a){var n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.clientWidth)/2;}})();</script>
+
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Module 6 · new-site ramp and risk board hedge</p>
+      <h1>Ramp Up, Board Up</h1>
+      <p class="sub">A new site takes about three months from the first trial build to full volume, and it can be pulled in; material rhythm, yield and supplier readiness are what hold it back. While it ramps, China builds the rest and pays the tariff. On the board side, every SMT run locks CPU and memory into boards: short runs keep material loose for uncertain models, long runs keep the ODM's capacity. Both are simulated live below.</p>
+    </div>
+    <div class="asof">Model run 2026-10-20 · US region for the ramp, all regions for the boards · <a href="rules.html">rules R13, R16, R19, R21, R46, R47</a></div>
+  </div>
+
+  <section class="slicers" aria-label="Inputs">
+    <div class="ctl-grid" id="ctl"></div>
+    <div class="ctl-foot">
+      <div class="slicer"><span class="s-label" id="l-g">GSM</span><div class="seg" role="group" aria-labelledby="l-g" id="f-g"></div></div>
+      <button type="button" class="btn" id="reset">Reset all</button>
+      <span class="status" id="status"></span>
+    </div>
+  </section>
+
+  <section class="canvas">
+    <div class="sec"><span class="n">01</span><h3>How fast the new site ramps</h3><span class="rule"></span><span class="note">Monte Carlo of the three gates · pull-in against tariff leakage</span></div>
+    <div class="cards" id="cards-a" aria-live="polite"></div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Share of the region's volume at the new site</h2><span class="hint" id="h-band"></span></div>
+      <div id="c-band" class="chart tall"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Cost of the ramp by weeks pulled in</h2><span class="hint">Expected, over the runs</span></div>
+      <div id="c-pull" class="chart tall"></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>What holds the ramp back</h2><span class="hint">Chance each gate slips and its expected weeks, with this GSM</span></div>
+      <div id="c-gate" class="chart short"></div>
+    </div>
+
+    <div class="sec"><span class="n">02</span><h3>How many weeks of boards per SMT run</h3><span class="rule"></span><span class="note">Short runs keep CPU and memory loose; the ODM takes away capacity it is not loaded with</span></div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Models</h2><span class="hint">Forecast bias at 16 weeks, error multiplier, chance the model is cut early</span></div>
+      <div id="mods"></div>
+    </div>
+    <div class="cards" id="cards-b" aria-live="polite"></div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Expected cost by weeks of boards per run</h2><span class="hint">Each model over the year · ring = recommended</span></div>
+      <div id="c-cover" class="chart tall"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Where the cost comes from</h2><span class="hint" id="h-parts"></span></div>
+      <div class="slicer" style="margin:2px 0 4px"><div class="seg" role="group" aria-label="Model" id="f-m"></div></div>
+      <div id="c-parts" class="chart"></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Board ledger</h2><span class="hint">Expected cost per model and cover, $k · boxed = recommended</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-b"></table></div>
+    </div>
+  </section>
+
+  <section class="insight" id="insight"></section>
+
+  <footer class="notes">
+    <p><b>Ramp (R16, R21, R46).</b> From the first trial build the new site follows an S-curve (smoothstep) to full volume over T weeks: T = the base ramp less the weeks pulled in (never below the fastest ramp), plus the slips. Each gate, material rhythm, yield and supplier readiness, slips with its own chance (times the GSM factor) by a uniform number of weeks between its bounds. China builds what the new site cannot yet and pays the tariff on its customs value (leakage). Units that fail first pass consume material: yield rises from its start to its full level with the learning time, and each failed unit costs a share of its BOM value. Pulling in costs per unit of weekly volume for every week pulled, rising by the growth rate for each further week. The pull-in with the lowest expected cost is marked.</p>
+    <p><b>Board runs (R13, R19, R47).</b> Each SMT run builds boards for the next N weeks of forecast; forecasts get worse with the horizon (accuracy 68% at 16 weeks, falling with its square root) and run high for models that sold badly. A board locks CPU and memory to the model and the site's origin: when the model ends (end of life, or an early cut), boards left over cost their full value as MWD, where loose parts would mostly migrate (Module 5: 90%). Runs shorter than the ODM's standard cover cost setups and capacity: the ODM keeps back a share of SMT capacity it is not loaded with (smaller with a strong GSM). Short of boards, rush boards cover up to the flex share of the run's planned volume at a premium; the rest ships late or is lost at gross margin. Boards on hand carry at the carrying rate. The cover with the lowest expected cost is recommended.</p>
+    <p><b>Status.</b> The three-month ramp, the three gates and the risk-board rule are practitioner input; the capacity cut with a strong GSM is calibrated so a steady model keeps the standard cover, as in practice; slip sizes, yields, pull-in and SMT costs are placeholders (<code>data/ramp_params.csv</code>, <code>data/board_models.csv</code>). Code in <code>src/ramp_board.py</code>, mirrored in <code>src/dash/rb_engine.js</code> and checked by <code>tests/test_rb_parity.py</code>.</p>
+  </footer>
+</main>
+<script>/* Shared helpers for the report pages: theme-aware ECharts, number formats, slicers. */
+const R = (() => {
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const theme = () => ({
+    ink: css('--ink'), ink2: css('--ink-2'), muted: css('--muted'), rule: css('--rule'),
+    panel: css('--panel'), paper: css('--paper'), chip: css('--chip'), hl: css('--hl'),
+    c: [1, 2, 3, 4, 5, 6, 7].map((i) => css('--c' + i)),
+    sea: css('--sea'), air: css('--air'), inland: css('--inland'),
+    d0: css('--d0'), d5: css('--d5'), d16: css('--d16'),
+    good: css('--good'), warn: css('--warn'), bad: css('--bad'),
+    fBody: css('--f-body'), fMono: css('--f-mono'), fDisp: css('--f-display'),
+  });
+
+  // ---------- numbers
+  const usd = (v, d) => {
+    if (v == null || isNaN(v)) return '–';
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e9) return s + '$' + (a / 1e9).toFixed(d ?? 2) + 'B';
+    if (a >= 1e6) return s + '$' + (a / 1e6).toFixed(d ?? 2) + 'M';
+    if (a >= 1e3) return s + '$' + (a / 1e3).toFixed(d ?? 0) + 'k';
+    return s + '$' + a.toFixed(0);
+  };
+  const num = (v, d = 0) => (v == null || isNaN(v)) ? '–' :
+    (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+  const kunits = (v) => Math.abs(v) >= 1e3 ? num(v / 1e3, 1) + 'k' : num(v);
+  const pct = (v, d = 0) => (v == null || isNaN(v)) ? '–' : (v * 100).toFixed(d) + '%';
+  const axUsd = (v) => usd(v, Math.abs(v) >= 1e6 ? 1 : 0);
+
+  // ---------- charts
+  const charts = [];
+  const hasLib = () => typeof window.echarts !== 'undefined';
+  function base(t) {
+    return {
+      animationDuration: 280, animationDurationUpdate: 280,
+      textStyle: { fontFamily: t.fBody, color: t.ink2, fontSize: 12 },
+      tooltip: { trigger: 'axis', confine: true, backgroundColor: t.panel, borderColor: t.rule,
+        textStyle: { color: t.ink, fontFamily: t.fBody, fontSize: 12 }, axisPointer: { lineStyle: { color: t.muted }, shadowStyle: { color: t.chip, opacity: .6 } } },
+      legend: { top: 0, left: 0, type: 'scroll', icon: 'roundRect', itemWidth: 12, itemHeight: 8, itemGap: 14,
+        textStyle: { color: t.ink2, fontSize: 12 }, pageTextStyle: { color: t.ink2 }, pageIconColor: t.ink2, pageIconInactiveColor: t.rule },
+      grid: { left: 6, right: 18, top: 34, bottom: 6, containLabel: true },
+    };
+  }
+  function axis(t, o = {}) {
+    return Object.assign({
+      axisLine: { lineStyle: { color: t.rule } }, axisTick: { show: false },
+      axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true },
+      splitLine: { lineStyle: { color: t.rule, width: 1 } },
+      nameTextStyle: { color: t.muted, fontSize: 11, fontFamily: t.fBody },
+    }, o);
+  }
+  function chart(id, build) {
+    const el = document.getElementById(id);
+    const c = { el, build, inst: null };
+    if (!el) return c;
+    if (!hasLib()) {
+      el.innerHTML = '<div class="nolib">The chart library did not load. The numbers in the cards and tables are still current.</div>';
+      return c;
+    }
+    c.inst = echarts.init(el, null, { renderer: 'svg' });
+    c.inst.setOption(build(theme()), true);
+    charts.push(c);
+    return c;
+  }
+  function update(c) { if (c && c.inst) c.inst.setOption(c.build(theme()), true); }
+  function refreshAll() { charts.forEach(update); }
+  let rt;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => charts.forEach((c) => c.inst && c.inst.resize()), 120); });
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshAll); } catch (e) { /* old browsers */ }
+  new MutationObserver(refreshAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ---------- per-viewer memory for slicers (optional; page works without it)
+  const KEY = 'scm-twin:' + location.pathname.split('/').pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } };
+  const save = (state) => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage blocked */ } };
+
+  // ---------- segmented slicer
+  function seg(el, options, value, onChange) {
+    el.innerHTML = '';
+    options.forEach(([v, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = label; b.dataset.v = String(v);
+      b.setAttribute('aria-pressed', String(String(v) === String(value)));
+      b.addEventListener('click', () => {
+        el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        onChange(v);
+      });
+      el.appendChild(b);
+    });
+    return { set(v) { el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === String(v)))); } };
+  }
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const tip = (t, rows, title) => `<div style="font-weight:600;margin-bottom:4px">${esc(title)}</div>` +
+    rows.map(([color, name, val]) => `<div style="display:flex;justify-content:space-between;gap:18px"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${color};margin-right:6px"></span>${esc(name)}</span><span style="font-family:${t.fMono}">${val}</span></div>`).join('');
+  return { theme, usd, num, kunits, pct, axUsd, base, axis, chart, update, refreshAll, load, save, seg, $, esc, tip, hasLib };
+})();
+</script>
+<script>/* Module 6 engine for the browser: a line-by-line port of src/ramp_board.py.
+   Same random numbers as src/prng.py; tests/test_rb_parity.py checks both give identical numbers. */
+const RBE = (() => {
+  function makeRng(seed) {
+    let s = seed >>> 0;
+    const random = () => {
+      s = (s + 0x6D2B79F5) >>> 0;
+      let t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1) >>> 0;
+      t = ((((t + (Math.imul(t ^ (t >>> 7), t | 61) >>> 0)) >>> 0)) ^ t) >>> 0;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    return { random, gauss(mu = 0, sigma = 1) { const u1 = 1 - random(), u2 = random(); return mu + sigma * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2); } };
+  }
+  const pct = (vals, q) => { const v = vals.slice().sort((a, b) => a - b); return v[Math.floor(q * (v.length - 1))]; };
+  const smoothstep = (x) => { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); };
+
+  // ---------------------------------------------------------------- Part A: ramp
+  function rampSlips(inp, P, seed = 11) {
+    const rng = makeRng(seed), mult = P.gsm_strong >= 0.5 ? P.gsm_mult_strong : P.gsm_mult_weak, out = [];
+    for (let r = 0; r < Math.trunc(P.ramp_runs); r++) {
+      const row = [];
+      for (const g of ['material', 'yield', 'supplier']) {
+        const u1 = rng.random(), u2 = rng.random();
+        const p = Math.min(1, P[`slip_${g}_prob`] * mult), lo = P[`slip_${g}_lo`], hi = P[`slip_${g}_hi`];
+        row.push(u1 < p ? lo + (hi - lo) * u2 : 0);
+      }
+      out.push(row);
+    }
+    return out;
+  }
+  function rampRun(inp, P, pull, slips) {
+    const rg = inp.region;
+    let sl = 0; for (const x of slips) sl += x;
+    const T = Math.max(P.ramp_min_weeks, P.ramp_base_weeks - pull) + sl;
+    const share = [];
+    for (let w = 0; w < inp.ramp_weeks; w++) share.push(T > 0 ? smoothstep(w / T) : 1);
+    let leak = 0, scrap = 0;
+    share.forEach((s, w) => {
+      leak += (1 - s) * rg.weekly_units * rg.customs * P.ramp_tariff;
+      const y = P.yield_full - (P.yield_full - P.yield_start) * Math.exp(-w / P.yield_tau_weeks);
+      scrap += s * rg.weekly_units * (1 / y - 1) * rg.bom * P.scrap_share_of_bom;
+    });
+    let g = 0; for (let i = 0; i < Math.trunc(pull); i++) g += 1 + P.pull_cost_growth * i;
+    const pc = rg.weekly_units * P.pull_cost_usd_per_unit * g;
+    return { T, share, leakage: leak, scrap, pull: pc, total: leak + scrap + pc };
+  }
+  function rampSweep(inp, P, seed = 11) {
+    const slips = rampSlips(inp, P, seed);
+    const top = Math.trunc(Math.max(0, P.ramp_base_weeks - P.ramp_min_weeks));
+    const rows = [];
+    for (let pull = 0; pull <= top; pull++) {
+      const runs = slips.map((s) => rampRun(inp, P, pull, s)), n = runs.length;
+      const mean = (k) => { let t = 0; for (const r of runs) t += r[k]; return t / n; };
+      const Ts = runs.map((r) => r.T);
+      const band = [];
+      for (let w = 0; w < inp.ramp_weeks; w++) { const col = runs.map((r) => r.share[w]); band.push([pct(col, 0.1), pct(col, 0.5), pct(col, 0.9)]); }
+      rows.push({ pull, T_mean: mean('T'), T_p10: pct(Ts, 0.1), T_p50: pct(Ts, 0.5), T_p90: pct(Ts, 0.9),
+        leakage: mean('leakage'), scrap: mean('scrap'), pull_cost: runs[0].pull, total: mean('total'), band });
+    }
+    let best = rows[0];
+    for (const r of rows) if (r.total < best.total || (r.total === best.total && r.pull < best.pull)) best = r;
+    const share = [0, 1, 2].map((g) => slips.filter((s) => s[g] > 0).length / slips.length);
+    const smean = [0, 1, 2].map((g) => { let t = 0; for (const s of slips) t += s[g]; return t / slips.length; });
+    return { rows, best: best.pull, slip_share: share, slip_mean: smean };
+  }
+
+  // ---------------------------------------------------------------- Part B: board cover
+  function boardDraws(inp, P, m, seed) {
+    const rng = makeRng(seed), runs = [];
+    for (let r = 0; r < Math.trunc(P.board_runs); r++) {
+      const z = [], u = [];
+      for (let w = 0; w < inp.weeks; w++) z.push(rng.gauss());
+      for (let w = 0; w < inp.weeks; w++) u.push(rng.gauss());
+      const c1 = rng.random(), c2 = rng.random();
+      const live = []; for (let w = 0; w < inp.weeks; w++) if (m.plan[w] > 0) live.push(w);
+      let cut = null;
+      if (c1 < m.cut_prob && live.length > 8) cut = live[0] + 4 + Math.trunc(c2 * (live.length - 4));
+      runs.push([z, u, cut]);
+    }
+    return runs;
+  }
+  function boardRun(inp, P, m, cover, draw) {
+    const [z, u, cut] = draw, W = inp.weeks;
+    const s16 = P.forecast_mape_16w * Math.sqrt(Math.PI / 2) * m.sigma_mult;
+    const D = [];
+    for (let w = 0; w < W; w++) D.push(cut !== null && w >= cut ? 0 : m.plan[w] * Math.max(0, 1 + P.demand_noise * z[w]));
+    const kappa = P.gsm_strong >= 0.5 ? P.capacity_cut_strong : P.capacity_cut_weak;
+    const cutcap = kappa * Math.max(0, (P.board_cover_std_weeks - cover) / P.board_cover_std_weeks);
+    let inv = 0, setups = 0, rush = 0, lost = 0, carry = 0, budget = 0;
+    const forecast = (w, h, d) => {
+      if (m.eol !== null && w >= m.eol) return 0;
+      if (cut !== null && d >= cut) return 0;
+      const base = m.plan[w] * Math.max(0, 1 + P.demand_noise * z[w]);
+      const g = Math.sqrt(h / 16);
+      return base * Math.max(0, 1 + m.bias * g + s16 * g * u[w]);
+    };
+    for (let w = 0; w < W; w++) {
+      if (w % cover === 0) {
+        let need = 0;
+        for (let j = 0; j < cover; j++) if (w + j < W) need += forecast(w + j, j + 1, w);
+        const build = Math.min(Math.max(0, need - inv), need * (1 - cutcap));
+        if (build > 1e-9) { inv += build; setups += P.setup_usd_per_run; }
+        let pl = 0; for (let j = 0; j < cover; j++) if (w + j < W) pl += m.plan[w + j];
+        budget = P.smt_flex * pl;
+      }
+      const use = Math.min(inv, D[w]);
+      inv -= use;
+      const short = D[w] - use;
+      if (short > 1e-9) {
+        const r = Math.min(short, budget);
+        budget -= r;
+        rush += r * P.rush_premium_usd;
+        lost += (short - r) * P.lost_share * m.margin;
+      }
+      carry += inv * m.board_value * P.carry / 52;
+    }
+    const ended = cut !== null || m.eol !== null;
+    const stranded = ended ? inv : 0;
+    const lock = (m.board_value - m.onboard_parts * (1 - P.migration)) * P.mwd_cost_rate;
+    const parts = { setups, rush, lost, carry, stranded: stranded * lock };
+    return { parts, total: parts.setups + parts.rush + parts.lost + parts.carry + parts.stranded, stranded_boards: stranded };
+  }
+  function boardEval(inp, P, m, seed) {
+    const draws = boardDraws(inp, P, m, seed), rows = [];
+    for (const cover of inp.covers) {
+      const runs = draws.map((d) => boardRun(inp, P, m, cover, d)), n = runs.length;
+      const parts = {};
+      for (const k of Object.keys(runs[0].parts)) { let t = 0; for (const r of runs) t += r.parts[k]; parts[k] = t / n; }
+      const tot = runs.map((r) => r.total);
+      let st = 0; for (const r of runs) st += r.stranded_boards;
+      let tt = 0; for (const x of tot) tt += x;
+      rows.push({ cover, parts, total: tt / n, p90: pct(tot, 0.9), stranded_boards: st / n });
+    }
+    let best = rows[0];
+    for (const r of rows) if (r.total < best.total || (r.total === best.total && -r.cover < -best.cover)) best = r;
+    return { model: m.model, risk: m.risk, rows, best: best.cover };
+  }
+  const boards = (inp, P) => inp.models.map((m, i) => boardEval(inp, P, m, 101 + i));
+  return { makeRng, smoothstep, rampSlips, rampRun, rampSweep, boardDraws, boardRun, boardEval, boards };
+})();
+if (typeof module !== 'undefined') module.exports = RBE;
+</script>
+<script>
+const D = {"input":{"models":[{"model":"P1-14","risk":"normal","bias":0.0,"sigma_mult":1.0,"cut_prob":0.0,"eol":30,"board_value":195.0,"onboard_parts":160.0,"margin":162.5,"plan":[5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,3750.0,2500.0,1250.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","risk":"risky","bias":0.1,"sigma_mult":1.5,"cut_prob":0.15,"eol":30,"board_value":198.0,"onboard_parts":160.0,"margin":190.0,"plan":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","risk":"new","bias":0.05,"sigma_mult":1.3,"cut_prob":0.1,"eol":null,"board_value":211.0,"onboard_parts":175.0,"margin":176.0,"plan":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1500.0,3000.0,4500.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0]}],"region":{"weekly_units":2800.0,"customs":502.85714285714283,"bom":372.7142857142857},"P":{"ramp_base_weeks":13.0,"ramp_min_weeks":6.0,"pull_cost_usd_per_unit":6.0,"pull_cost_growth":0.5,"slip_material_prob":0.4,"slip_material_lo":1.0,"slip_material_hi":4.0,"slip_yield_prob":0.3,"slip_yield_lo":1.0,"slip_yield_hi":3.0,"slip_supplier_prob":0.5,"slip_supplier_lo":2.0,"slip_supplier_hi":6.0,"gsm_strong":1.0,"gsm_mult_strong":0.6,"gsm_mult_weak":1.4,"yield_start":0.85,"yield_full":0.98,"yield_tau_weeks":4.0,"scrap_share_of_bom":0.3,"ramp_tariff":0.25,"ramp_runs":1000.0,"board_cover_std_weeks":4.0,"forecast_mape_16w":0.32,"demand_noise":0.1,"capacity_cut_strong":0.35,"capacity_cut_weak":0.8,"smt_flex":0.2,"rush_premium_usd":8.0,"setup_usd_per_run":1500.0,"lost_share":0.5,"board_runs":400.0,"carry":0.2,"migration":0.9,"mwd_cost_rate":0.9},"covers":[1,2,3,4,6,8],"weeks":52,"ramp_weeks":40}};
+const IN = D.input;
+const P0 = { ...IN.P };
+const M0 = JSON.parse(JSON.stringify(IN.models));
+const M$ = (v, d = 2) => (v < 0 ? '−' : '') + '$' + R.num(Math.abs(v) / 1e6, d) + 'M';
+const K$ = (v) => '$' + R.num(v / 1e3, 0) + 'k';
+// [key, label, min, max, step, format] ; null key = group heading
+const CTL = [
+  [null, 'New-site ramp'],
+  ['ramp_base_weeks', 'Base ramp, trial build to full volume', 4, 30, 1, 'wk'],
+  ['ramp_min_weeks', 'Fastest ramp when pulled in', 2, 20, 1, 'wk'],
+  ['pull_cost_usd_per_unit', 'Cost per week pulled, per weekly unit', 0, 60, 1, 'usd'],
+  ['pull_cost_growth', 'Each further week costs more by', 0, 2, 0.05, 'pct'],
+  ['slip_material_prob', 'Chance material rhythm slips', 0, 1, 0.05, 'pct'],
+  ['slip_yield_prob', 'Chance yield learning slips', 0, 1, 0.05, 'pct'],
+  ['slip_supplier_prob', 'Chance supplier readiness slips', 0, 1, 0.05, 'pct'],
+  ['ramp_tariff', 'Tariff on what China still builds', 0, 0.5, 0.01, 'pct'],
+  ['yield_start', 'First-pass yield at the first build', 0.5, 0.99, 0.01, 'pct'],
+  ['scrap_share_of_bom', 'Cost of a failed unit, share of BOM', 0, 1, 0.05, 'pct'],
+  [null, 'Board runs'],
+  ['board_cover_std_weeks', "ODM's standard weeks of boards per run", 1, 8, 1, 'wk'],
+  ['forecast_mape_16w', 'Forecast error at 16 weeks', 0.05, 0.6, 0.01, 'pct'],
+  ['capacity_cut_strong', 'Capacity the ODM keeps back, strong GSM', 0, 1, 0.01, 'pct'],
+  ['capacity_cut_weak', 'Capacity the ODM keeps back, weak GSM', 0, 1, 0.01, 'pct'],
+  ['smt_flex', 'Rush SMT capacity, share of the run’s plan', 0, 0.6, 0.01, 'pct'],
+  ['rush_premium_usd', 'Rush premium per board', 0, 40, 0.5, 'usd'],
+  ['setup_usd_per_run', 'Setup cost per SMT run', 0, 10000, 100, 'usd'],
+  ['lost_share', 'Share of short units lost', 0, 1, 0.05, 'pct'],
+];
+const fmt = (k, v) => ({ pct: () => R.pct(v), wk: () => R.num(v) + ' wk', usd: () => '$' + R.num(v, v < 10 && v % 1 ? 1 : 0) }[k])();
+const saved = R.load();
+const S = { P: { ...P0 }, models: JSON.parse(JSON.stringify(M0)), sel: 1 };
+if (saved.P) for (const k of Object.keys(S.P)) if (Number.isFinite(saved.P[k])) S.P[k] = saved.P[k];
+if (saved.models) saved.models.forEach((m, i) => { if (S.models[i]) for (const k of ['bias', 'sigma_mult', 'cut_prob']) if (Number.isFinite(m[k])) S.models[i][k] = m[k]; });
+if (Number.isInteger(saved.sel) && saved.sel >= 0 && saved.sel < S.models.length) S.sel = saved.sel;
+let RES = null, timer = null;
+
+R.$('#ctl').innerHTML = CTL.map(([k, l, mn, mx, st]) => k === null ? `<div class="ctl-h">${l}</div>` : `<div class="sl" data-k="${k}"><span class="s-label"><label for="p-${k}">${l}</label><output id="o-${k}"></output></span>
+  <input type="range" id="p-${k}" min="${mn}" max="${mx}" step="${st}" value="${S.P[k]}"></div>`).join('');
+CTL.forEach(([k]) => k && R.$('#p-' + k).addEventListener('input', (e) => { S.P[k] = +e.target.value; paintCtl(); schedule(); }));
+const segG = R.seg(R.$('#f-g'), [['1', 'Strong (capacity kept, fewer slips)'], ['0', 'Weak']], String(S.P.gsm_strong >= 0.5 ? 1 : 0), (v) => { S.P.gsm_strong = +v; schedule(); });
+const MS = [['bias', 'Forecast runs high by', -0.2, 0.4, 0.01], ['sigma_mult', 'Forecast error ×', 0.5, 3, 0.05], ['cut_prob', 'Chance of an early cut', 0, 0.8, 0.01]];
+R.$('#mods').innerHTML = S.models.map((m, i) => `<div class="mrow" data-i="${i}"><span class="mname">${m.model}<small>${m.risk}${m.eol !== null ? ' · EOL week ' + m.eol : ''}</small></span>` +
+  MS.map(([k, l, mn, mx, st]) => `<div class="sl"><span class="s-label"><label for="m-${i}-${k}">${l}</label><output id="om-${i}-${k}"></output></span><input type="range" id="m-${i}-${k}" min="${mn}" max="${mx}" step="${st}" value="${m[k]}"></div>`).join('') + '</div>').join('');
+S.models.forEach((m, i) => MS.forEach(([k]) => R.$(`#m-${i}-${k}`).addEventListener('input', (e) => { S.models[i][k] = +e.target.value; paintCtl(); schedule(); })));
+const segM = R.seg(R.$('#f-m'), S.models.map((m, i) => [String(i), m.model]), String(S.sel), (v) => { S.sel = +v; persist(); R.update(cParts); });
+R.$('#reset').addEventListener('click', () => {
+  S.P = { ...P0 }; S.models = JSON.parse(JSON.stringify(M0));
+  CTL.forEach(([k]) => { if (k) R.$('#p-' + k).value = S.P[k]; });
+  S.models.forEach((m, i) => MS.forEach(([k]) => { R.$(`#m-${i}-${k}`).value = m[k]; }));
+  segG.set(String(S.P.gsm_strong)); paintCtl(); schedule();
+});
+function paintCtl() {
+  CTL.forEach(([k, , , , , f]) => { if (!k) return; R.$('#o-' + k).textContent = fmt(f, S.P[k]); R.$(`.sl[data-k="${k}"]`).classList.toggle('changed', Math.abs(S.P[k] - P0[k]) > 1e-12); });
+  S.models.forEach((m, i) => MS.forEach(([k]) => { const o = R.$(`#om-${i}-${k}`); o.textContent = k === 'sigma_mult' ? R.num(m[k], 2) + '×' : (k === 'bias' && m[k] > 0 ? '+' : '') + R.pct(m[k]); o.closest('.sl').classList.toggle('changed', Math.abs(m[k] - M0[i][k]) > 1e-12); }));
+}
+const persist = () => { try { R.save({ P: S.P, models: S.models, sel: S.sel }); } catch (e) { /* storage blocked */ } };
+function schedule() { persist(); clearTimeout(timer); R.$('#status').textContent = 'running…'; timer = setTimeout(compute, 60); }
+function compute() {
+  const t0 = performance.now();
+  const inp = { ...IN, models: S.models };
+  const ramp = RBE.rampSweep(inp, S.P);
+  const bd = RBE.boards(inp, S.P);
+  RES = { inp, ramp, bd, ms: performance.now() - t0 };
+  draw();
+}
+
+// ---------------------------------------------------------------- Part A
+const GATES = ['Material rhythm', 'Yield learning', 'Supplier readiness'];
+function cardsA() {
+  const { ramp } = RES, r0 = ramp.rows[0], rb = ramp.rows.find((r) => r.pull === ramp.best);
+  const card = (eye, big, why, acc) => `<article class="card" style="--acc:${acc || 'var(--ink)'}"><span class="eye">${eye}</span><span class="big">${big}</span><p class="why">${why}</p></article>`;
+  R.$('#cards-a').innerHTML = [
+    card('Ramp without pull-in', R.num(r0.T_p50, 1) + ' wk', `median; P10 ${R.num(r0.T_p10, 1)}, P90 ${R.num(r0.T_p90, 1)} weeks against a base of ${S.P.ramp_base_weeks}`),
+    card('Best pull-in', ramp.best + ' wk', ramp.best ? `median ramp ${R.num(rb.T_p50, 1)} weeks; pull-in costs ${M$(rb.pull_cost)}` : 'pulling in costs more than the tariff it saves', 'var(--c1)'),
+    card('Tariff leakage saved', M$(r0.leakage - rb.leakage), `China builds less while the site ramps: ${M$(rb.leakage)} left at ${R.pct(S.P.ramp_tariff)}`),
+    card('Expected ramp cost', M$(rb.total), `leakage ${M$(rb.leakage)} + yield scrap ${M$(rb.scrap)} + pull-in ${M$(rb.pull_cost)} · ${M$(r0.total)} without pull-in`),
+  ].join('');
+}
+const cBand = R.chart('c-band', (t) => {
+  const o = R.base(t);
+  if (!RES) return o;
+  const { ramp } = RES, r0 = ramp.rows[0], rb = ramp.rows.find((r) => r.pull === ramp.best);
+  R.$('#h-band').textContent = `P10–P90 band and median · no pull-in against ${ramp.best} week${ramp.best === 1 ? '' : 's'} pulled in`;
+  const W = IN.ramp_weeks, x = Array.from({ length: W }, (_, w) => 'W' + w);
+  const band = (r, name, col, op) => [
+    { type: 'line', name: name + ' P10', data: r.band.map((b) => b[0]), lineStyle: { opacity: 0 }, symbol: 'none', stack: name, silent: true, tooltip: { show: false } },
+    { type: 'line', name: name + ' band', data: r.band.map((b) => b[2] - b[0]), lineStyle: { opacity: 0 }, symbol: 'none', stack: name, areaStyle: { color: col, opacity: op }, silent: true, tooltip: { show: false } },
+    { type: 'line', name, data: r.band.map((b) => b[1]), symbol: 'none', lineStyle: { color: col, width: 2.5 }, itemStyle: { color: col } }];
+  return {
+    ...o, legend: { ...o.legend, data: ['No pull-in', `Pulled in ${ramp.best} wk`] }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, valueFormatter: (v) => R.pct(v) },
+    xAxis: R.axis(t, { type: 'category', data: x, boundaryGap: false, splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, interval: 3 } }),
+    yAxis: R.axis(t, { type: 'value', min: 0, max: 1, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => R.pct(v) } }),
+    series: band(r0, 'No pull-in', t.muted, 0.18).concat(ramp.best ? band(rb, `Pulled in ${ramp.best} wk`, t.c[0], 0.22) : []),
+  };
+});
+const cPull = R.chart('c-pull', (t) => {
+  const o = R.base(t);
+  if (!RES) return o;
+  const rows = RES.ramp.rows;
+  const parts = [['leakage', 'Tariff leakage', t.bad], ['scrap', 'Yield scrap', t.c[3]], ['pull_cost', 'Pull-in cost', t.c[0]]];
+  return {
+    ...o, legend: { ...o.legend, data: parts.map((p) => p[1]) }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const r = rows[ps[0].dataIndex]; return R.tip(t, parts.map(([k, n, c]) => [c, n, M$(r[k])]).concat([[t.ink, 'Total', M$(r.total)], [t.muted, 'Median ramp', R.num(r.T_p50, 1) + ' wk']]), `${r.pull} week${r.pull === 1 ? '' : 's'} pulled in`); } },
+    xAxis: R.axis(t, { type: 'category', name: 'weeks pulled in', nameLocation: 'middle', nameGap: 24, data: rows.map((r) => ({ value: String(r.pull), textStyle: { fontWeight: r.pull === RES.ramp.best ? 700 : 400, color: r.pull === RES.ramp.best ? t.c[0] : t.muted } })), splitLine: { show: false }, axisLabel: { fontFamily: t.fMono, fontSize: 11 } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + R.num(v / 1e6, 1) + 'M' } }),
+    series: parts.map(([k, n, c], i) => ({ type: 'bar', stack: 'p', name: n, barMaxWidth: 26, itemStyle: { color: c, borderRadius: i === parts.length - 1 ? [3, 3, 0, 0] : 0 }, data: rows.map((r) => r[k]) })),
+  };
+});
+const cGate = R.chart('c-gate', (t) => {
+  const o = R.base(t);
+  if (!RES) return o;
+  const { slip_share: sh, slip_mean: mn } = RES.ramp;
+  return {
+    ...o, legend: { ...o.legend, data: ['Chance it slips', 'Expected weeks of slip'] }, grid: { ...o.grid, top: 34, right: 18 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' } },
+    xAxis: [R.axis(t, { type: 'value', max: Math.min(1, Math.ceil(Math.max(...sh) * 12) / 10 + 0.1), splitNumber: 4, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => R.pct(v) } })],
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: GATES, splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12 } }),
+    series: [{ type: 'bar', name: 'Chance it slips', barWidth: 12, itemStyle: { color: t.c[1], borderRadius: [0, 3, 3, 0] }, data: sh,
+      label: { show: true, position: 'right', fontFamily: t.fMono, fontSize: 11, color: t.ink2, formatter: (p) => `${R.pct(p.value)} · ${R.num(mn[p.dataIndex], 1)} wk expected` }, tooltip: { valueFormatter: (v) => R.pct(v) } }],
+  };
+});
+
+// ---------------------------------------------------------------- Part B
+const MCOL = (t) => [t.c[0], t.c[1], t.c[2]];
+function cardsB() {
+  const std = S.P.board_cover_std_weeks;
+  R.$('#cards-b').innerHTML = RES.bd.map((b, i) => {
+    const best = b.rows.find((r) => r.cover === b.best), stdR = b.rows.find((r) => r.cover === std);
+    const vs = stdR && stdR !== best ? `saves ${K$(stdR.total - best.total)} against the standard ${std} weeks` : `the ODM's standard cover`;
+    return `<article class="card" style="--acc:var(--c${i + 1})"><span class="eye">${b.model} · ${b.risk}</span><span class="big">${b.best} week${b.best === 1 ? '' : 's'} per run</span><p class="why">${vs}; expected ${K$(best.total)} a year, P90 ${K$(best.p90)}, ${R.num(best.stranded_boards)} boards stranded on average</p></article>`;
+  }).join('');
+}
+const cCover = R.chart('c-cover', (t) => {
+  const o = R.base(t);
+  if (!RES) return o;
+  const cols = MCOL(t), covers = IN.covers;
+  return {
+    ...o, legend: { ...o.legend, data: RES.bd.map((b) => b.model) }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, valueFormatter: (v) => K$(v) },
+    xAxis: R.axis(t, { type: 'category', name: 'weeks of boards per SMT run', nameLocation: 'middle', nameGap: 24, data: covers.map(String), splitLine: { show: false }, axisLabel: { fontFamily: t.fMono, fontSize: 11, color: t.muted } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + R.num(v / 1e3, 0) + 'k' } }),
+    series: RES.bd.map((b, i) => ({ type: 'line', name: b.model, data: b.rows.map((r) => ({ value: r.total, symbolSize: r.cover === b.best ? 14 : 6, itemStyle: r.cover === b.best ? { color: t.panel, borderColor: cols[i], borderWidth: 3 } : { color: cols[i] } })),
+      lineStyle: { color: cols[i], width: 2 }, itemStyle: { color: cols[i] }, symbol: 'circle',
+      markLine: i === 0 ? { silent: true, symbol: 'none', lineStyle: { color: t.muted, type: 'dashed' }, label: { formatter: 'ODM standard', color: t.muted, fontSize: 11 }, data: [{ xAxis: String(S.P.board_cover_std_weeks) }] } : undefined })),
+  };
+});
+const BPARTS = [['setups', 'Setups', (t) => t.c[6]], ['rush', 'Rush runs', (t) => t.c[4]], ['lost', 'Late and lost units', (t) => t.bad], ['carry', 'Carrying boards', (t) => t.c[3]], ['stranded', 'Stranded boards (MWD)', (t) => t.c[1]]];
+const cParts = R.chart('c-parts', (t) => {
+  const o = R.base(t);
+  if (!RES) return o;
+  const b = RES.bd[S.sel];
+  R.$('#h-parts').textContent = `${b.model} · expected, $k`;
+  return {
+    ...o, legend: { ...o.legend, type: 'plain', itemGap: 10, data: BPARTS.map((p) => p[1]) }, grid: { ...o.grid, top: (document.getElementById('c-parts').clientWidth < 560 ? 84 : 62) },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => K$(v) },
+    xAxis: R.axis(t, { type: 'category', data: b.rows.map((r) => ({ value: String(r.cover), textStyle: { fontWeight: r.cover === b.best ? 700 : 400, color: r.cover === b.best ? t.ink : t.muted } })), splitLine: { show: false }, axisLabel: { fontFamily: t.fMono, fontSize: 11 } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + R.num(v / 1e3, 0) + 'k' } }),
+    series: BPARTS.map(([k, n, c], i) => ({ type: 'bar', stack: 'b', name: n, barMaxWidth: 24, itemStyle: { color: c(t), borderRadius: i === BPARTS.length - 1 ? [3, 3, 0, 0] : 0 }, data: b.rows.map((r) => r.parts[k]) })),
+  };
+});
+function ledger() {
+  const covers = IN.covers;
+  R.$('#t-b').innerHTML = '<thead><tr><th class="txt">Model</th>' + covers.map((c) => `<th>${c} wk<small>${c === S.P.board_cover_std_weeks ? 'ODM standard' : c < S.P.board_cover_std_weeks ? 'stretched' : 'longer'}</small></th>`).join('') + '<th>Recommended</th></tr></thead><tbody>' +
+    RES.bd.map((b) => `<tr><td class="txt"><b>${b.model}</b><small>${b.risk}</small></td>` + b.rows.map((r) => `<td class="${r.cover === b.best ? 'best' : ''}">${K$(r.total)}<small>P90 ${K$(r.p90)}</small></td>`).join('') + `<td><b>${b.best} wk</b></td></tr>`).join('') + '</tbody>';
+}
+function insight() {
+  const { ramp, bd } = RES, r0 = ramp.rows[0], rb = ramp.rows.find((r) => r.pull === ramp.best), std = S.P.board_cover_std_weeks;
+  const gi = [0, 1, 2].reduce((a, g) => (ramp.slip_mean[g] > ramp.slip_mean[a] ? g : a), 0);
+  const stretched = bd.filter((b) => b.best < std), longer = bd.filter((b) => b.best > std);
+  R.$('#insight').innerHTML = `
+    <p><b>${ramp.best ? `Pull the ramp in by ${ramp.best} week${ramp.best === 1 ? '' : 's'}: it saves ${M$(r0.total - rb.total)} at a ${R.pct(S.P.ramp_tariff)} tariff.` : `At a ${R.pct(S.P.ramp_tariff)} tariff pulling in does not pay.`}</b> Without pull-in the median ramp is ${R.num(r0.T_p50, 1)} weeks against a base of ${S.P.ramp_base_weeks}; ${GATES[gi].toLowerCase()} adds the most (${R.num(ramp.slip_mean[gi], 1)} weeks expected). Every week the site is not at full volume, China builds the gap and pays the tariff, so the higher the tariff the further it pays to pull in.</p>
+    <p><b>${stretched.length ? `Stretch the board runs for ${stretched.map((b) => `${b.model} (${b.best} week${b.best === 1 ? '' : 's'})`).join(', ')}` : 'Keep every model on the standard board runs'}${stretched.length && stretched.length < bd.length ? `; keep ${bd.filter((b) => b.best === std).map((b) => b.model).join(', ') || 'the rest'} on the standard ${std} weeks` : ''}.</b> ${longer.length ? `${longer.map((b) => b.model).join(', ')} even pay${longer.length === 1 ? 's' : ''} for longer runs. ` : ''}Shorter runs strand fewer boards when a model ends or is cut, and build on fresher forecasts; they cost setups and the SMT capacity the ODM keeps back${S.P.gsm_strong >= 0.5 ? ', which a strong GSM keeps small' : ', which with a weak GSM is large enough to keep every model on the standard runs'}.</p>`;
+}
+function draw() {
+  cardsA(); cardsB(); ledger(); insight();
+  [cBand, cPull, cGate, cCover, cParts].forEach(R.update);
+  R.$('#status').textContent = `${R.num(S.P.ramp_runs)} ramp runs × ${RES.ramp.rows.length} pull-ins · ${R.num(S.P.board_runs)} board runs × ${IN.covers.length} covers × ${S.models.length} models in ${R.num(RES.ms, 0)} ms`;
+}
+paintCtl();
+compute();
+</script>
+
+</body>
+</html>
