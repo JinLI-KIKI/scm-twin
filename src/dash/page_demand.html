@@ -20,6 +20,8 @@
 .card .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; border-top: 1px solid var(--rule); padding-top: 8px; }
 .card .row .l { display: block; font-size: 11.5px; color: var(--muted); }
 .card .row .v { display: block; font: 600 17px/1.25 var(--f-body); }
+.card .qrow { display: flex; flex-wrap: wrap; gap: 4px 14px; font: 12px var(--f-mono); color: var(--ink-2); }
+.card .qrow b { color: var(--ink); font-weight: 600; } .card .qrow .qn { color: var(--muted); font-family: var(--f-body); }
 .gapbar { display: flex; align-items: baseline; gap: 10px 16px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 16px; }
 .gapbar .big { font: 600 22px var(--f-body); }
 .gapbar .txt { font-size: 13px; color: var(--ink-2); }
@@ -39,13 +41,14 @@
       <h1>Two Scorecards for One Transfer</h1>
       <p class="sub">A US tariff on China-made laptops starts at week 0 of the fiscal year. The brand passes part of it into the channel price, the price costs units, and the US volume can leave China in any week. The BU scores each choice on its KPIs, the shipment target in sell-in units and MWD; the company scores it on the total cost of the year. They do not always agree.</p>
     </div>
-    <div class="asof">Model run __TODAY__ · US region · fiscal year of 52 weeks · <a href="rules.html">rules R1, R8, R33, R42–R44</a></div>
+    <div class="asof">Model run __TODAY__ · US region · fiscal year of 52 weeks · <a href="rules.html">rules R1, R8, R33, R42–R45</a></div>
   </div>
 
   <section class="slicers" aria-label="Inputs">
     <div class="ctl-grid" id="ctl"></div>
     <div class="ctl-foot">
       <div class="slicer"><span class="s-label" id="l-b">BU counts MWD as</span><div class="seg" role="group" aria-labelledby="l-b" id="f-b"></div></div>
+      <div class="slicer"><span class="s-label" id="l-c">Company also holds the fiscal-year target</span><div class="seg" role="group" aria-labelledby="l-c" id="f-c"></div></div>
       <button type="button" class="btn" id="reset">Reset all</button>
       <span class="status" id="status"></span>
     </div>
@@ -84,9 +87,9 @@
 
   <footer class="notes">
     <p><b>Demand.</b> Each week the US plan of each model (lifecycle curve of Module 1, 40% US share) meets a price rise: pass-through × tariff × the share of the week's units still made in China, from the repricing week on. Units follow a constant elasticity: q = plan × (1 + rise / channel price)<sup>elasticity</sup>. The tariff is the rate × customs value, less the share foreign exporters absorb. After the cutover the new site takes over linearly over the ramp weeks; China builds the rest and pays the tariff.</p>
-    <p><b>BU view (R33, R1, R8).</b> Shipment attainment = sell-in units against the plan made before the tariff. MWD as the BU's KPI counts it: claimed MWD, every plan cancelled inside the 16-week liability window at full BOM value (Module 2), or physical MWD after netting, relocation and rework; both plus the extra end-of-life MWD of the longer window (Module 3) for the rest of the year. The BU picks the latest option that still reaches the target tolerance, since every week later means less MWD; if none does, the one closest to target. Tariffs are not a BU KPI.</p>
-    <p><b>Company view.</b> Tariff the brand absorbs (paid on China-made units minus what the price rise recovers) + gross margin on the units the price rise loses + physical MWD, holding, relocation and rework of the cutover (Module 2) + parts expediting and the longer chain (end-of-life MWD and pipeline carrying, Module 3, for the rest of the year) + the new site's conversion uplift on its units. One fiscal year only: the tariff saved in later years is on the <a href="business-case.html">Business case</a> page.</p>
-    <p><b>Status.</b> Pass-through, the repricing lag and exporter absorption come from 2025 price moves and the Kiel Institute; elasticity from 2026 US PC data (Omdia, confounded by the memory shortage); the claimed-MWD rule is practitioner input; the target tolerance, ramp and margins are placeholders (<code>data/demand_params.csv</code>, <code>data/demand_models.csv</code>). Code in <code>src/demand_kpi.py</code>, mirrored in <code>src/dash/dk_engine.js</code> and checked by <code>tests/test_dk_parity.py</code>.</p>
+    <p><b>BU view (R33, R1, R8, R42).</b> The fiscal-year target is in sell-in units and must be shipped in full; the pre-tariff plan sits above it, since the BU usually beats it. A first-half shortfall is not written off: Q1 and Q2 come in lower and Q3–Q4 catch up with a channel discount from the catch-up week, as large as needed up to the cap (R45). MWD as the BU's KPI counts it: claimed MWD, every plan cancelled inside the 16-week liability window at full BOM value (Module 2), or physical MWD after netting, relocation and rework; both plus the extra end-of-life MWD of the longer window (Module 3) for the rest of the year. The BU picks the latest option that still makes the target, since every week later means less MWD; only if none can is the target lowered. Tariffs and the discount are not BU KPIs.</p>
+    <p><b>Company view.</b> The company holds the fiscal-year target too (switch above) and picks the cheapest option that makes it. Cost = tariff the brand absorbs (paid on China-made units minus what the price rise recovers) + gross margin on the units the price rise loses (net of the catch-up) + the catch-up discount + physical MWD, holding, relocation and rework of the cutover (Module 2) + parts expediting and the longer chain (end-of-life MWD and pipeline carrying, Module 3, for the rest of the year) + the new site's conversion uplift on its units. One fiscal year only: the tariff saved in later years is on the <a href="business-case.html">Business case</a> page.</p>
+    <p><b>Status.</b> Pass-through, the repricing lag and exporter absorption come from 2025 price moves and the Kiel Institute; elasticity from 2026 US PC data (Omdia, confounded by the memory shortage); the claimed-MWD rule is practitioner input; the target rule is practitioner input (its 3% size, the discount cap, ramp and margins are placeholders) (<code>data/demand_params.csv</code>, <code>data/demand_models.csv</code>). Code in <code>src/demand_kpi.py</code>, mirrored in <code>src/dash/dk_engine.js</code> and checked by <code>tests/test_dk_parity.py</code>.</p>
   </footer>
 </main>
 <script>/*__JS__*/</script>
@@ -108,7 +111,9 @@ const CTL = [
   ['reprice_lag_weeks', 'Weeks until the new price', 0, 12, 1, 'wk'],
   ['elasticity', 'Price elasticity of units', -2, 0, 0.05, 'n2'],
   ['ramp_weeks', 'New-site ramp after cutover', 0, 30, 1, 'wk'],
-  ['target_tolerance', 'BU counts the target hit at', 0.85, 1, 0.005, 'pct1'],
+  ['target_tolerance', 'Fiscal-year target as a share of the plan', 0.9, 1.05, 0.005, 'pct1'],
+  ['catchup_from_week', 'Catch-up runs from week (Q3 = 26)', 0, 51, 1, 'wk'],
+  ['max_promo_discount', 'Largest catch-up discount', 0, 0.3, 0.005, 'pct1'],
   ['gross_margin', 'Gross margin on the channel price', 0.05, 0.45, 0.01, 'pct'],
   ['exporter_absorb', 'Tariff absorbed by the exporter', 0, 0.2, 0.01, 'pct'],
   ['conv_uplift', 'New-site conversion uplift', 0, 0.2, 0.005, 'pct1'],
@@ -128,7 +133,8 @@ R.$('#ctl').innerHTML = CTL.map(([k, l, mn, mx, st]) => `<div class="sl" data-k=
   <input type="range" id="p-${k}" min="${mn}" max="${mx}" step="${st}" value="${S.P[k]}"></div>`).join('');
 CTL.forEach(([k]) => R.$('#p-' + k).addEventListener('input', (e) => { S.P[k] = +e.target.value; paintCtl(); schedule(); }));
 const segB = R.seg(R.$('#f-b'), [['1', 'Claimed (plans cancelled, R1)'], ['0', 'Physical (after relocation)']], String(S.P.bu_mwd_claimed >= 0.5 ? 1 : 0), (v) => { S.P.bu_mwd_claimed = +v; schedule(); });
-R.$('#reset').addEventListener('click', () => { S.P = { ...DEF }; CTL.forEach(([k]) => { R.$('#p-' + k).value = S.P[k]; }); segB.set(String(S.P.bu_mwd_claimed)); paintCtl(); schedule(); });
+const segC = R.seg(R.$('#f-c'), [['1', 'Yes'], ['0', 'No, cost only']], String(S.P.company_holds_target >= 0.5 ? 1 : 0), (v) => { S.P.company_holds_target = +v; schedule(); });
+R.$('#reset').addEventListener('click', () => { S.P = { ...DEF }; CTL.forEach(([k]) => { R.$('#p-' + k).value = S.P[k]; }); segB.set(String(S.P.bu_mwd_claimed)); segC.set(String(S.P.company_holds_target)); paintCtl(); schedule(); });
 function paintCtl() {
   CTL.forEach(([k, , , , , f]) => { R.$('#o-' + k).textContent = fmt(f, S.P[k]); R.$(`.sl[data-k="${k}"]`).classList.toggle('changed', Math.abs(S.P[k] - DEF[k]) > 1e-12); });
 }
@@ -145,32 +151,35 @@ function compute() {
 }
 
 // ---------------------------------------------------------------- cards
+const qrow = (r) => r.quarters.map(([pl, q], k) => { const d = pl ? q / pl - 1 : 0; return `<span><b>Q${k + 1}</b> ${d >= 0 ? '+' : '−'}${R.pct(Math.abs(d), 1)}</span>`; }).join('') + `<span class="qn">against the plan${r.discount > 5e-4 ? ` · ${R.pct(r.discount, 1)} off from week ${S.P.catchup_from_week}` : ''}</span>`;
 function cards() {
   const { s, bu, co } = RES, P = S.P;
   const basis = P.bu_mwd_claimed >= 0.5 ? 'claimed' : 'physical';
   R.$('#card-bu').innerHTML = `<span class="eye">BU view · shipment target and MWD</span>
     <span class="pick">${longLab(bu)}</span>
-    <p class="why">${s.any_hit ? `The latest option that still ships ${R.pct(P.target_tolerance, 1)} of the target; every week later cancels fewer plans inside the window, so less ${basis} MWD.` : `No option reaches ${R.pct(P.target_tolerance, 1)} of the target; this one comes closest.`}</p>
-    <div class="row"><div><span class="l">Shipment attainment</span><span class="v">${R.pct(bu.attainment, 1)}</span></div>
+    <p class="why">${s.any_hit ? `The latest cutover that still ships 100% of the fiscal-year target (${R.pct(P.target_tolerance, 1)} of the plan) once Q3–Q4 catch up${bu.discount > 5e-4 ? ` (${R.pct(bu.discount, 1)} off from week ${P.catchup_from_week})` : ''}; every week later cancels fewer plans inside the window, so less ${basis} MWD.` : `No option reaches the fiscal-year target (${R.pct(P.target_tolerance, 1)} of the plan) even with the largest catch-up discount, so the target is lowered to the best reachable: ${R.pct(bu.attainment / P.target_tolerance, 1)} of it.`}</p>
+    <div class="row"><div><span class="l">Of the FY target</span><span class="v">${R.pct(bu.attainment / P.target_tolerance, 1)}</span></div>
       <div><span class="l">BU MWD (${basis})</span><span class="v">${M$(bu.bu_mwd)}</span></div>
-      <div><span class="l">Company cost</span><span class="v">${M$(bu.company_cost)}</span></div></div>`;
+      <div><span class="l">Company cost</span><span class="v">${M$(bu.company_cost)}</span></div></div>
+    <div class="qrow">${qrow(bu)}</div>`;
   R.$('#card-co').innerHTML = `<span class="eye">Company view · total cost of the year</span>
     <span class="pick">${longLab(co)}</span>
-    <p class="why">The lowest cost against a year with no tariff: tariff absorbed, margin on lost units, the cutover, expediting, the longer chain and conversion.</p>
-    <div class="row"><div><span class="l">Shipment attainment</span><span class="v">${R.pct(co.attainment, 1)}</span></div>
+    <p class="why">The lowest cost against a year with no tariff${P.company_holds_target >= 0.5 && s.any_hit ? ', among the options that still make the fiscal-year target' : ''}: tariff absorbed, margin on lost units, the catch-up discount, the cutover, expediting, the longer chain and conversion.</p>
+    <div class="row"><div><span class="l">Of the FY target</span><span class="v">${R.pct(co.attainment / P.target_tolerance, 1)}</span></div>
       <div><span class="l">BU MWD (${basis})</span><span class="v">${M$(co.bu_mwd)}</span></div>
-      <div><span class="l">Company cost</span><span class="v">${M$(co.company_cost)}</span></div></div>`;
+      <div><span class="l">Company cost</span><span class="v">${M$(co.company_cost)}</span></div></div>
+    <div class="qrow">${qrow(co)}</div>`;
   const same = s.bu === s.company;
   const dWeeks = (bu.cutover === null ? 52 : bu.cutover) - (co.cutover === null ? 52 : co.cutover);
   R.$('#gap').innerHTML = same
     ? `<span class="big">The views agree</span><span class="txt">Both pick ${phrase(bu)}.</span>`
-    : `<span class="big">${M$(s.gap)}</span><span class="txt">is what the BU's pick costs the company in the year. ${bu.cutover === null ? `The BU keeps the US volume in China this year; the company would move it in week ${co.cutover}` : co.cutover === null ? `The BU moves the volume in week ${bu.cutover}; the company would keep it in China this year` : `The BU moves ${Math.abs(dWeeks)} week${Math.abs(dWeeks) === 1 ? '' : 's'} ${dWeeks > 0 ? 'later' : 'earlier'} than the company would`}; its attainment is ${R.pct(bu.attainment, 1)} against ${R.pct(co.attainment, 1)}, its MWD ${M$(bu.bu_mwd)} against ${M$(co.bu_mwd)}.</span>`;
+    : `<span class="big">${M$(s.gap)}</span><span class="txt">is what the BU's pick costs the company in the year. ${bu.cutover === null ? `The BU keeps the US volume in China this year; the company would move it in week ${co.cutover}` : co.cutover === null ? `The BU moves the volume in week ${bu.cutover}; the company would keep it in China this year` : `The BU moves ${Math.abs(dWeeks)} week${Math.abs(dWeeks) === 1 ? '' : 's'} ${dWeeks > 0 ? 'later' : 'earlier'} than the company would`}; it ships ${R.pct(bu.attainment / S.P.target_tolerance, 1)} of the target against ${R.pct(co.attainment / S.P.target_tolerance, 1)}, its MWD ${M$(bu.bu_mwd)} against ${M$(co.bu_mwd)}.</span>`;
   R.$('#status').textContent = `${s.rows.length} options + ${TS.length * PS.length}-cell map in ${R.num(RES.ms, 0)} ms`;
 }
 
 // ---------------------------------------------------------------- charts
-const PARTS = [['absorbed', 'Tariff absorbed', (t) => t.bad], ['lost_margin', 'Margin on lost units', (t) => t.c[1]], ['transfer', 'Cutover: holding, relocation, MWD', (t) => t.c[3]],
-  ['expedite', 'Expediting', (t) => t.c[4]], ['chain', 'Longer chain', (t) => t.c[2]], ['conversion', 'Conversion uplift', (t) => t.c[5]]];
+const PARTS = [['absorbed', 'Tariff absorbed', (t) => t.bad], ['lost_margin', 'Margin on lost units', (t) => t.c[1]], ['promotion', 'Catch-up discount', (t) => t.c[4]],
+  ['transfer', 'Cutover: holding, relocation, MWD', (t) => t.c[3]], ['expedite', 'Expediting', (t) => t.c[6]], ['chain', 'Longer chain', (t) => t.c[2]], ['conversion', 'Conversion uplift', (t) => t.c[5]]];
 const xLabels = (t) => OPT.map((o) => ({ value: lab(o), textStyle: { fontWeight: o.id === RES.s.bu || o.id === RES.s.company ? 700 : 400, color: o.id === RES.s.company ? t.ink : o.id === RES.s.bu ? t.c[0] : t.muted } }));
 const pin = (t, id, name, color, y) => ({ coord: [OPT.findIndex((o) => o.id === id), y], value: name, symbol: 'pin', symbolSize: 34, itemStyle: { color }, label: { color: t.panel, fontSize: 10, fontWeight: 700 } });
 const cCo = R.chart('c-co', (t) => {
@@ -191,18 +200,20 @@ const cBu = R.chart('c-bu', (t) => {
   const o = R.base(t);
   if (!RES) return o;
   const rows = RES.s.rows, P = S.P;
-  R.$('#h-bu').textContent = `Bars: BU MWD (${P.bu_mwd_claimed >= 0.5 ? 'claimed' : 'physical'}) · line: shipment attainment`;
-  const lo = Math.max(0, Math.floor(Math.min(P.target_tolerance, ...rows.map((r) => r.attainment)) * 50 - 1) / 50);
+  R.$('#h-bu').textContent = `Bars: BU MWD (${P.bu_mwd_claimed >= 0.5 ? 'claimed' : 'physical'}) · lines: year shipped, before and after the Q3–Q4 catch-up`;
+  const lo = Math.max(0, Math.floor(Math.min(P.target_tolerance, ...rows.map((r) => r.before_catch_up)) * 50 - 1) / 50);
+  const hiA = Math.max(1, Math.ceil(Math.max(P.target_tolerance, ...rows.map((r) => r.attainment)) * 50 + 0.5) / 50);
   return {
-    ...o, legend: { ...o.legend, data: ['BU MWD', 'Shipment attainment'] }, grid: { ...o.grid, top: 58 },
-    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const r = rows[ps[0].dataIndex]; return R.tip(t, [[t.c[0], 'BU MWD', M$(r.bu_mwd)], [t.ink, 'Shipment attainment', R.pct(r.attainment, 1)], [t.muted, 'Units short of the plan', R.num(r.lost_units)]], longLab(r)); } },
+    ...o, legend: { ...o.legend, data: ['BU MWD', 'Shipped after catch-up', 'Before catch-up'] }, grid: { ...o.grid, top: 58 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const r = rows[ps[0].dataIndex]; return R.tip(t, [[t.c[0], 'BU MWD', M$(r.bu_mwd)], [t.ink, 'Year shipped after catch-up', R.pct(r.attainment, 1)], [t.muted, 'Before catch-up', R.pct(r.before_catch_up, 1)], [t.c[4], 'Catch-up discount', R.pct(r.discount, 1)]], longLab(r)); } },
     xAxis: R.axis(t, { type: 'category', data: xLabels(t), splitLine: { show: false }, axisLabel: { fontFamily: t.fMono, fontSize: 11, interval: 0, rotate: 45 } }),
     yAxis: [R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + R.num(v / 1e6, 0) + 'M' } }),
-      R.axis(t, { type: 'value', min: lo, max: 1, splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => R.pct(v) } })],
+      R.axis(t, { type: 'value', min: lo, max: hiA, splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => R.pct(v) } })],
     series: [{ type: 'bar', name: 'BU MWD', barMaxWidth: 16, itemStyle: { color: t.c[0], opacity: 0.75, borderRadius: [3, 3, 0, 0] }, data: rows.map((r) => r.bu_mwd) },
-      { type: 'line', name: 'Shipment attainment', yAxisIndex: 1, symbol: 'circle', symbolSize: 5, lineStyle: { color: t.ink, width: 2 }, itemStyle: { color: t.ink },
-        data: rows.map((r) => ({ value: r.attainment, itemStyle: { color: r.attainment >= P.target_tolerance - 1e-12 ? t.ink : t.bad } })),
-        markLine: { silent: true, symbol: 'none', lineStyle: { color: t.bad, type: 'dashed' }, label: { formatter: 'target ' + R.pct(P.target_tolerance, 1), color: t.bad, fontSize: 11, position: 'insideEndTop' }, data: [{ yAxis: P.target_tolerance }] } }],
+      { type: 'line', name: 'Before catch-up', yAxisIndex: 1, symbol: 'none', lineStyle: { color: t.muted, width: 1.5, type: 'dashed' }, itemStyle: { color: t.muted }, data: rows.map((r) => r.before_catch_up) },
+      { type: 'line', name: 'Shipped after catch-up', yAxisIndex: 1, symbol: 'circle', symbolSize: 5, lineStyle: { color: t.ink, width: 2 }, itemStyle: { color: t.ink },
+        data: rows.map((r) => ({ value: r.attainment, itemStyle: { color: r.attainment >= P.target_tolerance - 1e-9 ? t.ink : t.bad } })),
+        markLine: { silent: true, symbol: 'none', lineStyle: { color: t.bad, type: 'dashed' }, label: { formatter: 'FY target = ' + R.pct(P.target_tolerance, 1) + ' of plan', color: t.bad, fontSize: 11, position: 'insideEndTop' }, data: [{ yAxis: P.target_tolerance }] } }],
   };
 });
 const cWk = R.chart('c-wk', (t) => {
@@ -215,7 +226,8 @@ const cWk = R.chart('c-wk', (t) => {
     tooltip: { ...o.tooltip, valueFormatter: (v) => R.num(v) + ' units' },
     xAxis: R.axis(t, { type: 'category', data: plan.map((_, w) => 'W' + w), splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, interval: 3 } }),
     yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.kunits } }),
-    series: [{ type: 'line', name: 'Plan before the tariff', symbol: 'none', lineStyle: { color: t.muted, width: 1.5, type: 'dashed' }, itemStyle: { color: t.muted }, data: plan },
+    series: [{ type: 'line', name: 'Plan before the tariff', symbol: 'none', lineStyle: { color: t.muted, width: 1.5, type: 'dashed' }, itemStyle: { color: t.muted }, data: plan,
+        markArea: { silent: true, itemStyle: { color: t.chip, opacity: 0.6 }, label: { color: t.muted, fontSize: 11, position: 'insideTop' }, data: [[{ name: 'catch-up', xAxis: 'W' + Math.min(IN.weeks - 1, S.P.catchup_from_week) }, { xAxis: 'W' + (IN.weeks - 1) }]] } },
       { type: 'line', name: 'BU pick', symbol: 'none', lineStyle: { color: t.c[0], width: 2.5 }, itemStyle: { color: t.c[0] }, data: RES.bu.weekly,
         markLine: RES.bu.cutover === null ? undefined : { silent: true, symbol: 'none', lineStyle: { color: t.c[0], type: 'dotted' }, label: { formatter: 'BU cutover', color: t.c[0], fontSize: 11 }, data: [{ xAxis: 'W' + RES.bu.cutover }] } },
       { type: 'line', name: 'Company pick', symbol: 'none', lineStyle: { color: t.ink, width: same ? 0 : 2 }, itemStyle: { color: t.ink }, data: RES.co.weekly,
@@ -250,11 +262,11 @@ cMap.inst && cMap.inst.on('click', (p) => {
 function ledger() {
   const { s } = RES, P = S.P;
   R.$('#h-led').textContent = `${R.pct(P.tariff_cn)} tariff · ${R.pct(P.passthrough)} into the price from week ${P.reprice_lag_weeks} · ramp ${P.ramp_weeks} weeks`;
-  R.$('#t-led').innerHTML = '<thead><tr><th class="txt">Cutover</th><th>Sell-in<small>units</small></th><th>Attainment</th><th>Claimed MWD<small>plans cancelled</small></th><th>Physical MWD<small>after relocation</small></th><th>BU MWD<small>+ longer window</small></th>' +
-    PARTS.map(([, n]) => `<th>${n.split(':')[0]}</th>`).join('') + '<th>Company cost</th></tr></thead><tbody>' +
+  R.$('#t-led').innerHTML = `<thead><tr><th class="txt">Cutover</th><th>Before catch-up<small>share of plan</small></th><th>Discount<small>from week ${P.catchup_from_week}</small></th><th>Sell-in<small>units</small></th><th>Year shipped</th><th>Claimed MWD<small>plans cancelled</small></th><th>Physical MWD<small>after relocation</small></th><th>BU MWD<small>+ longer window</small></th>' +
+    ` + PARTS.map(([, n]) => `<th>${n.split(':')[0]}</th>`).join('') + '<th>Company cost</th></tr></thead><tbody>' +
     s.rows.map((r) => { const b = r.id === s.bu, c = r.id === s.company;
       return `<tr class="${b ? 'bu' : ''} ${c ? 'co' : ''}"><td class="txt"><b>${r.cutover === null ? 'No transfer' : 'Week ' + r.cutover}</b>${b ? '<span class="tag bu">BU</span>' : ''}${c ? '<span class="tag co">CO</span>' : ''}</td>` +
-        `<td>${R.num(r.units)}</td><td class="${r.attainment < P.target_tolerance - 1e-12 ? 'miss' : ''}">${R.pct(r.attainment, 1)}</td><td>${M$(r.claimed_mwd)}</td><td>${M$(r.physical_mwd)}</td><td>${M$(r.bu_mwd)}</td>` +
+        `<td>${R.pct(r.before_catch_up, 1)}</td><td>${r.discount > 5e-4 ? R.pct(r.discount, 1) : '–'}</td><td>${R.num(r.units)}</td><td class="${r.attainment < P.target_tolerance - 1e-9 ? 'miss' : ''}">${R.pct(r.attainment, 1)}</td><td>${M$(r.claimed_mwd)}</td><td>${M$(r.physical_mwd)}</td><td>${M$(r.bu_mwd)}</td>` +
         PARTS.map(([k]) => `<td>${M$(r.parts[k])}</td>`).join('') + `<td><b>${M$(r.company_cost)}</b></td></tr>`; }).join('') + '</tbody>';
 }
 function insight() {
@@ -267,7 +279,7 @@ function insight() {
   const drivers = PARTS.map(([k, n]) => [n, d(k)]).filter(([, v]) => Math.abs(v) > 5e4).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 3);
   R.$('#insight').innerHTML = `
     <p><b>${s.bu === s.company ? `At these settings both views pick ${phrase(bu)}.` : `At these settings the BU picks ${phrase(bu)} and the company ${phrase(co)}; the BU's pick costs ${M$(s.gap)} in the year.`}</b> ${s.bu === s.company || !drivers.length ? '' : `Against the company's pick it changes ${drivers.map(([n, v]) => `${lc1(n)} by ${v >= 0 ? '+' : '−'}${M$(Math.abs(v))}`).join(', ')}.`}</p>
-    <p><b>Across the map the views disagree in ${dis.length} of ${flat.length} cases</b>, and in ${late} of them the BU moves later than the company. The gap is largest at a ${R.pct(TS[wi])} tariff with ${R.pct(PS[wj])} passed on (${M$(worst.gap)}): when the company absorbs the tariff the BU sees no lost units and only MWD from moving, so it stays, while the company pays the tariff. When the price carries the tariff, the shipment target pushes the BU to move early, sometimes earlier than the company needs.</p>
+    <p><b>Across the map the views disagree in ${dis.length} of ${flat.length} cases</b>, and in ${late} of them the BU moves later than the company. The gap is largest at a ${R.pct(TS[wi])} tariff with ${R.pct(PS[wj])} passed on (${M$(worst.gap)}): when the company absorbs the tariff the BU sees no lost units and only MWD from moving, so it stays, while the company pays the tariff. When the price carries the tariff the BU still waits, and makes the year with a Q3–Q4 discount that the company pays${bu.discount > 5e-4 ? ` (here ${R.pct(bu.discount, 1)} off from week ${P.catchup_from_week}, ${M$(bu.parts.promotion)})` : ''}.</p>
     <p><b>Claimed against physical MWD.</b> Cutting over in week 0 cancels ${M$(RES.by.C0.claimed_mwd)} of plans inside the window, all of it claimed MWD for the BU, while relocation leaves ${M$(RES.by.C0.physical_mwd)} of physical MWD and ${M$(RES.by.C0.parts.transfer)} of holding and relocation for the company. Switch the BU to physical MWD to see how much of the disagreement is the counting rule.</p>`;
 }
 function draw() {

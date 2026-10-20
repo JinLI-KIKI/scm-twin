@@ -211,12 +211,25 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
 - Counted as physical MWD (after relocation) the BU's MWD from a cutover is almost zero, so
   most of the disagreement is the counting rule (R1), not the material.
 
+**Afternoon — the fiscal-year target rule (Q32 answered):**
+- The BU must ship 100% of the fiscal-year target and usually beats it, so the pre-tariff plan
+  sits above it (modelled 3%, Q33). The annual target is not lowered; the rhythm moves instead:
+  Q1 and Q2 come in lower and Q3 or Q4 is raised. Modelled as a channel discount from week 26,
+  as large as needed to close the gap (up to 10%), a company cost (R45). The target is lowered
+  only when even the cap cannot close it. The company holds the target too and picks the
+  cheapest option that reaches it.
+- Result at a 25% tariff, fully in the price: the BU waits until week 20 and needs 7% off in
+  Q3–Q4 ($3.4M) to make the year; the company would move in week 9 and need no discount. The
+  BU's pick costs $2.8M. With the tariff absorbed by the company the BU stays in China and the
+  company moves in week 0 ($8.9M).
+- Parity: 1,770 values identical, with the catch-up.
+
 ## Next — Day 6
 
 - **Jin to judge:** the take-or-pay fee and commitment (Q28), ramp months by mode and rush
   premium (Q29), own-plant overhead and labour share.
 
 - **Formula and algorithm review with Jin**, module by module (spec in `docs/models/`).
-- **Jin to judge Module 5:** target tolerance (Q32), the BU pick rule, pass-through and the
-  repricing lag, elasticity by model (Q17).
+- **Jin to judge Module 5:** how far the plan beats the target and the catch-up discount cap
+  (Q33), pass-through and the repricing lag, elasticity by model (Q17).
 - Then Roadmap A3, Module 6: new-site ramp and risk board hedge.

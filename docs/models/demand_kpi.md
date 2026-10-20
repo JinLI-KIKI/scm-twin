@@ -33,15 +33,32 @@ conversion = Σ q × (1 − china) × conversion_CN × conv_uplift
 transfer   = physical MWD + holding + relocation + rework at cutover C (Module 2; 0 after week 16)
 ```
 
-## 3. Two scorecards
+## 3. Catch-up in Q3–Q4 (R45)
+
+The fiscal-year target is `target = target_share × Σ q0` (the plan sits above the target). A
+shortfall `gap = target − units` is closed by a discount `d` on every unit from week
+`catchup_from_week` (26 = start of Q3), found by bisection:
 
 ```
-company cost = absorbed + lost + transfer + expedite + chain + conversion
+Σ_m H2_m × ((1 − d)^elasticity_m − 1) = gap,   0 ≤ d ≤ max_promo_discount
+q(w) ← q(w) × (1 − d)^elasticity   for w ≥ catchup_from_week
+promotion = Σ_{w ≥ catchup} q × d × price
+```
+
+`H2_m` = units of model m in the catch-up weeks before the discount. If the cap is not enough,
+`d` = cap and the year ends below target. Paid tariff, recovered tariff and lost margin are summed
+on the units after the discount (lost margin turns negative when the year sells above plan).
+
+## 4. Two scorecards
+
+```
+company cost = absorbed + lost + promotion + transfer + expedite + chain + conversion
 BU MWD       = claimed MWD (plans cancelled in weeks C..15 at full BOM value) + eol     default
              = physical MWD + eol                                                     switch
-BU pick      = among options with attainment ≥ target_tolerance: lowest BU MWD (the latest one)
-               none reaches it: highest attainment
-company pick = lowest company cost
+BU pick      = among options with units ≥ target: lowest BU MWD (the latest one)
+               none reaches it: highest units (the target is lowered to that)
+company pick = lowest company cost among options with units ≥ target (company_holds_target = 1)
+               or among all options (0, and when none reaches the target)
 gap          = company cost(BU pick) − company cost(company pick)
 ```
 
@@ -51,4 +68,5 @@ The map repeats the two picks over tariff 0–50% × pass-through 0–100%.
 
 One fiscal year only: the tariff saved after the year is on the business-case page (Module 3).
 Sell-in equals demand at the new price (no channel stock, Module 4). The target is not reset when
-the price rises. Elasticity is the same for every model.
+the price rises; quarter targets are re-phased only through the catch-up. Elasticity is the same
+for every model (Q17).

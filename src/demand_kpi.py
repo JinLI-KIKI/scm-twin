@@ -22,12 +22,20 @@ Weekly, for model m (US share of its lifecycle demand q0) and week w:
   rise(w)   = passthrough x tariff x china(w)    from reprice_lag_weeks on (0 before)
   q(w)      = q0(w) x (1 + rise / price)^elasticity
   paid      = q x tariff x china ;  recovered = q x rise ;  absorbed = paid - recovered
-  lost      = (q0 - q) x price x gross_margin
+  lost      = (q0 - q) x price x gross_margin                 (negative when the catch-up sells above plan)
 
-BU pick: the latest option that still reaches target_tolerance of the shipment target, with the
-lowest BU MWD among those (latest = least MWD); if none reaches it, the one closest to target.
-Company pick: the lowest total cost. Where they differ, the gap is what the BU's KPIs cost the
-company in the year.
+Fiscal-year target (R42, R45): 100% of the pre-tariff plan in sell-in units, not lowered. A
+shortfall in the first half is re-phased: Q1 and Q2 come in lower and Q3 and Q4 must sell more,
+with a channel price discount d on every unit from catchup_from_week on, large enough to close
+the gap (capped at max_promo_discount):
+  sum over models of H2_units x ((1 - d)^elasticity - 1) = target x plan - units
+  promotion = sum of H2 units x d x price
+Only when even the cap cannot close it is the target lowered to what can be reached.
+
+BU pick: among the options that reach the target, the one with the lowest BU MWD (the latest);
+if none does, the one closest to target. Company pick: the lowest total cost, among the options
+that reach the target when the company holds the fiscal-year target too (default), else of all.
+Where they differ, the gap is what the BU's KPIs cost the company in the year.
 
 src/dash/dk_engine.js is the same model for the browser; tests/test_dk_parity.py checks it.
 Run:  python3 src/demand_kpi.py
@@ -89,28 +97,69 @@ def china_share(w, cutover, ramp):
     return max(0.0, 1.0 - (w - cutover) / ramp) if ramp > 0 else 0.0
 
 
+def catch_up(inp, P, base, gap):
+    """Discount d on every unit from catchup_from_week on that sells `gap` extra units in the year,
+    capped at max_promo_discount (R45). base[i][w] = units of model i before the discount."""
+    cw = int(P["catchup_from_week"])
+    h2 = [sum(base[i][cw:]) for i in range(len(inp["models"]))]
+    extra = lambda d: sum(h * ((1 - d) ** m["elasticity"] - 1) for h, m in zip(h2, inp["models"]))
+    if gap <= 1e-9 or sum(h2) <= 0:
+        return 0.0
+    hi = P["max_promo_discount"]
+    if extra(hi) <= gap:
+        return hi
+    lo = 0.0
+    for _ in range(50):
+        mid = (lo + hi) / 2
+        if extra(mid) < gap:
+            lo = mid
+        else:
+            hi = mid
+    return hi
+
+
 def evaluate(inp, P, opt):
-    """Fiscal-year figures for one option."""
+    """Fiscal-year figures for one option, including the second-half catch-up (R45)."""
     C = opt["cutover"]
     tariff_rate = P["tariff_cn"] * (1 - P["exporter_absorb"])
-    plan = units = paid = recovered = lost = conv_units = 0.0
-    weekly = [0.0] * inp["weeks"]
+    base, plan, before = [], 0.0, 0.0
     for m in inp["models"]:
         tariff = tariff_rate * m["customs_value"]
+        row = []
+        for w in range(inp["weeks"]):
+            q0 = m["demand"][w]
+            ch = china_share(w, C, P["ramp_weeks"])
+            rise = P["passthrough"] * tariff * ch if w >= P["reprice_lag_weeks"] else 0.0
+            row.append(q0 * (1 + rise / m["price"]) ** m["elasticity"] if q0 > 0 else 0.0)
+            plan += q0
+        base.append(row)
+        before += sum(row)
+    disc = catch_up(inp, P, base, P["target_tolerance"] * plan - before)
+    cw = int(P["catchup_from_week"])
+    units = paid = recovered = lost = conv_units = promo = 0.0
+    weekly = [0.0] * inp["weeks"]
+    quarters = [[0.0, 0.0] for _ in range(4)]          # [plan, sell-in] per quarter of 13 weeks
+    for i, m in enumerate(inp["models"]):
+        tariff = tariff_rate * m["customs_value"]
+        lift = (1 - disc) ** m["elasticity"] if disc > 0 else 1.0
         for w in range(inp["weeks"]):
             q0 = m["demand"][w]
             if q0 <= 0:
                 continue
             ch = china_share(w, C, P["ramp_weeks"])
             rise = P["passthrough"] * tariff * ch if w >= P["reprice_lag_weeks"] else 0.0
-            q = q0 * (1 + rise / m["price"]) ** m["elasticity"]
-            plan += q0
+            q = base[i][w] * (lift if w >= cw else 1.0)
             units += q
             weekly[w] += q
+            k = min(3, w // 13)
+            quarters[k][0] += q0
+            quarters[k][1] += q
             paid += q * tariff * ch
             recovered += q * rise
             lost += (q0 - q) * m["price"] * m["gross_margin"]
             conv_units += q * (1 - ch)
+            if w >= cw:
+                promo += q * disc * m["price"]
     cs = inp["case"]
     moved = C is not None and C < inp["weeks"]
     frac = (inp["weeks"] - C) / inp["weeks"] if moved else 0.0
@@ -119,24 +168,29 @@ def evaluate(inp, P, opt):
     expedite = P["expedite_usd_per_unit"] * cs["weekly_units"] * cs["lt_adder"] if moved else 0.0
     conv = conv_units * cs["conv_cost"] * P["conv_uplift"]
     transfer = opt["mwd"] + opt["holding"] + opt["relocation"] + opt["rework"]
-    parts = {"absorbed": paid - recovered, "lost_margin": lost, "transfer": transfer, "expedite": expedite,
-             "chain": chain, "conversion": conv}
+    parts = {"absorbed": paid - recovered, "lost_margin": lost, "promotion": promo, "transfer": transfer,
+             "expedite": expedite, "chain": chain, "conversion": conv}
     bu_mwd = (opt["claimed_mwd"] if P["bu_mwd_claimed"] >= 0.5 else opt["mwd"]) + eol
     return {"id": opt["id"], "cutover": C, "plan": plan, "units": units, "attainment": units / plan if plan else 1.0,
+            "before_catch_up": before / plan if plan else 1.0, "discount": disc, "quarters": quarters,
             "lost_units": plan - units, "tariff_paid": paid, "recovered": recovered, "bu_mwd": bu_mwd,
             "claimed_mwd": opt["claimed_mwd"], "physical_mwd": opt["mwd"], "eol_mwd": eol,
             "parts": parts, "company_cost": sum(parts.values()), "weekly": weekly}
 
 
 def score(inp, P):
+    """BU: lowest MWD among the options that reach the target after the catch-up (the latest one);
+    none does -> the target is lowered to the best reachable. Company: lowest cost, among the
+    options that reach the target when it holds the fiscal-year target too (R42)."""
     rows = [evaluate(inp, P, o) for o in inp["options"]]
     order = lambda r: inp["weeks"] + 1 if r["cutover"] is None else r["cutover"]
-    hit = [r for r in rows if r["attainment"] >= P["target_tolerance"] - 1e-12]
+    hit = [r for r in rows if r["attainment"] >= P["target_tolerance"] - 1e-9]
     if hit:
         bu = min(hit, key=lambda r: (r["bu_mwd"], -order(r)))
     else:
         bu = max(rows, key=lambda r: (r["attainment"], -r["bu_mwd"]))
-    co = min(rows, key=lambda r: (r["company_cost"], order(r)))
+    pool = hit if (hit and P["company_holds_target"] >= 0.5) else rows
+    co = min(pool, key=lambda r: (r["company_cost"], order(r)))
     return {"rows": rows, "bu": bu["id"], "company": co["id"], "gap": bu["company_cost"] - co["company_cost"],
             "any_hit": bool(hit)}
 
@@ -162,15 +216,17 @@ def main():
     P = inp["P"]
     s = score(inp, P)
     print(f"== Fiscal year with a {P['tariff_cn']:.0%} US tariff on China-made laptops, "
-          f"{P['passthrough']:.0%} passed into the price from week {P['reprice_lag_weeks']:.0f}")
-    print(f"  {'option':<8}{'units':>9}{'attain':>8}{'BU MWD':>10}{'claimed':>10}{'absorbed':>10}"
-          f"{'lost mgn':>10}{'transfer':>10}{'chain+':>10}{'company':>10}")
+          f"{P['passthrough']:.0%} passed into the price from week {P['reprice_lag_weeks']:.0f}; target "
+          f"{P['target_tolerance']:.0%}, catch-up from week {P['catchup_from_week']:.0f} with up to "
+          f"{P['max_promo_discount']:.0%} off")
+    print(f"  {'option':<8}{'units':>9}{'before':>8}{'disc':>6}{'attain':>8}{'BU MWD':>10}{'absorbed':>10}"
+          f"{'lost mgn':>10}{'promo':>9}{'transfer':>10}{'chain+':>10}{'company':>10}")
     for r in s["rows"]:
         p = r["parts"]
         mark = (" <- BU" if r["id"] == s["bu"] else "") + (" <- company" if r["id"] == s["company"] else "")
-        print(f"  {r['id']:<8}{r['units']:>9,.0f}{r['attainment']:>8.1%}{r['bu_mwd'] / 1e6:>9.2f}M"
-              f"{r['claimed_mwd'] / 1e6:>9.2f}M{p['absorbed'] / 1e6:>9.2f}M{p['lost_margin'] / 1e6:>9.2f}M"
-              f"{p['transfer'] / 1e6:>9.2f}M{(p['chain'] + p['expedite'] + p['conversion']) / 1e6:>9.2f}M"
+        print(f"  {r['id']:<8}{r['units']:>9,.0f}{r['before_catch_up']:>8.1%}{r['discount']:>6.1%}{r['attainment']:>8.1%}"
+              f"{r['bu_mwd'] / 1e6:>9.2f}M{p['absorbed'] / 1e6:>9.2f}M{p['lost_margin'] / 1e6:>9.2f}M"
+              f"{p['promotion'] / 1e6:>8.2f}M{p['transfer'] / 1e6:>9.2f}M{(p['chain'] + p['expedite'] + p['conversion']) / 1e6:>9.2f}M"
               f"{r['company_cost'] / 1e6:>9.2f}M{mark}")
     by = {r["id"]: r for r in s["rows"]}
     print(f"\n  BU pick: {label(by[s['bu']])} · company pick: {label(by[s['company']])} · "

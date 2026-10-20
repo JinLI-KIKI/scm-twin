@@ -1,10 +1,13 @@
 key,value,status,note
-tariff_cn,0.25,PLACEHOLDER,"Extra US tariff on China-made laptops from week 0 of the fiscal year (scenario; 20% was paid Mar-Nov 2025)"
-passthrough,1.0,WEB-DERIVED,"Share of the tariff the brand puts into its channel price (Acer raised US list prices 10% for the 10% China tariff of Feb 2025; Asus 6.7-9% in Mar 2025)"
+tariff_cn,0.25,PLACEHOLDER,Extra US tariff on China-made laptops from week 0 of the fiscal year (scenario; 20% was paid Mar-Nov 2025)
+passthrough,1.0,WEB-DERIVED,Share of the tariff the brand puts into its channel price (Acer raised US list prices 10% for the 10% China tariff of Feb 2025; Asus 6.7-9% in Mar 2025)
 reprice_lag_weeks,2,WEB-DERIVED,"Weeks from the tariff to the new channel price; the brand absorbs the tariff until then (10% tariff on 4 Feb 2025, Acer price rise reported 18 Feb)"
-exporter_absorb,0.04,WEB,"Share of a US tariff absorbed by foreign exporters through lower prices; the importer pays the rest (Kiel Institute: about 4%)"
+exporter_absorb,0.04,WEB,Share of a US tariff absorbed by foreign exporters through lower prices; the importer pays the rest (Kiel Institute: about 4%)
 ramp_weeks,12,PLACEHOLDER,"Weeks for the new site to cover the region's volume after cutover, linear; China builds the rest and pays the tariff (Module 3, strong GSM 8-16)"
-target_tolerance,0.98,PLACEHOLDER,"Share of the fiscal-year shipment target (sell-in units) the BU must reach to count it as hit (Q32)"
+target_tolerance,0.97,PRACTITIONER (rule) / PLACEHOLDER (size),"Fiscal-year shipment target (sell-in units) as a share of the pre-tariff plan. The BU must ship 100% of the target and usually beats it, so the plan sits above it: about 3% (size Q33). The annual target is not lowered unless it truly cannot be reached (Q32)"
+catchup_from_week,26,PRACTITIONER,"The first-half shortfall is re-phased into Q3 and Q4 (Q1 and Q2 targets lowered, Q3 or Q4 raised): the catch-up runs from this week (start of Q3) to year end"
+max_promo_discount,0.10,PLACEHOLDER,Largest channel price discount the BU can use in the catch-up weeks; beyond it the target is lowered (Q33)
+company_holds_target,1,PRACTITIONER,"1 = the company also holds the fiscal-year target (the fiscal year concerns all of the company), so it only picks among options that reach it; 0 = pure cost"
 bu_mwd_claimed,1,PRACTITIONER (R1 / R8),"1 = the BU KPI counts claimed MWD: every plan cancelled inside the liability window at full BOM value; 0 = physical MWD after netting, relocation and rework"
 conv_uplift,0.075,PRACTITIONER,"New-site conversion cost uplift, midpoint of 5-10% (R20)"
 expedite_usd_per_unit,6,PLACEHOLDER,"Parts expediting per unit while the +4 week lead time is not yet covered, strong GSM (Module 3)"
