@@ -21,11 +21,11 @@ yield_tau_weeks,4,PLACEHOLDER,Weeks for the yield gap to fall to about a third (
 scrap_share_of_bom,0.3,PLACEHOLDER,"Cost of a unit that fails first pass, as a share of its BOM value, after rework and salvage (R16: yield loss consumes material)"
 ramp_tariff,0.25,PLACEHOLDER,"Extra US tariff on China-made units while China covers the gap (scenario, as Module 5)"
 ramp_runs,1000,DESIGN,Monte Carlo runs for the ramp
-board_cover_std_weeks,4,PLACEHOLDER,Weeks of demand the ODM builds into boards per SMT run of a model by default (about a month; Q37)
+board_cover_std_weeks,8,PRACTITIONER,"Weeks of demand the ODM builds into boards per SMT run of a model by default: about 8 weeks, and the brand can push board builds later (Q37)"
 forecast_mape_16w,0.32,PRACTITIONER (virtualized),Forecast error at the 16-week window: accuracy 68% (Module 3); error falls with the square root of the horizon
 demand_noise,0.10,PLACEHOLDER,Week-to-week noise of actual demand around the plan
-capacity_cut_strong,0.35,PRACTITIONER (R19) / CALIBRATED,"Share of reserved SMT capacity the ODM takes away when a model is loaded for no weeks ahead, strong GSM; scales with (standard cover - cover) / standard cover. Set so that, as in practice (R19), a steady model keeps the standard cover while uncertain models are stretched"
-capacity_cut_weak,0.80,PRACTITIONER (R19) / PLACEHOLDER (size),"Same with a weak GSM: the ODM gives the capacity to other customers, so stretching does not pay for any model (R19: needs a strong GSM)"
+capacity_cut_strong,0.35,PRACTITIONER (direction R19) / PLACEHOLDER (size),"Share of reserved SMT capacity the ODM takes away when a model is loaded for no weeks ahead, strong GSM; scales with (standard cover - cover) / standard cover (R19; size open, Q38)"
+capacity_cut_weak,0.80,PRACTITIONER (R19) / PLACEHOLDER (size),"Same with a weak GSM: the ODM gives the capacity to other customers, so pushing board builds back pays less (R19: needs a strong GSM; size open, Q38)"
 smt_flex,0.20,PLACEHOLDER,"Rush SMT capacity the ODM can add during a run, share of the planned volume of the run's weeks"
 rush_premium_usd,8,PLACEHOLDER,Extra cost per board built in a rush run
 setup_usd_per_run,1500,PLACEHOLDER,Changeover and setup cost per SMT run of a model

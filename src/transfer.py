@@ -57,11 +57,12 @@ def run_transfer(region, cutover, tariff_old, tariff_new=0.0, relocate=True,
     dem = lambda s, w: E.sku_demand(s, w, models, locales)
     model_of = lambda s: s.rsplit("_", 1)[0]
 
-    hit = {s for s in bom if s.endswith("_" + region)}
+    order = [s for s in bom if s.endswith("_" + region)]   # iterate a list: same sum order on every run
+    hit = set(order)                                         # membership tests only
 
     # ---- tariff inside the liability window (weeks beyond are identical for every C)
     tariff = 0.0
-    for s in hit:
+    for s in order:
         v = models[model_of(s)]["customs_value"]
         for w in range(window):
             rate = tariff_old if w < cutover else tariff_new
@@ -70,7 +71,7 @@ def run_transfer(region, cutover, tariff_old, tariff_new=0.0, relocate=True,
     # ---- freed material: cancelled plans at the old factory, weeks C..window-1
     freed_loose = defaultdict(float)
     freed_boards = defaultdict(float)          # model -> boards already built
-    for s in hit:
+    for s in order:
         for w in range(cutover, window):
             u = dem(s, w)
             built = w < ahead

@@ -50,7 +50,7 @@ from prng import PortableRandom
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
-COVERS = [1, 2, 3, 4, 6, 8]
+COVERS = [1, 2, 3, 4, 5, 6, 7, 8]
 WEEKS = 52
 RAMP_WEEKS = 40
 

@@ -271,12 +271,16 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   line allows) brings it to 7.7 and saves $0.9M (leakage $2.86M → $1.63M).
 - Part B (R47): boards per SMT run of 1–8 weeks of forecast. Boards strand at full value when a
   model ends or is cut, loose parts migrate; short runs cost setups and the SMT capacity the ODM
-  keeps back. With the capacity cut set so a steady model keeps the standard 4 weeks (R19),
-  the model returns: P1-14 4 weeks, P1-16 (sold below plan) 3 weeks, P2-14 (new) 3 weeks. With
-  a weak GSM no model is stretched.
+  keeps back. First run with a 4-week standard: P1-14 4 weeks, P1-16 (sold below plan) 3, P2-14
+  (new) 3; with a weak GSM no model is stretched.
 - `src/dash/rb_engine.js` + `tests/test_rb_parity.py` (726 values identical); new page
   `docs/ramp.html` with every input as a slider, per-model risk sliders, the ramp band, cost
   by pull-in, the gates, cost by cover per model and the board ledger.
+
+- Q37 answered: the ODM builds about 8 weeks of boards per SMT run, and board builds can be
+  pushed later. With the 8-week standard (covers 1–8 weeks): strong GSM → P1-14 6 weeks,
+  P1-16 and P2-14 5 weeks; weak GSM → P1-14 and P2-14 7, P1-16 6. The capacity the ODM takes
+  back stays a placeholder (Q38).
 
 ## Next — Day 6
 
@@ -286,6 +290,6 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
 - **Formula and algorithm review with Jin**, module by module (spec in `docs/models/`).
 - **Jin to judge Module 5:** how far the plan beats the target (Q33), pass-through and the
   repricing lag, elasticity by model (Q17).
-- **Jin to judge Module 6:** ODM standard board cover and capacity response (Q37), slip sizes,
-  pull-in cost, yield ramp.
+- **Jin to judge Module 6:** capacity the ODM takes back when board builds are pushed (Q38),
+  slip sizes, pull-in cost, yield ramp.
 - Then Roadmap A4: the full week-by-week run across Modules 1–6.

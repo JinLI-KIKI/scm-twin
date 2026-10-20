@@ -10,25 +10,31 @@
      6     9.2   7.0   8.7  12.9      1.80M    0.29M    0.23M      2.32M
      7     8.2   6.0   7.7  11.9      1.63M    0.30M    0.29M      2.22M  <- best
 
-== Part B, board-build cover per SMT run (standard 4 weeks), 400 runs
-  P1-14 (normal): recommended cover 4 weeks
-    cover 1: expected $1,086k (P90 $1,264k) · setups 45k · rush 218k · lost 824k · carry 0k · stranded 0k (0 boards)
-    cover 2: expected $444k (P90 $595k) · setups 22k · rush 178k · lost 210k · carry 34k · stranded 0k (0 boards)
-    cover 3: expected $230k (P90 $308k) · setups 15k · rush 97k · lost 25k · carry 89k · stranded 5k (30 boards)
-    cover 4: expected $228k (P90 $278k) · setups 12k · rush 35k · lost 1k · carry 162k · stranded 18k (112 boards)
-    cover 6: expected $419k (P90 $678k) · setups 8k · rush 33k · lost 1k · carry 272k · stranded 105k (651 boards)
+== Part B, board-build cover per SMT run (standard 8 weeks), 400 runs
+  P1-14 (normal): recommended cover 6 weeks
+    cover 1: expected $1,522k (P90 $1,709k) · setups 45k · rush 226k · lost 1,252k · carry 0k · stranded 0k (0 boards)
+    cover 2: expected $1,055k (P90 $1,280k) · setups 22k · rush 221k · lost 787k · carry 25k · stranded 0k (0 boards)
+    cover 3: expected $696k (P90 $917k) · setups 15k · rush 208k · lost 414k · carry 59k · stranded 0k (0 boards)
+    cover 4: expected $475k (P90 $652k) · setups 12k · rush 180k · lost 180k · carry 102k · stranded 0k (0 boards)
+    cover 5: expected $366k (P90 $493k) · setups 9k · rush 142k · lost 61k · carry 153k · stranded 1k (8 boards)
+    cover 6: expected $350k (P90 $441k) · setups 8k · rush 98k · lost 17k · carry 216k · stranded 13k (79 boards)
+    cover 7: expected $376k (P90 $428k) · setups 7k · rush 55k · lost 6k · carry 294k · stranded 14k (88 boards)
     cover 8: expected $507k (P90 $762k) · setups 6k · rush 32k · lost 1k · carry 363k · stranded 105k (651 boards)
-  P1-16 (risky): recommended cover 3 weeks
-    cover 1: expected $468k (P90 $599k) · setups 42k · rush 74k · lost 352k · carry 0k · stranded 0k (1 boards)
-    cover 2: expected $216k (P90 $332k) · setups 21k · rush 54k · lost 108k · carry 17k · stranded 15k (94 boards)
-    cover 3: expected $163k (P90 $282k) · setups 14k · rush 26k · lost 20k · carry 47k · stranded 55k (339 boards)
-    cover 4: expected $221k (P90 $465k) · setups 11k · rush 12k · lost 5k · carry 85k · stranded 107k (655 boards)
-    cover 6: expected $354k (P90 $614k) · setups 7k · rush 10k · lost 2k · carry 139k · stranded 195k (1,193 boards)
+  P1-16 (risky): recommended cover 5 weeks
+    cover 1: expected $630k (P90 $776k) · setups 42k · rush 81k · lost 507k · carry 0k · stranded 0k (0 boards)
+    cover 2: expected $426k (P90 $569k) · setups 21k · rush 76k · lost 307k · carry 12k · stranded 10k (61 boards)
+    cover 3: expected $304k (P90 $452k) · setups 14k · rush 67k · lost 169k · carry 29k · stranded 25k (155 boards)
+    cover 4: expected $262k (P90 $425k) · setups 11k · rush 53k · lost 82k · carry 54k · stranded 62k (378 boards)
+    cover 5: expected $261k (P90 $458k) · setups 9k · rush 37k · lost 31k · carry 83k · stranded 100k (612 boards)
+    cover 6: expected $284k (P90 $504k) · setups 7k · rush 23k · lost 10k · carry 114k · stranded 129k (789 boards)
+    cover 7: expected $354k (P90 $759k) · setups 7k · rush 14k · lost 5k · carry 155k · stranded 173k (1,059 boards)
     cover 8: expected $465k (P90 $774k) · setups 6k · rush 9k · lost 3k · carry 190k · stranded 257k (1,569 boards)
-  P2-14 (new): recommended cover 3 weeks
-    cover 1: expected $1,124k (P90 $1,447k) · setups 37k · rush 205k · lost 882k · carry 0k · stranded 0k (0 boards)
-    cover 2: expected $521k (P90 $739k) · setups 19k · rush 158k · lost 271k · carry 42k · stranded 31k (177 boards)
-    cover 3: expected $327k (P90 $428k) · setups 14k · rush 81k · lost 51k · carry 107k · stranded 73k (418 boards)
-    cover 4: expected $397k (P90 $376k) · setups 10k · rush 37k · lost 12k · carry 199k · stranded 139k (799 boards)
-    cover 6: expected $652k (P90 $527k) · setups 7k · rush 35k · lost 11k · carry 322k · stranded 276k (1,586 boards)
+  P2-14 (new): recommended cover 5 weeks
+    cover 1: expected $1,547k (P90 $1,913k) · setups 37k · rush 217k · lost 1,293k · carry 0k · stranded 0k (0 boards)
+    cover 2: expected $1,093k (P90 $1,440k) · setups 19k · rush 208k · lost 813k · carry 31k · stranded 23k (132 boards)
+    cover 3: expected $780k (P90 $1,106k) · setups 14k · rush 188k · lost 459k · carry 72k · stranded 46k (265 boards)
+    cover 4: expected $608k (P90 $885k) · setups 10k · rush 157k · lost 227k · carry 130k · stranded 85k (488 boards)
+    cover 5: expected $531k (P90 $730k) · setups 9k · rush 118k · lost 104k · carry 189k · stranded 111k (639 boards)
+    cover 6: expected $641k (P90 $635k) · setups 7k · rush 76k · lost 43k · carry 276k · stranded 239k (1,373 boards)
+    cover 7: expected $746k (P90 $593k) · setups 7k · rush 48k · lost 22k · carry 350k · stranded 318k (1,827 boards)
     cover 8: expected $768k (P90 $647k) · setups 6k · rush 33k · lost 10k · carry 443k · stranded 275k (1,582 boards)
