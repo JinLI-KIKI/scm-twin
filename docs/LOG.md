@@ -224,12 +224,27 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   company moves in week 0 ($8.9M).
 - Parity: 1,770 values identical, with the catch-up.
 
+**Evening — price points against MWD (Q33):**
+- Planners do not know the points: sales planning asks sales, sales negotiate them with the
+  channel, and the BU may have to fund them. So the BU now weighs the MWD it avoids by moving
+  later against the points it pays to catch up (R43, R45). Not a one-way rule: it depends on the
+  price of MWD (what $1 of MWD finally costs the BU), the price of the points (share the BU funds,
+  share that reaches the shelf, elasticity) and how much of the claimed MWD migrates.
+- New page section "What moves the BU's pick": the BU's cutover week across the MWD price and
+  one of migration share / BU share of points / points reaching the shelf; and "The BU's
+  balance": claimed, migrated, MWD cost, points and the total per key option.
+- At the defaults (25% tariff in the price, 50% migrates, $1 per $): the BU waits until week 16,
+  the company moves in week 9; the BU's pick costs the company $1.7M. With 80% or more
+  migrating, or MWD at $0.50 per $ or less, the BU picks the company's week.
+- Parity: 2,709 values identical.
+
 ## Next — Day 6
 
 - **Jin to judge:** the take-or-pay fee and commitment (Q28), ramp months by mode and rush
   premium (Q29), own-plant overhead and labour share.
 
 - **Formula and algorithm review with Jin**, module by module (spec in `docs/models/`).
-- **Jin to judge Module 5:** how far the plan beats the target and the catch-up discount cap
-  (Q33), pass-through and the repricing lag, elasticity by model (Q17).
+- **Jin to judge Module 5:** share of claimed MWD that migrates and what MWD finally costs the
+  BU (Q34), how far the plan beats the target (Q33), pass-through and the repricing lag,
+  elasticity by model (Q17).
 - Then Roadmap A3, Module 6: new-site ramp and risk board hedge.

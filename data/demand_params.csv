@@ -6,8 +6,11 @@ exporter_absorb,0.04,WEB,Share of a US tariff absorbed by foreign exporters thro
 ramp_weeks,12,PLACEHOLDER,"Weeks for the new site to cover the region's volume after cutover, linear; China builds the rest and pays the tariff (Module 3, strong GSM 8-16)"
 target_tolerance,0.97,PRACTITIONER (rule) / PLACEHOLDER (size),"Fiscal-year shipment target (sell-in units) as a share of the pre-tariff plan. The BU must ship 100% of the target and usually beats it, so the plan sits above it: about 3% (size Q33). The annual target is not lowered unless it truly cannot be reached (Q32)"
 catchup_from_week,26,PRACTITIONER,"The first-half shortfall is re-phased into Q3 and Q4 (Q1 and Q2 targets lowered, Q3 or Q4 raised): the catch-up runs from this week (start of Q3) to year end"
-max_promo_discount,0.10,PLACEHOLDER,Largest channel price discount the BU can use in the catch-up weeks; beyond it the target is lowered (Q33)
+max_promo_discount,0.10,PLACEHOLDER (Q33),"Largest channel price discount (price points) in the catch-up weeks. Planners do not know it: sales planning asks sales, and sales negotiate the points with the channel case by case (Q33); beyond it the target is lowered"
+bu_funds_support,1,PRACTITIONER,"Share of the catch-up price points the BU has to fund (the points may need to come from the BU), so the BU weighs it against its MWD"
+points_effect,1.0,PLACEHOLDER,Share of the price points that reaches the shelf price and moves units (the channel may keep part); the BU pays the full points
 company_holds_target,1,PRACTITIONER,"1 = the company also holds the fiscal-year target (the fiscal year concerns all of the company), so it only picks among options that reach it; 0 = pure cost"
-bu_mwd_claimed,1,PRACTITIONER (R1 / R8),"1 = the BU KPI counts claimed MWD: every plan cancelled inside the liability window at full BOM value; 0 = physical MWD after netting, relocation and rework"
+mwd_transferability,0.5,PLACEHOLDER (rule PRACTITIONER),"Share of the claimed MWD (plans cancelled inside the window, R1) that the BU expects to migrate before the year-end reconciliation: netted into other plans, other regions or moved to the new site (R8). 0 = all claimed MWD stays, 1 = down to the physical MWD of Module 2"
+mwd_cost_rate,1.0,PLACEHOLDER (rule PRACTITIONER),"What one dollar of MWD (at BOM value) costs the BU after settlement with the ODM, salvage or resale; the BU weighs it against the price points"
 conv_uplift,0.075,PRACTITIONER,"New-site conversion cost uplift, midpoint of 5-10% (R20)"
 expedite_usd_per_unit,6,PLACEHOLDER,"Parts expediting per unit while the +4 week lead time is not yet covered, strong GSM (Module 3)"

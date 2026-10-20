@@ -32,8 +32,15 @@ the gap (capped at max_promo_discount):
   promotion = sum of H2 units x d x price
 Only when even the cap cannot close it is the target lowered to what can be reached.
 
-BU pick: among the options that reach the target, the one with the lowest BU MWD (the latest);
-if none does, the one closest to target. Company pick: the lowest total cost, among the options
+Sales negotiate the discount (price points) with the channel and the BU usually funds it, so the
+BU trades MWD against points (R43, R45). Neither always wins; it depends on
+  what a dollar of MWD costs the BU     mwd_cost_rate
+  how much of it migrates               mwd_transferability (claimed -> physical MWD)
+  what a point costs and buys           bu_funds_support, points_effect, elasticity
+  BU cost = mwd_cost_rate x (claimed - t x (claimed - physical) + eol) + bu_funds_support x promotion
+
+BU pick: among the options that reach the target, the lowest BU MWD + BU-funded price support
+(ties: the latest); if none does, the one closest to target. Company pick: the lowest total cost, among the options
 that reach the target when the company holds the fiscal-year target too (default), else of all.
 Where they differ, the gap is what the BU's KPIs cost the company in the year.
 
@@ -102,7 +109,8 @@ def catch_up(inp, P, base, gap):
     capped at max_promo_discount (R45). base[i][w] = units of model i before the discount."""
     cw = int(P["catchup_from_week"])
     h2 = [sum(base[i][cw:]) for i in range(len(inp["models"]))]
-    extra = lambda d: sum(h * ((1 - d) ** m["elasticity"] - 1) for h, m in zip(h2, inp["models"]))
+    eff = P["points_effect"]                      # share of the points that reaches the shelf price
+    extra = lambda d: sum(h * ((1 - eff * d) ** m["elasticity"] - 1) for h, m in zip(h2, inp["models"]))
     if gap <= 1e-9 or sum(h2) <= 0:
         return 0.0
     hi = P["max_promo_discount"]
@@ -141,7 +149,7 @@ def evaluate(inp, P, opt):
     quarters = [[0.0, 0.0] for _ in range(4)]          # [plan, sell-in] per quarter of 13 weeks
     for i, m in enumerate(inp["models"]):
         tariff = tariff_rate * m["customs_value"]
-        lift = (1 - disc) ** m["elasticity"] if disc > 0 else 1.0
+        lift = (1 - P["points_effect"] * disc) ** m["elasticity"] if disc > 0 else 1.0
         for w in range(inp["weeks"]):
             q0 = m["demand"][w]
             if q0 <= 0:
@@ -170,29 +178,42 @@ def evaluate(inp, P, opt):
     transfer = opt["mwd"] + opt["holding"] + opt["relocation"] + opt["rework"]
     parts = {"absorbed": paid - recovered, "lost_margin": lost, "promotion": promo, "transfer": transfer,
              "expedite": expedite, "chain": chain, "conversion": conv}
-    bu_mwd = (opt["claimed_mwd"] if P["bu_mwd_claimed"] >= 0.5 else opt["mwd"]) + eol
+    # MWD as the BU weighs it (R43): claimed MWD less the share that migrates to other plans or
+    # the new site (transferability, down to the physical MWD), plus the longer window's EOL MWD,
+    # at what each dollar of MWD really costs the BU (mwd_cost_rate)
+    t = P["mwd_transferability"]
+    bu_mwd = opt["claimed_mwd"] - t * (opt["claimed_mwd"] - opt["mwd"]) + eol
+    bu_mwd_cost = P["mwd_cost_rate"] * bu_mwd
+    bu_support = P["bu_funds_support"] * promo          # the price points the BU funds (R45)
     return {"id": opt["id"], "cutover": C, "plan": plan, "units": units, "attainment": units / plan if plan else 1.0,
             "before_catch_up": before / plan if plan else 1.0, "discount": disc, "quarters": quarters,
             "lost_units": plan - units, "tariff_paid": paid, "recovered": recovered, "bu_mwd": bu_mwd,
+            "bu_mwd_cost": bu_mwd_cost, "bu_support": bu_support, "bu_cost": bu_mwd_cost + bu_support,
             "claimed_mwd": opt["claimed_mwd"], "physical_mwd": opt["mwd"], "eol_mwd": eol,
             "parts": parts, "company_cost": sum(parts.values()), "weekly": weekly}
 
 
 def score(inp, P):
-    """BU: lowest MWD among the options that reach the target after the catch-up (the latest one);
-    none does -> the target is lowered to the best reachable. Company: lowest cost, among the
+    """BU: among the options that reach the target after the catch-up, the lowest MWD plus the
+    price support the BU funds (ties: the latest); none does -> the target is lowered to the best
+    reachable. Company: lowest cost, among the
     options that reach the target when it holds the fiscal-year target too (R42)."""
     rows = [evaluate(inp, P, o) for o in inp["options"]]
     order = lambda r: inp["weeks"] + 1 if r["cutover"] is None else r["cutover"]
     hit = [r for r in rows if r["attainment"] >= P["target_tolerance"] - 1e-9]
     if hit:
-        bu = min(hit, key=lambda r: (r["bu_mwd"], -order(r)))
+        bu = min(hit, key=lambda r: (r["bu_cost"], -order(r)))
     else:
         bu = max(rows, key=lambda r: (r["attainment"], -r["bu_mwd"]))
     pool = hit if (hit and P["company_holds_target"] >= 0.5) else rows
     co = min(pool, key=lambda r: (r["company_cost"], order(r)))
     return {"rows": rows, "bu": bu["id"], "company": co["id"], "gap": bu["company_cost"] - co["company_cost"],
             "any_hit": bool(hit)}
+
+
+def bu_grid(inp, P, row_key, row_vals, col_key, col_vals):
+    """The BU's pick over two of its trade-off inputs (MWD price, transferability, points)."""
+    return [[score(inp, {**P, row_key: a, col_key: b})["bu"] for b in col_vals] for a in row_vals]
 
 
 def grid(inp, P, tariffs, passthroughs):

@@ -9,7 +9,8 @@ const DKE = (() => {
   function catchUp(inp, P, base, gap) {        // R45: discount from catchup_from_week that closes the gap
     const cw = Math.trunc(P.catchup_from_week);
     const h2 = base.map((row) => ssum(row.slice(cw)));
-    const extra = (d) => { let t = 0; inp.models.forEach((m, i) => { t += h2[i] * (Math.pow(1 - d, m.elasticity) - 1); }); return t; };
+    const eff = P.points_effect;
+    const extra = (d) => { let t = 0; inp.models.forEach((m, i) => { t += h2[i] * (Math.pow(1 - eff * d, m.elasticity) - 1); }); return t; };
     if (gap <= 1e-9 || ssum(h2) <= 0) return 0;
     let hi = P.max_promo_discount;
     if (extra(hi) <= gap) return hi;
@@ -39,7 +40,7 @@ const DKE = (() => {
     const quarters = [[0, 0], [0, 0], [0, 0], [0, 0]];
     inp.models.forEach((m, i) => {
       const tariff = tariffRate * m.customs_value;
-      const lift = disc > 0 ? Math.pow(1 - disc, m.elasticity) : 1;
+      const lift = disc > 0 ? Math.pow(1 - P.points_effect * disc, m.elasticity) : 1;
       for (let w = 0; w < inp.weeks; w++) {
         const q0 = m.demand[w];
         if (q0 <= 0) continue;
@@ -64,11 +65,14 @@ const DKE = (() => {
     const conv = convUnits * cs.conv_cost * P.conv_uplift;
     const transfer = opt.mwd + opt.holding + opt.relocation + opt.rework;
     const parts = { absorbed: paid - recovered, lost_margin: lost, promotion: promo, transfer, expedite, chain, conversion: conv };
-    const buMwd = (P.bu_mwd_claimed >= 0.5 ? opt.claimed_mwd : opt.mwd) + eol;
+    const tr = P.mwd_transferability;                     // R43: claimed -> physical as material migrates
+    const buMwd = opt.claimed_mwd - tr * (opt.claimed_mwd - opt.mwd) + eol;
+    const buMwdCost = P.mwd_cost_rate * buMwd;
+    const buSupport = P.bu_funds_support * promo;
     const companyCost = parts.absorbed + parts.lost_margin + parts.promotion + parts.transfer + parts.expedite + parts.chain + parts.conversion;
     return { id: opt.id, cutover: C, plan, units, attainment: plan ? units / plan : 1, before_catch_up: plan ? before / plan : 1, discount: disc, quarters,
       lost_units: plan - units,
-      tariff_paid: paid, recovered, bu_mwd: buMwd, claimed_mwd: opt.claimed_mwd, physical_mwd: opt.mwd, eol_mwd: eol,
+      tariff_paid: paid, recovered, bu_mwd: buMwd, bu_mwd_cost: buMwdCost, bu_support: buSupport, bu_cost: buMwdCost + buSupport, claimed_mwd: opt.claimed_mwd, physical_mwd: opt.mwd, eol_mwd: eol,
       parts, company_cost: companyCost, weekly };
   }
   function score(inp, P) {
@@ -77,7 +81,7 @@ const DKE = (() => {
     const hit = rows.filter((r) => r.attainment >= P.target_tolerance - 1e-9);
     let bu = null;
     if (hit.length) {
-      for (const r of hit) if (!bu || r.bu_mwd < bu.bu_mwd || (r.bu_mwd === bu.bu_mwd && -order(r) < -order(bu))) bu = r;
+      for (const r of hit) if (!bu || r.bu_cost < bu.bu_cost || (r.bu_cost === bu.bu_cost && -order(r) < -order(bu))) bu = r;
     } else {
       for (const r of rows) if (!bu || r.attainment > bu.attainment || (r.attainment === bu.attainment && -r.bu_mwd > -bu.bu_mwd)) bu = r;
     }
@@ -86,12 +90,15 @@ const DKE = (() => {
     for (const r of pool) if (!co || r.company_cost < co.company_cost || (r.company_cost === co.company_cost && order(r) < order(co))) co = r;
     return { rows, bu: bu.id, company: co.id, gap: bu.company_cost - co.company_cost, any_hit: hit.length > 0 };
   }
+  function buGrid(inp, P, rowKey, rowVals, colKey, colVals) {
+    return rowVals.map((a) => colVals.map((b) => score(inp, { ...P, [rowKey]: a, [colKey]: b }).bu));
+  }
   function grid(inp, P, tariffs, passthroughs) {
     return tariffs.map((t) => passthroughs.map((pt) => {
       const s = score(inp, { ...P, tariff_cn: t, passthrough: pt });
       return { bu: s.bu, company: s.company, gap: s.gap };
     }));
   }
-  return { chinaShare, evaluate, score, grid };
+  return { chinaShare, evaluate, score, grid, buGrid };
 })();
 if (typeof module !== 'undefined') module.exports = DKE;

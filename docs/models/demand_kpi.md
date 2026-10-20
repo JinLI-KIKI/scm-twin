@@ -40,8 +40,9 @@ shortfall `gap = target − units` is closed by a discount `d` on every unit fro
 `catchup_from_week` (26 = start of Q3), found by bisection:
 
 ```
-Σ_m H2_m × ((1 − d)^elasticity_m − 1) = gap,   0 ≤ d ≤ max_promo_discount
-q(w) ← q(w) × (1 − d)^elasticity   for w ≥ catchup_from_week
+Σ_m H2_m × ((1 − e × d)^elasticity_m − 1) = gap,   0 ≤ d ≤ max_promo_discount
+q(w) ← q(w) × (1 − e × d)^elasticity   for w ≥ catchup_from_week
+e = points_effect (share of the points that reaches the shelf price)
 promotion = Σ_{w ≥ catchup} q × d × price
 ```
 
@@ -53,9 +54,10 @@ on the units after the discount (lost margin turns negative when the year sells 
 
 ```
 company cost = absorbed + lost + promotion + transfer + expedite + chain + conversion
-BU MWD       = claimed MWD (plans cancelled in weeks C..15 at full BOM value) + eol     default
-             = physical MWD + eol                                                     switch
-BU pick      = among options with units ≥ target: lowest BU MWD (the latest one)
+BU MWD       = claimed − transferability × (claimed − physical) + eol
+               claimed = plans cancelled in weeks C..15 at full BOM value (R1); physical from Module 2
+BU cost      = mwd_cost_rate × BU MWD + bu_funds_support × promotion        MWD against points (R43)
+BU pick      = among options with units ≥ target: lowest BU cost (ties: the latest)
                none reaches it: highest units (the target is lowered to that)
 company pick = lowest company cost among options with units ≥ target (company_holds_target = 1)
                or among all options (0, and when none reaches the target)
