@@ -3055,10 +3055,10 @@
    ],
    "variant": "open",
    "passages": [
-    "malacca",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "malacca",
+    "suez"
    ]
   },
   "S:P_SHA>P_RTM:cape": {
@@ -5097,10 +5097,10 @@
    ],
    "variant": "open",
    "passages": [
-    "malacca",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "malacca",
+    "suez"
    ]
   },
   "S:P_SHA>P_FXT:cape": {
@@ -9940,8 +9940,8 @@
    ],
    "variant": "open",
    "passages": [
-    "ormuz",
-    "malacca"
+    "malacca",
+    "ormuz"
    ]
   },
   "S:P_SHA>P_KFK:open": {
@@ -11962,9 +11962,9 @@
    ],
    "variant": "open",
    "passages": [
-    "suez",
-    "gibraltar",
     "babalmandab",
+    "gibraltar",
+    "suez",
     "sunda"
    ]
   },
@@ -13174,9 +13174,9 @@
    ],
    "variant": "open",
    "passages": [
-    "suez",
-    "gibraltar",
     "babalmandab",
+    "gibraltar",
+    "suez",
     "sunda"
    ]
   },
@@ -18068,10 +18068,10 @@
    ],
    "variant": "open",
    "passages": [
-    "malacca",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "malacca",
+    "suez"
    ]
   },
   "S:P_HPH>P_RTM:cape": {
@@ -19392,10 +19392,10 @@
    ],
    "variant": "open",
    "passages": [
-    "malacca",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "malacca",
+    "suez"
    ]
   },
   "S:P_HPH>P_FXT:cape": {
@@ -22701,8 +22701,8 @@
    ],
    "variant": "open",
    "passages": [
-    "ormuz",
-    "malacca"
+    "malacca",
+    "ormuz"
    ]
   },
   "S:P_HPH>P_KFK:open": {
@@ -24304,9 +24304,9 @@
    ],
    "variant": "open",
    "passages": [
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "suez"
    ]
   },
   "S:P_PEN>P_RTM:cape": {
@@ -25426,9 +25426,9 @@
    ],
    "variant": "open",
    "passages": [
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "suez"
    ]
   },
   "S:P_PEN>P_FXT:cape": {
@@ -33368,8 +33368,8 @@
    ],
    "variant": "open",
    "passages": [
-    "south_africa",
-    "ormuz"
+    "ormuz",
+    "south_africa"
    ]
   },
   "S:P_SSZ>P_KFK:open": {
@@ -34379,8 +34379,8 @@
    ],
    "variant": "open",
    "passages": [
-    "ormuz",
-    "malacca"
+    "malacca",
+    "ormuz"
    ]
   },
   "T:F_AE>P_KFK": {
@@ -35715,10 +35715,10 @@
    ],
    "variant": "open",
    "passages": [
-    "ormuz",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "ormuz",
+    "suez"
    ]
   },
   "S:P_JEA>P_RTM:cape": {
@@ -36134,8 +36134,8 @@
    ],
    "variant": "cape",
    "passages": [
-    "south_africa",
-    "ormuz"
+    "ormuz",
+    "south_africa"
    ]
   },
   "S:P_KFK>P_RTM:cape": {
@@ -36931,9 +36931,9 @@
    ],
    "variant": "suez",
    "passages": [
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "suez"
    ]
   },
   "A:A_DWC>A_AMS": {
@@ -37637,10 +37637,10 @@
    ],
    "variant": "open",
    "passages": [
-    "ormuz",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "ormuz",
+    "suez"
    ]
   },
   "S:P_JEA>P_FXT:cape": {
@@ -38052,8 +38052,8 @@
    ],
    "variant": "cape",
    "passages": [
-    "south_africa",
-    "ormuz"
+    "ormuz",
+    "south_africa"
    ]
   },
   "S:P_KFK>P_FXT:cape": {
@@ -38841,9 +38841,9 @@
    ],
    "variant": "suez",
    "passages": [
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "suez"
    ]
   },
   "A:A_DWC>A_LHR": {
@@ -39375,8 +39375,8 @@
    ],
    "variant": "open",
    "passages": [
-    "ormuz",
-    "malacca"
+    "malacca",
+    "ormuz"
    ]
   },
   "S:P_KFK>P_YOK:open": {
@@ -40122,8 +40122,8 @@
    ],
    "variant": "open",
    "passages": [
-    "south_africa",
-    "ormuz"
+    "ormuz",
+    "south_africa"
    ]
   },
   "S:P_KFK>P_SSZ:open": {
@@ -41521,8 +41521,8 @@
    ],
    "variant": "open",
    "passages": [
-    "ormuz",
-    "malacca"
+    "malacca",
+    "ormuz"
    ]
   },
   "S:P_KFK>P_SIN:open": {
@@ -45198,10 +45198,10 @@
    "km": 19472,
    "nm": 10514,
    "passages": [
-    "malacca",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "malacca",
+    "suez"
    ],
    "from_port": "P_SHA",
    "to_port": "P_RTM",
@@ -45336,10 +45336,10 @@
    "km": 19369,
    "nm": 10458,
    "passages": [
-    "malacca",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "malacca",
+    "suez"
    ],
    "from_port": "P_SHA",
    "to_port": "P_FXT",
@@ -45863,8 +45863,8 @@
    "km": 10466,
    "nm": 5651,
    "passages": [
-    "ormuz",
-    "malacca"
+    "malacca",
+    "ormuz"
    ],
    "from_port": "P_SHA",
    "to_port": "P_JEA",
@@ -46131,9 +46131,9 @@
    "km": 16004,
    "nm": 8642,
    "passages": [
-    "suez",
-    "gibraltar",
     "babalmandab",
+    "gibraltar",
+    "suez",
     "sunda"
    ],
    "from_port": "P_JKT",
@@ -46269,9 +46269,9 @@
    "km": 15901,
    "nm": 8586,
    "passages": [
-    "suez",
-    "gibraltar",
     "babalmandab",
+    "gibraltar",
+    "suez",
     "sunda"
    ],
    "from_port": "P_JKT",
@@ -47064,10 +47064,10 @@
    "km": 17923,
    "nm": 9678,
    "passages": [
-    "malacca",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "malacca",
+    "suez"
    ],
    "from_port": "P_HPH",
    "to_port": "P_RTM",
@@ -47202,10 +47202,10 @@
    "km": 17820,
    "nm": 9622,
    "passages": [
-    "malacca",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "malacca",
+    "suez"
    ],
    "from_port": "P_HPH",
    "to_port": "P_FXT",
@@ -47729,8 +47729,8 @@
    "km": 8918,
    "nm": 4815,
    "passages": [
-    "ormuz",
-    "malacca"
+    "malacca",
+    "ormuz"
    ],
    "from_port": "P_HPH",
    "to_port": "P_JEA",
@@ -47998,9 +47998,9 @@
    "km": 14909,
    "nm": 8050,
    "passages": [
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "suez"
    ],
    "from_port": "P_PEN",
    "to_port": "P_RTM",
@@ -48134,9 +48134,9 @@
    "km": 14806,
    "nm": 7994,
    "passages": [
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "suez"
    ],
    "from_port": "P_PEN",
    "to_port": "P_FXT",
@@ -49458,8 +49458,8 @@
    "km": 15284,
    "nm": 8253,
    "passages": [
-    "south_africa",
-    "ormuz"
+    "ormuz",
+    "south_africa"
    ],
    "from_port": "P_SSZ",
    "to_port": "P_JEA",
@@ -49593,8 +49593,8 @@
    "km": 20904,
    "nm": 11287,
    "passages": [
-    "ormuz",
-    "malacca"
+    "malacca",
+    "ormuz"
    ],
    "from_port": "P_JEA",
    "to_port": "P_LAX",
@@ -49728,8 +49728,8 @@
    "km": 20456,
    "nm": 11045,
    "passages": [
-    "south_africa",
-    "ormuz"
+    "ormuz",
+    "south_africa"
    ],
    "from_port": "P_JEA",
    "to_port": "P_RTM",
@@ -49821,10 +49821,10 @@
    "km": 11598,
    "nm": 6262,
    "passages": [
-    "ormuz",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "ormuz",
+    "suez"
    ],
    "from_port": "P_JEA",
    "to_port": "P_RTM",
@@ -49870,9 +49870,9 @@
    "km": 11340,
    "nm": 6123,
    "passages": [
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "suez"
    ],
    "from_port": "P_KFK",
    "to_port": "P_RTM",
@@ -49960,8 +49960,8 @@
    "km": 20353,
    "nm": 10990,
    "passages": [
-    "south_africa",
-    "ormuz"
+    "ormuz",
+    "south_africa"
    ],
    "from_port": "P_JEA",
    "to_port": "P_FXT",
@@ -50053,10 +50053,10 @@
    "km": 11495,
    "nm": 6207,
    "passages": [
-    "ormuz",
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "ormuz",
+    "suez"
    ],
    "from_port": "P_JEA",
    "to_port": "P_FXT",
@@ -50102,9 +50102,9 @@
    "km": 11237,
    "nm": 6067,
    "passages": [
-    "suez",
+    "babalmandab",
     "gibraltar",
-    "babalmandab"
+    "suez"
    ],
    "from_port": "P_KFK",
    "to_port": "P_FXT",
@@ -50192,8 +50192,8 @@
    "km": 11922,
    "nm": 6437,
    "passages": [
-    "ormuz",
-    "malacca"
+    "malacca",
+    "ormuz"
    ],
    "from_port": "P_JEA",
    "to_port": "P_YOK",
@@ -50327,8 +50327,8 @@
    "km": 15284,
    "nm": 8253,
    "passages": [
-    "south_africa",
-    "ormuz"
+    "ormuz",
+    "south_africa"
    ],
    "from_port": "P_JEA",
    "to_port": "P_SSZ",
@@ -50594,8 +50594,8 @@
    "km": 6486,
    "nm": 3502,
    "passages": [
-    "ormuz",
-    "malacca"
+    "malacca",
+    "ormuz"
    ],
    "from_port": "P_JEA",
    "to_port": "P_SIN",
@@ -51291,8 +51291,8 @@
     "to_port": "P_JEA",
     "nm": 5651,
     "passages": [
-     "ormuz",
-     "malacca"
+     "malacca",
+     "ormuz"
     ],
     "steps": [
      [

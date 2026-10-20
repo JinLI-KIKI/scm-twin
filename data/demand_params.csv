@@ -1,0 +1,10 @@
+key,value,status,note
+tariff_cn,0.25,PLACEHOLDER,"Extra US tariff on China-made laptops from week 0 of the fiscal year (scenario; 20% was paid Mar-Nov 2025)"
+passthrough,1.0,WEB-DERIVED,"Share of the tariff the brand puts into its channel price (Acer raised US list prices 10% for the 10% China tariff of Feb 2025; Asus 6.7-9% in Mar 2025)"
+reprice_lag_weeks,2,WEB-DERIVED,"Weeks from the tariff to the new channel price; the brand absorbs the tariff until then (10% tariff on 4 Feb 2025, Acer price rise reported 18 Feb)"
+exporter_absorb,0.04,WEB,"Share of a US tariff absorbed by foreign exporters through lower prices; the importer pays the rest (Kiel Institute: about 4%)"
+ramp_weeks,12,PLACEHOLDER,"Weeks for the new site to cover the region's volume after cutover, linear; China builds the rest and pays the tariff (Module 3, strong GSM 8-16)"
+target_tolerance,0.98,PLACEHOLDER,"Share of the fiscal-year shipment target (sell-in units) the BU must reach to count it as hit (Q32)"
+bu_mwd_claimed,1,PRACTITIONER (R1 / R8),"1 = the BU KPI counts claimed MWD: every plan cancelled inside the liability window at full BOM value; 0 = physical MWD after netting, relocation and rework"
+conv_uplift,0.075,PRACTITIONER,"New-site conversion cost uplift, midpoint of 5-10% (R20)"
+expedite_usd_per_unit,6,PLACEHOLDER,"Parts expediting per unit while the +4 week lead time is not yet covered, strong GSM (Module 3)"

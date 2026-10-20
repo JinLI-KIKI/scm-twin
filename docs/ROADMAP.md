@@ -6,7 +6,7 @@ selling worldwide, built around tariff-driven factory transfer, MWD and lead tim
 Effort is counted in **working days** of one long session each. Plan: about 40–45 days,
 roughly two months of daily work; allow two and a half to three months with interruptions.
 
-Last updated: 2026-10-15
+Last updated: 2026-10-20
 
 ## Working rules
 
@@ -35,14 +35,15 @@ Last updated: 2026-10-15
 | ✓ | F1 pulled forward — finished-goods simulator with input ranges, live in the browser (`docs/fg-live.html`) | done |
 | ✓ | Module 7 — factory footprint: six sites, nine markets, real duties, origin by main board (`src/footprint.py`) | done (takes most of B2, C1 and D3) |
 | ✓ | Module 7 on 2026 reality: Hormuz bypass, lane freight benchmarks, ODM terms, China parts scenario, back-test on US imports | done (day 4) |
-| → | Phase A — core loop closure | **A4 first link done (day 4); next: Jin's check of Q28–Q31, formula review, then A2** |
+| ✓ | Module 5 — demand and KPI view: tariff → price → units → shipment gap, BU scorecard vs company cost (`src/demand_kpi.py`) | done (day 5) |
+| → | Phase A — core loop closure | **A2 done (day 5), A4 first link done (day 4); next: Jin's check of Q28–Q32, then A3** |
 
 ## Phase A — core loop closure · 5 days → release v1
 
 | Step | Scope | Done when |
 |---|---|---|
 | A1 ✓ | **Module 4 — finished goods at MGI.** Sell-in vs sell-through, excess build-up, step price drop at successor launch paid as price protection (R26, R27), sales volume lock (R28, R31), dealer leftovers and stock rotation (R30), disposition paths 1–6 (R11), post-customs vs FTZ (R25). | An excess-stock scenario returns the cost of each path and the cheapest path per product line. |
-| A2 | **Module 5 — demand and KPI view.** Tariff → retail price (pass-through) → units (elasticity by segment) → fiscal-year shipment gap. Score decisions twice: BU view (MWD + shipment target) and company view (total cost). | The same transfer decision is scored both ways and the page shows where the two views disagree. |
+| A2 ✓ | **Module 5 — demand and KPI view.** Tariff → retail price (pass-through) → units (elasticity by segment) → fiscal-year shipment gap. Score decisions twice: BU view (MWD + shipment target) and company view (total cost). | The same transfer decision is scored both ways and the page shows where the two views disagree. |
 | A3 | **Module 6 — new-site ramp and risk board hedge.** Capacity, yield and certification ramp curves; board-build timing vs the ODM's capacity response; GSM strength as a parameter. | The model returns a recommended board-build lead per model under demand uncertainty. |
 | A4 | **Integrated simulation.** Chain modules 1–6 week by week. | One command runs a full transfer scenario end to end and writes a summary report. **Day 4: first link done** — `src/integrate.py` prices Module 7's chain, end-of-life stock and urgent-transfer costs from Modules 2–4 (`data/linkage.json`). A week-by-week run across all modules remains. |
 

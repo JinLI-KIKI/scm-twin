@@ -157,7 +157,7 @@ function insight() {
   R.$('#insight').innerHTML = `
     <p><b>At a ${S.t}% China tariff with ${S.g} GSM, the median transfer year ${c.net_year1[1] >= 0 ? 'nets' : 'loses'} ${R.usd(Math.abs(c.net_year1[1]))}.</b> The move breaks even at about ${R.pct(be.strong, 1)} with strong GSM and ${R.pct(be.weak, 1)} with weak GSM.</p>
     <p>The ramp costs ${R.usd(ramp)} once (tariff still paid while the new site ramps, plus expediting). The biggest single swing comes from <b>${top.d.toLowerCase()}</b>: ${R.usd(Math.min(top.lo, top.hi))} to ${R.usd(Math.max(top.lo, top.hi))}.</p>
-    <p>Company view only. The business unit sees MWD in its KPI but tariffs only through the shipment target (R22), so it can reject a move that pays for the company. Module 5 will score both views.</p>`;
+    <p>Company view only. The business unit sees MWD in its KPI but tariffs only through the shipment target (R22), so it can reject a move that pays for the company. The <a href="demand.html">Demand &amp; KPI</a> page (Module 5) scores both views.</p>`;
 }
 
 function draw() {

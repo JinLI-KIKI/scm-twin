@@ -77,6 +77,7 @@ R.$('#kpis').innerHTML = [
   card('mwd.html', 'Late transfer vs early transfer', R.usd(D.mwd.D.total), `8 weeks before EOL · ${R.usd(D.mwd.B.total)} with 30 weeks left`),
   card('lanes.html', 'Ocean, factory door to US MGI', R.num(D.lead.cn_us, 1) + ' days', `China · ${R.num(D.lead.id_us, 1)} days from Indonesia`),
   card('finished-goods.html', 'Price-protection bill at launch', R.usd(fg.plan.protection), `sales plan · ${R.usd(fg.lock_drain.protection)} with lock + drain`),
+  card('demand.html', "What the BU's KPIs cost the company", R.usd(D.dk.absorb_gap, 1), `${R.pct(D.dk.tariff)} tariff absorbed: BU ${D.dk.absorb_bu === 'stay' ? 'stays' : 'moves in week ' + D.dk.absorb_bu.slice(1)}, company ${D.dk.absorb_company === 'stay' ? 'stays' : 'moves in week ' + D.dk.absorb_company.slice(1)} · ${R.usd(D.dk.gap, 1)} with the tariff in the price`),
   card('footprint.html', 'Most robust factory footprint', D.fp.robust.replace(' · own boards', ''), `${D.fp.robust.includes('own boards') ? 'boards made on site · ' : ''}never more than ${R.usd(D.fp.robust_regret, 1)} a year off`),
 ].join('');
 
@@ -87,7 +88,7 @@ const MODS = [
   { href: 'business-case.html', id: 'Module 3', name: 'Business case', q: 'Does the tariff saved pay for a longer chain and a slow ramp?', num: R.pct(D.breakeven.strong, 1), sub: 'break-even tariff' },
   { href: 'finished-goods.html', id: 'Module 4', name: 'Finished goods', q: 'What does old stock cost when the successor launches?', num: R.usd(fg.lock.avoidable), sub: 'avoidable cost, sales lock' },
   { href: 'footprint.html', id: 'Module 7', name: 'Factory footprint', q: 'Which sites should build for which markets under real duties, and is a second site worth opening before a tariff?', num: D.fp.robust.replace(' · own boards', ''), sub: `robust choice · build now only if a China tariff is over ${R.pct(D.fp.hedge_weight)} likely` },
-  { href: null, id: 'Module 5', name: 'Demand and KPI view', q: 'Tariff → price → units → fiscal-year shipment gap; BU view vs company view.', num: 'Next', sub: '' },
+  { href: 'demand.html', id: 'Module 5', name: 'Demand and KPI view', q: 'A tariff raises the price and costs units: does the BU, scored on shipments and MWD, move when the company would?', num: D.dk.absorb_bu === D.dk.absorb_company ? 'Agree' : R.usd(D.dk.absorb_gap, 1), sub: D.dk.absorb_bu === D.dk.absorb_company ? 'BU and company pick the same' : `cost of the BU's pick when the company absorbs a ${R.pct(D.dk.tariff)} tariff` },
   { href: null, id: 'Module 6', name: 'Ramp and risk board', q: 'How fast does the new site ramp, and when should boards be built?', num: 'Planned', sub: '' },
 ];
 R.$('#flow').innerHTML = MODS.map((m) => {

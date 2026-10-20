@@ -1,0 +1,4 @@
+model,channel_net_price_usd,elasticity,gross_margin_pct,status,note
+P1-14,650,-0.7,25,PLACEHOLDER (price and margin as Module 4) / WEB-DERIVED (elasticity),"Mainstream 14-inch; elasticity = US market, 2026 units -10.7% against sell-in ASP +12% (Omdia), confounded by the memory shortage"
+P1-16,760,-0.7,25,PLACEHOLDER / WEB-DERIVED,"Mainstream 16-inch"
+P2-14,704,-0.7,25,PLACEHOLDER / WEB-DERIVED,"Successor 14-inch from week 26; price = customs value x the P1-14 price ratio (650 / 480)"

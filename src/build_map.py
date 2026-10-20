@@ -98,7 +98,7 @@ def sea_route(sr, a, b, variant):
     r = sr.searoute([a["lon"], a["lat"]], [b["lon"], b["lat"]], units="km",
                     restrictions=restrictions, return_passages=True)
     coords = [[a["lon"], a["lat"]]] + r.geometry["coordinates"] + [[b["lon"], b["lat"]]]
-    return coords, r.properties["length"], r.properties.get("traversed_passages", [])
+    return coords, r.properties["length"], sorted(r.properties.get("traversed_passages", []))   # stable order between builds
 
 
 # ----------------------------------------------------------------------------- build

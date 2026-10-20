@@ -37,6 +37,13 @@ sales cannot sell the BU absorbs or resells through other GEOs. Compares push se
 sales lock, lock + drain, lock + push and lock + IBP hedge (no-lock strategies kept as benchmarks),
 for the brand alone and for brand + dealers.
 
+**Module 5 — demand and KPI view** (`src/demand_kpi.py`): a US tariff on China-made laptops
+starts in week 0 of the fiscal year; part of it goes into the channel price, the price costs
+units (constant elasticity), and the US volume can leave China in any week. Each option is scored
+twice: by the BU's KPIs (shipment target in sell-in units, claimed MWD) and by the company's total
+cost (tariff absorbed, margin on lost units, MWD, holding, relocation, longer chain). The page
+maps where the two picks differ across tariff and pass-through.
+
 **Module 7 — factory footprint** (`src/footprint.py`): China and five candidate ODM sites
 (Indonesia, Vietnam, Malaysia, Brazil, UAE) and nine regional distribution centres (US, EU, UK,
 Japan, Brazil, Australia, Singapore, India, UAE). Landed cost per site and market from 2026
@@ -76,11 +83,13 @@ python3 src/scenarios.py          # module 1: scenarios A/B/C0/C/D, per-material
 python3 src/transfer.py           # module 2: cutover-week sweep under tariff scenarios
 python3 src/business_case.py      # module 3: annual business case, Monte Carlo
 python3 src/finished_goods.py     # module 4: finished goods around a successor launch
+python3 src/demand_kpi.py         # module 5: BU scorecard vs company cost for each transfer week
 python3 src/integrate.py          # A4: price Module 7's chain, EOL-stock and transfer costs from modules 2-4
 python3 src/footprint.py          # module 7: landed cost, allocation, footprints across tariff scenarios
 python3 src/build_dashboards.py   # rebuild the report pages in docs/ (about two minutes)
 python3 tests/test_fg_parity.py   # browser engines match Python (needs Node.js)
 python3 tests/test_fp_parity.py
+python3 tests/test_dk_parity.py
 ```
 
 All rules and numbers, and whether each is practitioner input, web-sourced or a placeholder:

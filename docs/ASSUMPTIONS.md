@@ -114,6 +114,26 @@ Last updated: 2026-10-15 (v0.7: Module 7 footprint — six sites, nine markets, 
 | Chokepoint premium | $0 per risky passage by default (Red Sea, Hormuz) | PLACEHOLDER |
 | Straits on each ocean lane | Reported by `searoute` (Malacca, Sunda, Hormuz, Suez, Bab-el-Mandeb, Gibraltar, Cape, Panama, Chile) | WEB / open source |
 
+## Demand and KPI view (Module 5) — added 2026-10-20
+
+| ID | Rule | Status |
+|---|---|---|
+| R42 | **Two scorecards for one decision.** The BU (planner) is scored on the fiscal-year shipment target in sell-in units (R33) and on MWD; tariffs are not a BU KPI (R22) and reach it only through the price and the units it loses. The company is scored on the total cost of the year. The BU picks the latest transfer option that still reaches the target tolerance (later = fewer plans cancelled, less MWD); the company picks the lowest total cost. | PRACTITIONER (KPIs, R22) · design choice (pick rule) |
+| R43 | **The BU counts claimed MWD.** By default the BU's MWD is claimed MWD (R1, R8): every plan cancelled inside the liability window at full BOM value, although netting and relocation leave little physical MWD for the company. A switch counts physical MWD instead. Both add the extra end-of-life MWD of the longer window (Module 3) for the rest of the year. | PRACTITIONER (R1, R8) |
+| R44 | **Price response.** From the repricing week on, the channel price rises by pass-through × tariff × the share of the week's units still made in China; units follow a constant elasticity, q = plan × (1 + rise / price)^elasticity. The brand absorbs the tariff until it reprices; foreign exporters absorb a small share. | Design choice · inputs WEB / PLACEHOLDER |
+
+| Item | Value | Status |
+|---|---|---|
+| Tariff scenario | +25% on China-made laptops in the US from week 0 (20% was paid Mar–Nov 2025); the map runs 0–50% | PLACEHOLDER (scenario) |
+| Share of the tariff put into the price | 100% (Acer raised US list prices 10% for the 10% China tariff of Feb 2025; Asus 6.7–9% in Mar 2025); the map runs 0–100% | WEB-DERIVED — [The Register](https://www.theregister.com/2025/02/18/acer_hikes_us_prices/), [Yahoo Tech](https://tech.yahoo.com/computing/articles/5-asus-laptops-now-more-090000444.html) |
+| Weeks until the new price | 2 (10% tariff from 4 Feb 2025, Acer's price rise reported 18 Feb) | WEB-DERIVED |
+| Tariff absorbed by the exporter | 4% (importers paid about 96%) | WEB — Kiel Institute via [Mahomet Daily](https://mahometdaily.com/?p=341079) |
+| Price elasticity of units | −0.7 for every model (2026 US PC units −10.7% against sell-in ASP +12%, Omdia; confounded by the memory shortage) | WEB-DERIVED (Q17) |
+| Channel net price and gross margin | P1-14 $650, P1-16 $760, P2-14 $704 (customs value × the P1-14 ratio); 25% gross margin — `data/demand_models.csv` | PLACEHOLDER (as Module 4) |
+| New-site ramp after cutover | 12 weeks, linear (Module 3, strong GSM 8–16) | PLACEHOLDER |
+| Target tolerance | The BU counts the target hit at 98% of plan | PLACEHOLDER (Q32) |
+| Cutover options | Week 0–16 (inside the liability window), weeks 20, 26 (model change) and 39, or no transfer this year; MWD, holding and relocation per week from Module 2 | DERIVED |
+
 ## Ageing while waiting
 
 | Item | Value | Status |
@@ -200,5 +220,6 @@ Last updated: 2026-10-15 (v0.7: Module 7 footprint — six sites, nine markets, 
 | Q29 | When a US tariff on China-made laptops is announced, how long does it take to open and qualify a new site and its board line, and is it usual to prepare one before the tariff comes? | OPEN — modelled 12 months, $1M rush premium (R36) |
 | Q30 | For planning a footprint over three years, which ocean rate should count: the pre-war level, today's spot after the Hormuz closure, or a contract rate in between? | Use a real index → the long-term contract rate (Xeneta), slider to pre-war or spot (R37) |
 | Q31 | Is a second site usually an ODM line (price per unit, NRE, volume commitment) or the brand's own factory? If ODM, roughly how big is the NRE, the volume commitment and the fee below it? | Usually a line on an ODM's newly built overseas campus, or buying an electronics plant; use real indices → both modes, NRE and plant price from campus capex per unit of capacity (R35). Commitment and fee still open (Q28) |
+| Q32 | How is the BU's fiscal-year shipment target judged: met only at 100% of plan, or is there a tolerance (for example 97–98%)? And when a tariff forces a price rise, is the target reset? | OPEN — modelled: met at 98% of the pre-tariff plan, not reset (R42) |
 | Q12 | From first trial build to full volume, how long does a new factory take; what holds it back most? | OPEN |
 | Q7 | How many weeks before delivery does a PO become non-cancellable, standard vs custom parts? | QUEUED |

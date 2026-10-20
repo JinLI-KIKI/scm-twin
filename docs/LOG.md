@@ -183,11 +183,40 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   building a hedge now pays once a China tariff passes about 60% (was 42%). Buying the plants
   instead of ODM lines costs about $1M a year more at half load. Parity: 3,524 numbers.
 
-## Next — Day 5
+## Day 5 — 2026-10-20
+
+**Built — Module 5, demand and KPI view (Roadmap A2):**
+- `src/demand_kpi.py`: a US tariff on China-made laptops starts at week 0 of the fiscal year;
+  part of it goes into the channel price from the repricing week, units follow a constant
+  elasticity, and the US volume can leave China in any week (0–16 inside the liability window,
+  20, 26, 39) or not at all this year. The new site ramps up linearly; China builds the rest and
+  pays the tariff.
+- **Two scorecards (R42, R43).** BU: shipment attainment in sell-in units (R33) and claimed MWD
+  (every plan cancelled inside the window at full BOM value, R1/R8), plus the extra end-of-life
+  MWD of the longer window. Company: tariff absorbed, margin on lost units, physical MWD,
+  holding and relocation (Module 2), expediting, longer chain and conversion uplift (Module 3).
+  The BU picks the latest option that still ships 98% of the target; the company the cheapest.
+- Inputs from public data: 100% pass-through and a 2-week repricing lag (Acer, Feb 2025), 4%
+  absorbed by exporters (Kiel Institute), elasticity −0.7 (Omdia 2026).
+- `src/dash/dk_engine.js` + `tests/test_dk_parity.py` (747 values, identical); new page
+  `docs/demand.html` with sliders for every input, both picks, the cost and BU charts, the
+  weekly sell-in, a tariff × pass-through map of the disagreement and the option ledger.
+
+**Results (25% tariff, fully passed on):**
+- BU cuts over in week 4 (attainment 98.1%, claimed MWD $13.2M); the company would wait until
+  week 16 (attainment 95.5%, cost $3.05M). With the tariff in the price, the shipment target makes
+  the BU move earlier than the company needs; the BU's pick costs $0.20M.
+- With the tariff absorbed by the company the BU stays in China (no lost units, no MWD) while the
+  company moves in week 0: the BU's pick costs $12.3M at 25% and $27.1M at 50%.
+- Counted as physical MWD (after relocation) the BU's MWD from a cutover is almost zero, so
+  most of the disagreement is the counting rule (R1), not the material.
+
+## Next — Day 6
 
 - **Jin to judge:** the take-or-pay fee and commitment (Q28), ramp months by mode and rush
   premium (Q29), own-plant overhead and labour share.
 
 - **Formula and algorithm review with Jin**, module by module (spec in `docs/models/`).
-- Then Roadmap A2, Module 5: demand and KPI view. Q27 answered: the BU's FY shipment target is
-  counted in sell-in units (R33).
+- **Jin to judge Module 5:** target tolerance (Q32), the BU pick rule, pass-through and the
+  repricing lag, elasticity by model (Q17).
+- Then Roadmap A3, Module 6: new-site ramp and risk board hedge.
