@@ -112,6 +112,6 @@ const DKE = (() => {
       return { bu: s.bu, company: s.company, gap: s.gap };
     }));
   }
-  return { chinaShare, evaluate, evaluateMix, score, grid, buGrid };
+  return { chinaShare, catchUp, evaluate, evaluateMix, score, grid, buGrid };
 })();
 if (typeof module !== 'undefined') module.exports = DKE;

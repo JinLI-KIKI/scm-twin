@@ -282,14 +282,61 @@ KPI but hitting the FY shipment target; MGI = post-customs regional DC; FTZ / bo
   P1-16 and P2-14 5 weeks; weak GSM → P1-14 and P2-14 7, P1-16 6. The capacity the ODM takes
   back stays a placeholder (Q38).
 
-## Next — Day 6
+## Day 6 — 2026-11-13
 
-- **Jin to judge:** the take-or-pay fee and commitment (Q28), ramp months by mode and rush
-  premium (Q29), own-plant overhead and labour share.
+**Module 6 — Q38 answered: the GSM makes a large difference.** When board builds are pushed
+back, the ODM gives the capacity to other customers and capacity may drop; that is the risk.
+- Two effects, both far larger with a weak GSM: line time given away in every pushed run (as
+  before, 35% / 80% × push), and a new risk event: each week the model sells, with chance
+  hazard × push (0.5% / 3% a week at a full push) the ODM moves the model's line to another
+  customer, and builds and rush capacity drop 25% / 50% for 13 weeks.
+- The cover is picked on 75% expected cost + 25% P90, so the bad years count (`risk_weight`).
+- Result: strong GSM P1-14 6 weeks, P1-16 6, P2-14 5 (the line moves in 4–5% of years at those
+  covers); weak GSM 7, 7, 8 (9–11% of years at 7 weeks; at 5 weeks it would be 26–28%).
+- Page: chance the line moves by cover (strong against weak), a strong-vs-weak table, P90 lines
+  on the cost chart, the chance in the ledger, sliders for every new input. Parity 1,448 values.
 
-- **Formula and algorithm review with Jin**, module by module (spec in `docs/models/`).
-- **Jin to judge Module 5:** how far the plan beats the target (Q33), pass-through and the
-  repricing lag, elasticity by model (Q17).
-- **Jin to judge Module 6:** capacity the ODM takes back when board builds are pushed (Q38),
-  slip sizes, pull-in cost, yield ramp.
-- Then Roadmap A4: the full week-by-week run across Modules 1–6.
+**Market monitor (Roadmap E2, first half) — new page `docs/market.html`, `src/market.py`.**
+- 22 dated readings with source and the input each feeds (`data/market_watch.csv`): Drewry WCI
+  12 Nov (Shanghai–Los Angeles $7,416, –Rotterdam $3,504), SCFI 30 Oct (Gulf, Australia,
+  Singapore, Japan), Xeneta's 2027 outlook (long-term −5%, spot −30%), Hormuz day 257 (3 transits
+  a day against 85), US laptop duties (still 0% for every origin; Section 232 phase 2 confirmed
+  in Sep with laptops named as a possible target, no rate), TrendForce memory contract prices,
+  IDC Q3 PC shipments (−20.1%), notebook output outside China (24% → 21%).
+- Spot ocean rates moved to November 2026 on every lane with a print; fallback factor 2.8.
+
+**Memory lens (R48).** DRAM ×6.8 and NAND ×4.7 since Q2 2025 (`data/memory_prices.csv`).
+- One switch in the shared loader (`memory_market`, default 0 = 2025 base): memory parts take the
+  index, customs values rise by the same dollars, channel prices keep their markup.
+- P1-14 BOM $367 → $728 (memory 20% → 60%), board $195 → $426, customs value $480 → $841.
+- What moves: the risky P1-16's board run 6 → 3 weeks (strong GSM), the lowest-cost footprint
+  CN + BR → CN + MY + BR with own boards; transfer-year net at 25% $14.3M → $25.1M, break-even
+  tariff 3.0% → 2.4%. What does not: the cutover picks (BU week 11, company week 0), the physical
+  MWD, the weak-GSM board runs.
+- Switch on the Year run, Demand, Ramp, Footprint and FG simulator pages; the Market page runs
+  every module both ways.
+
+**Roadmap A4 — the year run. New page `docs/year.html`, `src/year_run.py`.**
+- One fiscal year week by week across Modules 1–7: Module 5's units, catch-up and absorb chance;
+  Module 6's S-curve ramp instead of the straight line; Modules 1–2 cutover costs, MWD at the
+  year-end reconciliation; Module 3 expediting and the longer chain; Module 4 end-of-life stock
+  from the longer transit (6.3 days Indonesia vs China to the US MGI).
+- At 25%, strong GSM: staying costs $9.64M and ships 94.3% of plan (misses the 97% target even
+  with a 10% catch-up); the company moves in week 0 ($4.10M; cheaper than staying from week 19);
+  the BU waits to week 13 ($4.58M); the model change (week 26) $7.98M.
+- Live studio: `src/dash/yr_engine.js` ports `src/year_run.py` on top of the Module 5 and 6
+  engines; the tariff, GSM, memory prices and 13 price, target and ramp inputs are sliders
+  (about 0.2 s a run). `tests/test_yr_parity.py`: 616 values identical.
+
+**Site.** Navigation grouped (Start · Network · Transfer · End of life · Sources) with the two
+new pages. Overview: a strip of six market readings, the year-run hero with the cost-to-date
+chart, the module cards in the order a tariff decision runs, eight KPI cards in two rows.
+
+**Questions for Jin, sent together:** Q7, Q28, Q29, Q33 (still open) and Q39–Q52 (new: capacity
+recovery, risk appetite, memory pass-through and default, memory configs, region vs model
+moves, decision lag, scenario chances, and six sets of placeholder sizes).
+
+## Next — Day 7
+
+- Jin's answers to the question batch; update the defaults and re-run the year.
+- Then Phase B (Mexico and Thailand, AI servers) or Phase C (inventory policy), Jin to choose.

@@ -10,21 +10,24 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DASH = os.path.join(ROOT, "src", "dash")
 REPO_URL = "https://github.com/jinli-kiki/scm-twin"
 
-# (file in docs/, key, tab label, href used in links)
+# (file in docs/, key, tab label, href used in links, nav group)
 PAGES = [
-    ("index.html", "overview", "Overview", "index.html"),
-    ("atlas.html", "atlas", "Network atlas", "atlas.html"),
-    ("lanes.html", "lanes", "Lanes & lead time", "lanes.html"),
-    ("mwd.html", "mwd", "MWD", "mwd.html"),
-    ("transfer.html", "transfer", "Transfer timing", "transfer.html"),
-    ("business-case.html", "business", "Business case", "business-case.html"),
-    ("finished-goods.html", "fg", "Finished goods", "finished-goods.html"),
-    ("fg-live.html", "fglive", "FG simulator", "fg-live.html"),
-    ("demand.html", "demand", "Demand & KPI", "demand.html"),
-    ("ramp.html", "ramp", "Ramp & boards", "ramp.html"),
-    ("footprint.html", "footprint", "Footprint", "footprint.html"),
-    ("rules.html", "rules", "Rules register", "rules.html"),
+    ("index.html", "overview", "Overview", "index.html", "start"),
+    ("year.html", "year", "Year run", "year.html", "start"),
+    ("market.html", "market", "Market", "market.html", "start"),
+    ("atlas.html", "atlas", "Atlas", "atlas.html", "network"),
+    ("lanes.html", "lanes", "Lanes", "lanes.html", "network"),
+    ("footprint.html", "footprint", "Footprint", "footprint.html", "network"),
+    ("mwd.html", "mwd", "MWD", "mwd.html", "transfer"),
+    ("transfer.html", "transfer", "Transfer", "transfer.html", "transfer"),
+    ("business-case.html", "business", "Business case", "business-case.html", "transfer"),
+    ("demand.html", "demand", "Demand & KPI", "demand.html", "transfer"),
+    ("ramp.html", "ramp", "Ramp & boards", "ramp.html", "transfer"),
+    ("finished-goods.html", "fg", "Finished goods", "finished-goods.html", "eol"),
+    ("fg-live.html", "fglive", "FG sim", "fg-live.html", "eol"),
+    ("rules.html", "rules", "Rules", "rules.html", "ref"),
 ]
+GROUPS = {"start": "Start", "network": "Network", "transfer": "Transfer", "eol": "End of life", "ref": "Sources"}
 
 
 def read(name):
@@ -33,10 +36,13 @@ def read(name):
 
 
 def nav_html(active):
-    tabs = []
-    for _, key, label, href in PAGES:
+    tabs, group = [], None
+    for _, key, label, href, g in PAGES:
+        if group is not None and g != group:
+            tabs.append(f'<span class="tab-sep" aria-hidden="true" title="{GROUPS[g]}"></span>')
+        group = g
         cur = ' aria-current="page"' if key == active else ""
-        tabs.append(f'<a class="tab" href="{href}"{cur}>{label}</a>')
+        tabs.append(f'<a class="tab" href="{href}"{cur} data-group="{g}">{label}</a>')
     return (
         '<header class="topbar">\n'
         '  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span>'

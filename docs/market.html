@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>The 2026 Market</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
+<style>/* Layout: a BI-style report. Sticky page tabs on top; under them a header, a slicer bar,
+   a row of KPI cards, then a 12-column canvas of visual containers. One column on phones.
+   Tokens match the network atlas so every page reads as one product. */
+:root {
+  --paper: #f6f7f5; --panel: #fbfcfb; --ink: #14181c; --ink-2: #4a525a; --muted: #6f777e;
+  --rule: #d9dde0; --chip: #eceeec; --hl: #fff3c4;
+  --sea: #2a78d6; --air: #eb6834; --inland: #1baf7a;
+  --d0: #9d90e6; --d5: #7464d9; --d16: #4a3aa7;
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #7464d9; --c5: #c9940f; --c6: #c2417a; --c7: #8a939a;
+  --good: #16794c; --warn: #9a6408; --bad: #b8322a;
+  --good-bg: #e3f2ea; --warn-bg: #f7eedb; --bad-bg: #f8e4e1;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+    --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+    --sea: #3987e5; --air: #d95926; --inland: #199e70;
+    --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+    --c1: #4a93ea; --c2: #de6d35; --c3: #00ad79; --c4: #8d83e2; --c5: #b88a00; --c6: #d96496; --c7: #858e95;
+    --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+    --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1316; --panel: #151a1e; --ink: #e8ecef; --ink-2: #b4bcc3; --muted: #8b939a;
+  --rule: #2a3137; --chip: #1f262b; --hl: #3a3410;
+  --sea: #3987e5; --air: #d95926; --inland: #199e70;
+  --d0: #5f55c4; --d5: #8a80e4; --d16: #bab3f7;
+  --c1: #4a93ea; --c2: #de6d35; --c3: #00ad79; --c4: #8d83e2; --c5: #b88a00; --c6: #d96496; --c7: #858e95;
+  --good: #46c98a; --warn: #e3ae4a; --bad: #f07a6c;
+  --good-bg: #16302a; --warn-bg: #33290f; --bad-bg: #3a1d1a; color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font: 14px/1.5 var(--f-body); margin: 0; }
+a { color: inherit; }
+
+.report { max-width: 1440px; margin: 0 auto; display: grid; gap: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 40px; }
+.report-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 6px 24px; }
+.report-head > div { min-width: 0; }
+.eyebrow { font: 500 12px var(--f-mono); color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin: 0 0 4px; }
+h1 { font: 600 34px/1.02 var(--f-display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--ink-2); margin: 6px 0 0; max-width: 78ch; }
+.asof { font: 12px var(--f-mono); color: var(--muted); text-align: right; }
+
+/* slicers */
+.slicers { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end;
+  padding: 10px 14px 12px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+.slicer { display: grid; gap: 4px; min-width: 0; }
+.slicer > .s-label { font-size: 12px; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-body); color: var(--ink-2); background: transparent; border: 0;
+  padding: 5px 11px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button:hover { background: var(--chip); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.range { display: flex; align-items: center; gap: 10px; }
+.range input[type="range"] { width: min(260px, 60vw); accent-color: var(--sea); }
+.range output { font: 600 18px var(--f-display); min-width: 3.4em; font-variant-numeric: tabular-nums; }
+input[type="search"] { font: 13px var(--f-body); color: var(--ink); background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 5px 10px; width: min(280px, 70vw); }
+button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+
+/* KPI cards */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .k-value { font-size: 24px; } .kpi { padding: 8px 10px 10px; } }
+.kpi { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px 12px;
+  display: grid; gap: 2px; align-content: start; min-width: 0; }
+.k-label { font-size: 12px; color: var(--muted); }
+.k-value { font: 600 30px/1.08 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.k-sub { font: 12px/1.4 var(--f-mono); color: var(--ink-2); overflow-wrap: anywhere; }
+.k-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+/* canvas of visuals */
+.canvas { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; }
+.viz { grid-column: span 6; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.viz.w3 { grid-column: span 3; } .viz.w4 { grid-column: span 4; } .viz.w5 { grid-column: span 5; } .viz.w6 { grid-column: span 6; }
+.viz.w7 { grid-column: span 7; } .viz.w8 { grid-column: span 8; } .viz.w12 { grid-column: span 12; }
+.viz-h { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.viz-h h2 { font: 600 15px/1.2 var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.hint { font-size: 12px; color: var(--muted); }
+.chart { width: 100%; height: 300px; min-width: 0; }
+.chart.short { height: 230px; } .chart.tall { height: 380px; } .chart.xtall { height: 460px; }
+.chart .nolib { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: 13px; text-align: center; padding: 12px; }
+@media (max-width: 1180px) { .viz.w3, .viz.w4, .viz.w5 { grid-column: span 6; } .viz.w7, .viz.w8 { grid-column: span 12; } }
+@media (max-width: 860px) { .viz, .viz.w3, .viz.w4, .viz.w5, .viz.w6, .viz.w7, .viz.w8 { grid-column: span 12; } h1 { font-size: 28px; } .asof { text-align: left; } }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; min-width: 0; }
+table.tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.tbl th { font: 500 11px var(--f-body); color: var(--muted); text-align: right; padding: 0 8px 6px; border-bottom: 1px solid var(--rule);
+  letter-spacing: .03em; white-space: nowrap; }
+.tbl td { padding: 7px 8px; border-bottom: 1px solid var(--rule); text-align: right; font: 13px var(--f-mono); vertical-align: top; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; padding-left: 0; }
+.tbl td.txt, .tbl th.txt { text-align: left; font-family: var(--f-body); }
+.tbl tr.sel td { background: var(--hl); }
+.tbl tr.click { cursor: pointer; }
+.tbl tr.click:hover td { background: var(--chip); }
+.tbl td small { display: block; font: 12px var(--f-body); color: var(--muted); }
+.bar-cell { position: relative; }
+.bar-cell i { position: absolute; left: 0; top: 4px; bottom: 4px; background: var(--chip); border-radius: 2px; z-index: 0; }
+.bar-cell span { position: relative; z-index: 1; }
+
+/* chips and notes */
+.chip { display: inline-block; font: 500 11px/1.6 var(--f-body); padding: 0 7px; border-radius: 10px; white-space: nowrap;
+  border: 1px solid var(--rule); color: var(--ink-2); background: var(--paper); }
+.chip.good { color: var(--good); background: var(--good-bg); border-color: transparent; }
+.chip.warn { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.bad { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.prac { color: var(--c1); border-color: var(--c1); }
+.chip.web { color: var(--c3); border-color: var(--c3); }
+.chip.ph { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.chip.open { color: var(--bad); background: var(--bad-bg); border-color: transparent; }
+.chip.ill, .chip.design { color: var(--muted); }
+.insight { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--ink-2);
+  background: var(--panel); display: grid; gap: 4px; }
+.insight b { color: var(--ink); font-weight: 600; }
+.insight p { margin: 0; }
+.notes { font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.notes p { margin: 0; max-width: 100ch; }
+.notes a, .tbl a, .insight a { color: var(--ink-2); overflow-wrap: anywhere; }
+code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border-radius: 3px; }
+.legend-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.sw { width: 12px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+/* section headers (pages that use .sec): stack the note under the title on phones */
+@media (max-width: 640px) { main .sec { flex-wrap: wrap; row-gap: 2px; } main .sec .rule { display: none; } main .sec .note { flex-basis: 100%; text-align: left; max-width: none; } }
+
+/* Top navigation shared by every page, including the atlas. Uses the page's own tokens. */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1200; display: flex; align-items: stretch; gap: 14px;
+  height: 46px; background: var(--panel); border-bottom: 1px solid var(--rule); box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topbar .brand { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; flex: none;
+  font: 500 13px var(--f-mono); }
+.topbar .brand-mark { width: 12px; height: 12px; background: var(--ink); border: 2px solid var(--panel);
+  box-shadow: 0 0 0 1px var(--ink); box-sizing: border-box; }
+.topbar .tabs { display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
+.topbar .tabs::-webkit-scrollbar { display: none; }
+.topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
+  font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab-sep { flex: none; width: 1px; margin: 13px 5px; background: var(--rule); }
+.topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
+.topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
+.topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }
+.topbar .repo:hover { color: var(--ink); }
+@media (max-width: 560px) { .topbar .repo { display: none; } .topbar .brand-name { display: none; } }
+
+.sec { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; margin: 8px 0 -4px; min-width: 0; }
+.sec .n { font: 500 12px var(--f-mono); color: var(--muted); }
+.sec h3 { font: 600 21px/1.1 var(--f-display); letter-spacing: .02em; margin: 0; }
+.sec .rule { flex: 1 1 40px; border-bottom: 1px solid var(--rule); transform: translateY(-5px); min-width: 24px; }
+.sec .note { font-size: 12px; color: var(--muted); text-align: right; max-width: 56ch; }
+.strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1180px) { .strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } }
+.tile { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px 11px; display: grid; gap: 2px; align-content: start; min-width: 0; position: relative; overflow: hidden; }
+.tile::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--acc, var(--rule)); }
+.tile .t-g { font: 500 11px var(--f-mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.tile .t-v { font: 600 28px/1.08 var(--f-display); font-variant-numeric: tabular-nums; }
+.tile .t-l { font-size: 12.5px; color: var(--ink); font-weight: 500; }
+.tile .t-s { font-size: 12px; color: var(--ink-2); }
+.lens td.txt b { font-weight: 600; }
+.lens td.arrow { color: var(--muted); padding-inline: 2px; }
+.reading { display: grid; gap: 2px; }
+.tbl td .src { font: 11.5px var(--f-body); color: var(--muted); }
+.feeds { font: 12px var(--f-body); color: var(--ink-2); }
+</style>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
+  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html" data-group="start">Overview</a><a class="tab" href="year.html" data-group="start">Year run</a><a class="tab" href="market.html" aria-current="page" data-group="start">Market</a><span class="tab-sep" aria-hidden="true" title="Network"></span><a class="tab" href="atlas.html" data-group="network">Atlas</a><a class="tab" href="lanes.html" data-group="network">Lanes</a><a class="tab" href="footprint.html" data-group="network">Footprint</a><span class="tab-sep" aria-hidden="true" title="Transfer"></span><a class="tab" href="mwd.html" data-group="transfer">MWD</a><a class="tab" href="transfer.html" data-group="transfer">Transfer</a><a class="tab" href="business-case.html" data-group="transfer">Business case</a><a class="tab" href="demand.html" data-group="transfer">Demand & KPI</a><a class="tab" href="ramp.html" data-group="transfer">Ramp & boards</a><span class="tab-sep" aria-hidden="true" title="End of life"></span><a class="tab" href="finished-goods.html" data-group="eol">Finished goods</a><a class="tab" href="fg-live.html" data-group="eol">FG sim</a><span class="tab-sep" aria-hidden="true" title="Sources"></span><a class="tab" href="rules.html" data-group="ref">Rules</a></nav>
+  <a class="repo" href="https://github.com/jinli-kiki/scm-twin">GitHub</a>
+</header>
+<script>(function(){var a=document.querySelector(".topbar .tab[aria-current]");if(a){var n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.clientWidth)/2;}})();</script>
+
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Market monitor · the readings behind the inputs</p>
+      <h1>The 2026 Market</h1>
+      <p class="sub">The model runs on 2026 as it is: the Strait of Hormuz closed since February, ocean rates several times their pre-war level, no US duty on laptops from any origin after the Supreme Court ruling, and a memory price surge that has multiplied what DRAM and SSDs cost. Each reading below is dated, sourced and tied to the input it feeds. The last section runs every module twice, with memory at 2025 prices and at today's contract prices, and shows which decisions move.</p>
+    </div>
+    <div class="asof">Readings to <span id="asof"></span> · page built 2026-11-13 · every source linked below</div>
+  </div>
+
+  <section class="strip" id="strip" aria-label="Headline readings"></section>
+
+  <section class="canvas">
+    <div class="sec"><span class="n">01</span><h3>Freight and the Strait of Hormuz</h3><span class="rule"></span><span class="note">Ocean rates per 40-ft container by lane: before the war, the long-term contract a plan pays, and spot today</span></div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Ocean rate by lane</h2><span class="hint" id="h-lanes"></span></div>
+      <div id="c-lanes" class="chart tall"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Freight and Hormuz readings</h2><span class="hint">Latest print, with the input it feeds</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-freight"></table></div>
+    </div>
+
+    <div class="sec"><span class="n">02</span><h3>US duties on laptops</h3><span class="rule"></span><span class="note">Extra US duty on a China-made laptop against every other origin, and the scenarios the footprint is scored in</span></div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Extra US duty on laptops since 2025</h2><span class="hint">HS 8471.30 · percentage points on top of the zero MFN rate</span></div>
+      <div id="c-duty" class="chart"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Tariff scenarios the footprint weighs</h2><span class="hint">Chance over the three-year horizon · <a href="footprint.html">Footprint</a></span></div>
+      <div id="c-scen" class="chart"></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Duty readings</h2><span class="hint">What changed, what did not</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-duty"></table></div>
+    </div>
+
+    <div class="sec"><span class="n">03</span><h3>Memory prices</h3><span class="rule"></span><span class="note">Contract prices compounded from TrendForce's quarterly changes, against the 2025 BOM prices of the model</span></div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>DRAM and NAND contract price index</h2><span class="hint">Q2 2025 = 1 · Q4 2026 is TrendForce's forecast</span></div>
+      <div id="c-mem" class="chart"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>What memory does to a laptop's BOM</h2><span class="hint">Per unit, 2025 base against Q4 2026 contract</span></div>
+      <div id="c-bom" class="chart"></div>
+    </div>
+
+    <div class="sec"><span class="n">04</span><h3>What the memory market changes</h3><span class="rule"></span><span class="note">Every module run twice on the same inputs; only memory prices differ</span></div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Decisions at 2025 and at Q4 2026 memory prices</h2><span class="hint">Memory dollars pass to the customs value at cost; channel prices keep their markup · switch it on the <a href="year.html">Year run</a>, <a href="demand.html">Demand</a>, <a href="ramp.html">Ramp</a>, <a href="footprint.html">Footprint</a> and <a href="fg-live.html">FG simulator</a> pages</span></div>
+      <div class="tbl-wrap"><table class="tbl lens" id="t-lens"></table></div>
+    </div>
+    <section class="insight" id="insight" style="grid-column: 1 / -1"></section>
+
+    <div class="sec"><span class="n">05</span><h3>Demand and where notebooks are built</h3><span class="rule"></span><span class="note">The back-test of the footprint model and the demand shock behind the elasticity</span></div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Share of US computer imports by origin</h2><span class="hint">HS 8471, Census via import.tax · Mexico and Taiwan are mostly servers</span></div>
+      <div id="c-imp" class="chart"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Demand and production readings</h2><span class="hint">With the input each one checks</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-dem"></table></div>
+    </div>
+  </section>
+
+  <footer class="notes">
+    <p><b>How readings enter the model.</b> Ocean rates by lane sit in <code>data/freight_lanes.csv</code> (pre-war, long-term contract, spot); a plan pays the contract rate. The Hormuz switch, the bypass truck leg and the fallback factor sit in <code>data/footprint_params.csv</code>. Duties by market and origin sit in <code>data/tariffs.csv</code>, scenarios in <code>data/duty_scenarios.csv</code>. Memory prices sit in <code>data/memory_prices.csv</code>; <code>memory_market</code> in <code>data/params.csv</code> sets the default (0 = 2025 base), and DRAM parts (MEM_*) and NAND parts (SSD_*) take the index of the latest quarter when it is 1. The readings themselves are in <code>data/market_watch.csv</code>; code in <code>src/market.py</code>.</p>
+    <p><b>Memory lens.</b> With Q4 2026 memory prices, the ODM passes the extra memory dollars on at cost, so each model's customs value rises by the same amount and the US tariff base grows with it; channel prices keep their markup (the 2026 sell-in price data show a smaller rise so far, because brands cut memory configurations and absorbed part of it). Boards carry their memory, so stranded boards and boards on hand cost more. Finished-goods values follow the unit cost. Freight, duties and every practitioner rule are the same in both runs.</p>
+    <p><b>Caveat.</b> Several readings come from secondary reports of the original data (noted per row). Quarterly contract changes are midpoints of TrendForce's ranges, compounded; the NAND series is anchored on one client SSD contract price because the 2025 quarters were not found.</p>
+  </footer>
+</main>
+<script>/* Shared helpers for the report pages: theme-aware ECharts, number formats, slicers. */
+const R = (() => {
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const theme = () => ({
+    ink: css('--ink'), ink2: css('--ink-2'), muted: css('--muted'), rule: css('--rule'),
+    panel: css('--panel'), paper: css('--paper'), chip: css('--chip'), hl: css('--hl'),
+    c: [1, 2, 3, 4, 5, 6, 7].map((i) => css('--c' + i)),
+    sea: css('--sea'), air: css('--air'), inland: css('--inland'),
+    d0: css('--d0'), d5: css('--d5'), d16: css('--d16'),
+    good: css('--good'), warn: css('--warn'), bad: css('--bad'),
+    fBody: css('--f-body'), fMono: css('--f-mono'), fDisp: css('--f-display'),
+  });
+
+  // ---------- numbers
+  const usd = (v, d) => {
+    if (v == null || isNaN(v)) return '–';
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e9) return s + '$' + (a / 1e9).toFixed(d ?? 2) + 'B';
+    if (a >= 1e6) return s + '$' + (a / 1e6).toFixed(d ?? 2) + 'M';
+    if (a >= 1e3) return s + '$' + (a / 1e3).toFixed(d ?? 0) + 'k';
+    return s + '$' + a.toFixed(0);
+  };
+  const num = (v, d = 0) => (v == null || isNaN(v)) ? '–' :
+    (v < 0 ? '−' : '') + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+  const kunits = (v) => Math.abs(v) >= 1e3 ? num(v / 1e3, 1) + 'k' : num(v);
+  const pct = (v, d = 0) => (v == null || isNaN(v)) ? '–' : (v * 100).toFixed(d) + '%';
+  const axUsd = (v) => usd(v, Math.abs(v) >= 1e6 ? 1 : 0);
+
+  // ---------- charts
+  const charts = [];
+  const hasLib = () => typeof window.echarts !== 'undefined';
+  function base(t) {
+    return {
+      animationDuration: 280, animationDurationUpdate: 280,
+      textStyle: { fontFamily: t.fBody, color: t.ink2, fontSize: 12 },
+      tooltip: { trigger: 'axis', confine: true, backgroundColor: t.panel, borderColor: t.rule,
+        textStyle: { color: t.ink, fontFamily: t.fBody, fontSize: 12 }, axisPointer: { lineStyle: { color: t.muted }, shadowStyle: { color: t.chip, opacity: .6 } } },
+      legend: { top: 0, left: 0, type: 'scroll', icon: 'roundRect', itemWidth: 12, itemHeight: 8, itemGap: 14,
+        textStyle: { color: t.ink2, fontSize: 12 }, pageTextStyle: { color: t.ink2 }, pageIconColor: t.ink2, pageIconInactiveColor: t.rule },
+      grid: { left: 6, right: 18, top: 34, bottom: 6, containLabel: true },
+    };
+  }
+  function axis(t, o = {}) {
+    return Object.assign({
+      axisLine: { lineStyle: { color: t.rule } }, axisTick: { show: false },
+      axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, hideOverlap: true },
+      splitLine: { lineStyle: { color: t.rule, width: 1 } },
+      nameTextStyle: { color: t.muted, fontSize: 11, fontFamily: t.fBody },
+    }, o);
+  }
+  function chart(id, build) {
+    const el = document.getElementById(id);
+    const c = { el, build, inst: null };
+    if (!el) return c;
+    if (!hasLib()) {
+      el.innerHTML = '<div class="nolib">The chart library did not load. The numbers in the cards and tables are still current.</div>';
+      return c;
+    }
+    c.inst = echarts.init(el, null, { renderer: 'svg' });
+    c.inst.setOption(build(theme()), true);
+    charts.push(c);
+    return c;
+  }
+  function update(c) { if (c && c.inst) c.inst.setOption(c.build(theme()), true); }
+  function refreshAll() { charts.forEach(update); }
+  let rt;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => charts.forEach((c) => c.inst && c.inst.resize()), 120); });
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshAll); } catch (e) { /* old browsers */ }
+  new MutationObserver(refreshAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ---------- per-viewer memory for slicers (optional; page works without it)
+  const KEY = 'scm-twin:' + location.pathname.split('/').pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } };
+  const save = (state) => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage blocked */ } };
+
+  // ---------- segmented slicer
+  function seg(el, options, value, onChange) {
+    el.innerHTML = '';
+    options.forEach(([v, label]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = label; b.dataset.v = String(v);
+      b.setAttribute('aria-pressed', String(String(v) === String(value)));
+      b.addEventListener('click', () => {
+        el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        onChange(v);
+      });
+      el.appendChild(b);
+    });
+    return { set(v) { el.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === String(v)))); } };
+  }
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const tip = (t, rows, title) => `<div style="font-weight:600;margin-bottom:4px">${esc(title)}</div>` +
+    rows.map(([color, name, val]) => `<div style="display:flex;justify-content:space-between;gap:18px"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${color};margin-right:6px"></span>${esc(name)}</span><span style="font-family:${t.fMono}">${val}</span></div>`).join('');
+  return { theme, usd, num, kunits, pct, axUsd, base, axis, chart, update, refreshAll, load, save, seg, $, esc, tip, hasLib };
+})();
+</script>
+<script>
+const D = {"watch":[{"group":"Freight","indicator":"Drewry World Container Index, composite","value":"4305","unit":"USD per 40-ft","date":"2026-11-12","change":"-2% on the week","feeds":"Context for the spot column of data/freight_lanes.csv","status":"WEB","source_name":"Drewry","source_url":"https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry"},{"group":"Freight","indicator":"Shanghai to Los Angeles, spot","value":"7416","unit":"USD per 40-ft","date":"2026-11-12","change":"-2% on the week; about 4x the pre-war rate","feeds":"FE-USWC spot (freight_basis 2)","status":"WEB","source_name":"Drewry WCI","source_url":"https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry"},{"group":"Freight","indicator":"Shanghai to Rotterdam, spot","value":"3504","unit":"USD per 40-ft","date":"2026-11-12","change":"-3% on the week","feeds":"FE-NEUR spot (freight_basis 2)","status":"WEB","source_name":"Drewry WCI","source_url":"https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry"},{"group":"Freight","indicator":"Shanghai to New York, spot","value":"9020","unit":"USD per 40-ft","date":"2026-11-12","change":"-3% on the week","feeds":"Context (no US East Coast MGI in the model)","status":"WEB","source_name":"Drewry WCI","source_url":"https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry"},{"group":"Freight","indicator":"SCFI composite","value":"3633","unit":"index points","date":"2026-11-06","change":"-1.5% on the week","feeds":"Context for the SCFI lanes","status":"WEB","source_name":"Shanghai Shipping Exchange via Sina","source_url":"https://k.sina.cn/article_5953190046_162d6789e06703wlis.html"},{"group":"Freight","indicator":"SCFI Persian Gulf (Dubai)","value":"6533","unit":"USD per 20-ft","date":"2026-10-30","change":"+0.5% on the week; 6.7x pre-war per 40-ft","feeds":"FE-GULF spot (x 1.6 per 40-ft)","status":"WEB","source_name":"SCFI via China Times","source_url":"https://www.chinatimes.com/realtimenews/20261102001091-260410"},{"group":"Freight","indicator":"Long-term contract rates, 2027 outlook","value":"-5","unit":"% full year 2027 against Q3 2026","date":"2026-11-13","change":"Spot -30% over the same span; fleet +6.8%, demand +2.5-4%","feeds":"Contract column (freight_basis 1, the default)","status":"WEB","source_name":"Xeneta Ocean Outlook 2027","source_url":"https://cyprusshippingnews.com/2026/11/13/xeneta-ocean-outlook-2027-three-years-three-shocks-and-what-comes-next/"},{"group":"Freight","indicator":"Schedule reliability, on-time arrivals","value":"27","unit":"% of vessels","date":"2026-09-30","change":"Q3 2026; ceiling about 40% expected in H1 2027","feeds":"Lead-time buffers (Module 3 forecast and window, Module 4 transit)","status":"WEB","source_name":"Xeneta","source_url":"https://cyprusshippingnews.com/2026/11/13/xeneta-ocean-outlook-2027-three-years-three-shocks-and-what-comes-next/"},{"group":"Hormuz","indicator":"Strait of Hormuz","value":"257","unit":"days closed","date":"2026-11-12","change":"3 transits a day against 85 before the war (IMF PortWatch, 8 Nov); talks deadlocked","feeds":"hormuz_closed = 1: Gulf cargo lands at Khor Fakkan and is trucked to Dubai","status":"WEB","source_name":"Straits Daily Brief","source_url":"https://straits.live/briefs/2026-11-12"},{"group":"Hormuz","indicator":"Jebel Ali weekly container arrivals","value":"9000","unit":"TEU a week","date":"2026-11-13","change":"423,000 TEU a week before the conflict; carriers keep Khor Fakkan, Jeddah and Sohar even if the strait reopens","feeds":"Bypass routing and truck leg (bypass_truck_usd_feu)","status":"WEB","source_name":"Xeneta via Cyprus Shipping News","source_url":"https://cyprusshippingnews.com/2026/11/13/xeneta-ocean-outlook-2027-three-years-three-shocks-and-what-comes-next/"},{"group":"Hormuz","indicator":"Brent crude","value":"96.13","unit":"USD per barrel","date":"2026-11-12","change":"+4% in 24 hours after tanker attacks; Singapore bunker +107% since 27 Feb","feeds":"Fuel share of ocean rates (contract fuel surcharges +42% to USD 820 per 40-ft)","status":"WEB","source_name":"Straits Daily Brief","source_url":"https://straits.live/briefs/2026-11-12"},{"group":"Tariffs","indicator":"US duty on laptops (HS 8471.30), every origin","value":"0","unit":"%","date":"2026-11-13","change":"IEEPA tariffs struck down (Feb 2026); Section 122 expired 24 Jul; the 24 Jul Section 301 action on Asia exempts laptops","feeds":"data/tariffs.csv (USA row) and the Current duties scenario","status":"WEB","source_name":"Dimerco tariff tracker; TechNode","source_url":"https://dimerco.com/us-tariff-update-2026/"},{"group":"Tariffs","indicator":"Section 232 semiconductors, phase 2","value":"0","unit":"% (no rate yet)","date":"2026-09-02","change":"Confirmed by Commerce; servers, laptops and gaming hardware named as possible targets; allowances for firms that build chips in the US","feeds":"Scenario s232 (25% on every origin, 15%)","status":"WEB","source_name":"Tech Times","source_url":"https://www.techtimes.com/articles/326474/20260903/chip-tariff-phase-two-confirmed-build-america-pay-lutnick-announces.htm"},{"group":"Tariffs","indicator":"China Section 301, Lists 1-4A","value":"25","unit":"% (Lists 1-3); 7.5% List 4A","date":"2026-10-07","change":"Continued by USTR; laptops sit on the suspended List 4B","feeds":"Scenario cn301 (25% on China-made laptops, 20%)","status":"WEB","source_name":"Tariff Sentinel","source_url":"https://tariffsentinel.com/changes/section-301-china-four-year-review-continuation-2026"},{"group":"Tariffs","indicator":"US-China arrangement (Busan)","value":"2027-01-10","unit":"extended to","date":"2026-09-28","change":"Reported extension of China's suspended rare-earth controls, US 301 exclusions and ship fees; a US-China Board of Trade to review tariffs yearly","feeds":"Scenario cnparts (China licenses parts exports, 5%)","status":"WEB","source_name":"Dimerco tariff tracker","source_url":"https://dimerco.com/us-tariff-update-2026/"},{"group":"Memory","indicator":"DRAM contract price, Q4 2026","value":"+10-15","unit":"% on the quarter (forecast)","date":"2026-09-30","change":"PC DRAM +13-18%; index 6.8x the Q2 2025 level after +95% in Q1 and +60% in Q2 2026","feeds":"data/memory_prices.csv (memory_market = 1)","status":"WEB","source_name":"TrendForce","source_url":"https://www.trendforce.com/presscenter/news/20260930-13258.html"},{"group":"Memory","indicator":"NAND contract price, Q4 2026","value":"+15-20","unit":"% on the quarter (forecast)","date":"2026-09-30","change":"Client SSD makers restrain increases; 256GB TLC SSD contract USD 33 to 134 in a year","feeds":"data/memory_prices.csv (memory_market = 1)","status":"WEB","source_name":"TrendForce; Notebookcheck via Tech Insider","source_url":"https://tech-insider.org/nand-shortage-ssd-prices-2026/"},{"group":"Memory","indicator":"DRAM cost, year on year","value":"5","unit":"x (Q2 2026)","date":"2026-10-12","change":"Gartner","feeds":"Cross-check of the DRAM index (5.2x from Q2 2025 to Q2 2026)","status":"WEB","source_name":"Gartner via TheTechBag","source_url":"https://www.thetechbag.com/blog/pc-shipments-fall-memory-prices-ai-data-centres"},{"group":"Memory","indicator":"CPU + DRAM + SSD share of a mainstream notebook BOM","value":"68","unit":"%","date":"2026-10-08","change":"About 45% before the surge; a USD 900 notebook needs about +40% to keep margins (Mar 2026 estimate)","feeds":"Cross-check of the lens BOM (P1-14: CPU + memory 76% at Q4 2026 prices)","status":"WEB","source_name":"TrendForce via AI Weekly","source_url":"https://aiweekly.co/alerts/trendforce-notebook-output-outside-china-slips-to-21-in-2026"},{"group":"Demand","indicator":"Global PC shipments, Q3 2026","value":"62.7","unit":"million units","date":"2026-10-08","change":"-20.1% on the year; Omdia expects -24% in Q4 and -7% in 2027","feeds":"Elasticity and the shipment target (Module 5)","status":"WEB","source_name":"IDC via The Register","source_url":"https://www.theregister.com/personal-tech/2026/10/09/global-pc-shipments-crater-20-as-rising-prices-hammer-demand/5302264"},{"group":"Footprint","indicator":"Notebook output outside China","value":"21","unit":"% of world output (2026)","date":"2026-10-08","change":"24% in 2025, possibly below 20% in 2027: without tariff pressure brands move some capacity back to China","feeds":"Back-test of Module 7 (no China-only tariff gap in 2026)","status":"WEB","source_name":"TrendForce via AI Weekly","source_url":"https://aiweekly.co/alerts/trendforce-notebook-output-outside-china-slips-to-21-in-2026"},{"group":"Footprint","indicator":"Top US laptop supplier","value":"Vietnam","unit":"since 2025","date":"2026-03-14","change":"Bac Ninh laptop output +130% in 2025; Vietnam adds at most about 8% of the export value of an assembled MacBook (parts from China, Korea, Taiwan)","feeds":"Sites (Vietnam, Bac Ninh) and the China parts feed","status":"WEB","source_name":"Bloomberg","source_url":"https://bloomberg.com/graphics/2026-vietnam-trump-tariffs-supply-chain"}],"memory":[{"quarter":"2025Q2","dram_index":1.0,"nand_index":1.0,"dram_qoq":"","nand_qoq":"","status":"BASE","dram_source":"Base: the BOM prices in data/materials.csv (16GB memory $40, 512GB SSD $35)","nand_source":"Base"},{"quarter":"2025Q3","dram_index":1.125,"nand_index":1.0,"dram_qoq":"0.125","nand_qoq":"0.000","status":"WEB","dram_source":"TrendForce, conventional DRAM contract +10-15% (24 Sep 2025)","nand_source":"Assumed flat (no print found; the 2025Q3 256GB TLC SSD contract price of $33.30 anchors the NAND series)"},{"quarter":"2025Q4","dram_index":1.659,"nand_index":1.318,"dram_qoq":"0.475","nand_qoq":"0.318","status":"WEB / DERIVED","dram_source":"TrendForce, conventional DRAM contract +45-50% (2 Feb 2026)","nand_source":"DERIVED: 256GB TLC SSD contract $33.30 (Q3 2025) to $134.20 (Q3 2026) = 4.03x (Notebookcheck) less the TrendForce quarters below"},{"quarter":"2026Q1","dram_index":3.244,"nand_index":2.076,"dram_qoq":"0.955","nand_qoq":"0.575","status":"WEB","dram_source":"TrendForce, conventional DRAM contract +93-98% (31 Mar 2026; PC DRAM +105-110% forecast 2 Feb 2026)","nand_source":"TrendForce, NAND contract +55-60%"},{"quarter":"2026Q2","dram_index":5.207,"nand_index":3.581,"dram_qoq":"0.605","nand_qoq":"0.725","status":"WEB","dram_source":"TrendForce, conventional DRAM contract +58-63% (31 Mar 2026); Gartner: DRAM cost about 5x year on year in Q2","nand_source":"TrendForce, NAND contract +70-75%"},{"quarter":"2026Q3","dram_index":6.014,"nand_index":4.028,"dram_qoq":"0.155","nand_qoq":"0.125","status":"WEB","dram_source":"TrendForce, conventional DRAM contract +13-18% (3 Jul 2026)","nand_source":"TrendForce, NAND contract +10-15% (3 Jul 2026)"},{"quarter":"2026Q4","dram_index":6.766,"nand_index":4.733,"dram_qoq":"0.125","nand_qoq":"0.175","status":"WEB (forecast)","dram_source":"TrendForce forecast, conventional DRAM contract +10-15%; PC DRAM +13-18% (30 Sep 2026)","nand_source":"TrendForce forecast, NAND contract +15-20% (30 Sep 2026)"}],"lens":{"index":{"quarter":"2026Q4","dram":6.766,"nand":4.733},"base":{"units":{"P1-14":{"bom":367,"memory":75.0,"memory_share":0.2044,"board":195,"customs":480,"price_scale":1.0},"P1-16":{"bom":387,"memory":75.0,"memory_share":0.1938,"board":198,"customs":560,"price_scale":1.0},"P2-14":{"bom":386,"memory":75.0,"memory_share":0.1943,"board":211,"customs":520,"price_scale":1.0}},"m1":{"freed":16697600,"mwd":1164800,"holding":510872},"m2":{"best_week":0,"best_total":566892,"week0":566892,"tariff_week0":0.0},"m3":{"net_year1":14267174,"breakeven":0.0296,"pipeline":834880,"weekly_customs":1408000},"m4":{"avoidable":7929523},"m5":{"bu":"C11","company":"C0","gap":453444,"bu_cost":1001652,"company_cost":3636473},"m6":{"P1-14|1":{"cover":6,"expected":367969,"p90":464933,"stranded":12068},"P1-16|1":{"cover":6,"expected":291286,"p90":532234,"stranded":128095},"P2-14|1":{"cover":5,"expected":559329,"p90":823517,"stranded":108927},"P1-14|0":{"cover":7,"expected":522703,"p90":580697,"stranded":1757},"P1-16|0":{"cover":7,"expected":370899,"p90":1031129,"stranded":129838},"P2-14|0":{"cover":8,"expected":767734,"p90":646910,"stranded":275450},"ramp_pull":7},"m7":{"best":"CN + BR","best_expected":337876524,"robust":"CN + MY · own boards","robust_regret":5205259}},"now":{"units":{"P1-14":{"bom":728,"memory":436,"memory_share":0.5991,"board":426,"customs":841,"price_scale":1.7527},"P1-16":{"bom":748,"memory":436,"memory_share":0.5831,"board":429,"customs":921,"price_scale":1.6452},"P2-14":{"bom":747,"memory":436,"memory_share":0.5838,"board":442,"customs":881,"price_scale":1.6948}},"m1":{"freed":32883616,"mwd":1164800,"holding":936922},"m2":{"best_week":0,"best_total":937057,"week0":937057,"tariff_week0":0.0},"m3":{"net_year1":25091572,"breakeven":0.0245,"pipeline":1644181,"weekly_customs":2419626},"m4":{"avoidable":10457734},"m5":{"bu":"C11","company":"C0","gap":899253,"bu_cost":1456883,"company_cost":5673017},"m6":{"P1-14|1":{"cover":6,"expected":662575,"p90":842692,"stranded":26062},"P1-16|1":{"cover":3,"expected":523904,"p90":873196,"stranded":53547},"P2-14|1":{"cover":5,"expected":975406,"p90":1363989,"stranded":225778},"P1-14|0":{"cover":7,"expected":936443,"p90":1003457,"stranded":3795},"P1-16|0":{"cover":7,"expected":721347,"p90":2020042,"stranded":277923},"P2-14|0":{"cover":8,"expected":1554619,"p90":1226240,"stranded":570938},"ramp_pull":7},"m7":{"best":"CN + MY + BR · own boards","best_expected":586872138,"robust":"CN + MY + BR · own boards","robust_regret":6675333}}},"lanes":[{"lane":"FE-USWC","pre":1857,"contract":2854,"now":7416,"now_basis":"Drewry WCI Shanghai-Los Angeles 12 Nov 2026, USD/FEU (SCFI 30 Oct 7,479)"},{"lane":"FE-NEUR","pre":2218,"contract":2690,"now":3504,"now_basis":"Drewry WCI Shanghai-Rotterdam 12 Nov 2026, USD/FEU (SCFI 30 Oct Europe 3,587)"},{"lane":"FE-JP","pre":528,"contract":530,"now":536,"now_basis":"SCFI 30 Oct 2026 Japan Kanto 335/TEU x 1.6"},{"lane":"FE-SEA","pre":730,"contract":1029,"now":1862,"now_basis":"SCFI 30 Oct 2026 Southeast Asia (Singapore) 1164/TEU x 1.6"},{"lane":"FE-FE","pre":730,"contract":1029,"now":1862,"now_basis":"Intra-Asia short sea, same as FE-SEA"},{"lane":"FE-ANZ","pre":1358,"contract":1915,"now":4042,"now_basis":"SCFI 30 Oct 2026 Australia/NZ (Melbourne) 2526/TEU x 1.6"},{"lane":"FE-SAEC","pre":1901,"contract":2680,"now":10448,"now_basis":"SCFI late Sep 2026 South America 6530/TEU x 1.6 (latest print found)"},{"lane":"FE-INDIA","pre":1450,"contract":2044,"now":3650,"now_basis":"Forwarder quotes Sep 2026 South China-Nhava Sheva 40ft"},{"lane":"FE-GULF","pre":1568,"contract":2211,"now":10453,"now_basis":"SCFI 30 Oct 2026 Persian Gulf (Dubai) 6533/TEU x 1.6 (via bypass ports while Hormuz is closed)"}],"history":[{"series":"hs8471_value","period":"2023","china":"39.6","vietnam":"8.7","mexico":"27.8","taiwan":"14.3","thailand":"5.9","unit":"USD bn","status":"WEB (Census via import.tax)","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":"All computers (HS 8471), incl. servers; yearly sums of monthly Census values"},{"series":"hs8471_value","period":"2024","china":"35.5","vietnam":"15.3","mexico":"48.3","taiwan":"25.8","thailand":"6.8","unit":"USD bn","status":"WEB (Census via import.tax)","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"hs8471_value","period":"2025","china":"11.3","vietnam":"33.6","mexico":"89.9","taiwan":"85.0","thailand":"20.7","unit":"USD bn","status":"WEB (Census via import.tax)","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"hs8471_value","period":"2026 Jan-Jul","china":"3.2","vietnam":"26.1","mexico":"89.8","taiwan":"82.3","thailand":"25.6","unit":"USD bn","status":"WEB (Census via import.tax)","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"hs8471_share","period":"2023","china":"38.4","vietnam":"8.5","mexico":"26.9","taiwan":"13.9","thailand":"5.7","unit":"% of US HS 8471 imports","status":"WEB / DERIVED","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"hs8471_share","period":"2025 May-Jul","china":"2.1","vietnam":"15.5","mexico":"34.3","taiwan":"38.3","thailand":"6.3","unit":"% of US HS 8471 imports","status":"WEB","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"hs8471_share","period":"2026 May-Jul","china":"1.9","vietnam":"11.4","mexico":"43.7","taiwan":"28.1","thailand":"10.0","unit":"% of US HS 8471 imports","status":"WEB","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":""},{"series":"laptop_share","period":"2022","china":"","vietnam":"","mexico":"","taiwan":"","thailand":"","unit":"% of US laptop imports","status":"WEB (CTA via PCMag)","source":"https://finance.yahoo.com/economy/policy/articles/laptop-isnt-made-china-anymore-204113668.html","note":"Nearly all from China"},{"series":"laptop_share","period":"2025","china":"","vietnam":"60","mexico":"","taiwan":"","thailand":"","unit":"% of US laptop and tablet imports","status":"WEB (CTA via PCMag)","source":"https://finance.yahoo.com/economy/policy/articles/laptop-isnt-made-china-anymore-204113668.html","note":"About 60% from Vietnam"},{"series":"laptop_share","period":"2026 May-Jul","china":"","vietnam":"68","mexico":"","taiwan":"","thailand":"","unit":"% of US HS 8471.30 imports","status":"WEB / DERIVED (import.tax)","source":"https://import.tax/articles/us-computer-imports-nearly-doubled-mexico-record-share","note":"Vietnam 10.7 of 15.8 USD bn portable machines"}],"tariff_history":[{"from":"2025-02-04","to":"2025-03-03","china_extra_pct":"10","others_extra_pct":"0","status":"WEB","note":"IEEPA fentanyl tariff on China, 10%"},{"from":"2025-03-04","to":"2025-11-09","china_extra_pct":"20","others_extra_pct":"0","status":"WEB","note":"IEEPA fentanyl tariff raised to 20%; laptops exempted from the reciprocal tariffs on 11 Apr 2025, so China-made laptops paid 20%"},{"from":"2025-11-10","to":"2026-02-19","china_extra_pct":"10","others_extra_pct":"0","status":"WEB","note":"Fentanyl tariff cut to 10% after the Trump-Xi deal (Bloomberg, 4 Nov 2025)"},{"from":"2026-02-20","to":"2026-11-13","china_extra_pct":"0","others_extra_pct":"0","status":"WEB","note":"Supreme Court struck down the IEEPA tariffs; a 10% global tariff (Section 122) followed for every origin and expired on 24 Jul 2026, so no China-specific gap (unchanged on 13 Nov 2026)"}],"scenarios":[{"id":"now","label":"Current duties (Nov 2026)","probability":0.45},{"id":"cn301","label":"US tariffs China-made laptops (25%)","probability":0.2},{"id":"s232","label":"Section 232 phase 2 on laptops (25%, every origin)","probability":0.15},{"id":"asia301","label":"Asia Section 301 without the computer exemption","probability":0.1},{"id":"brcut","label":"Brazil removes the 16% on laptops","probability":0.05},{"id":"cnparts","label":"China licences parts exports to other sites","probability":0.05}],"hormuz_closed":1.0,"freight_basis":1.0};
+const W = D.watch, L = D.lens, B = L.base, N = L.now;
+const M$ = (v, d = 2) => (v < 0 ? '−' : '') + '$' + R.num(Math.abs(v) / 1e6, d) + 'M';
+const find = (s) => W.find((r) => r.indicator.startsWith(s));
+const dt = (d) => { const x = new Date(d + 'T00:00:00Z'); return isNaN(x) ? d : x.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); };
+R.$('#asof').textContent = dt(W.map((r) => r.date).filter((d) => /^\d{4}-\d\d-\d\d$/.test(d)).sort().pop());
+
+// ---------------------------------------------------------------- headline strip
+const lane = (k) => D.lanes.find((l) => l.lane === k);
+const usw = lane('FE-USWC'), mem = D.memory[D.memory.length - 1];
+const pcs = find('Global PC shipments'), off = find('Notebook output outside China'), hz = find('Strait of Hormuz');
+const tile = (g, v, l, s, acc) => `<article class="tile" style="--acc:${acc}"><span class="t-g">${g}</span><span class="t-v">${v}</span><span class="t-l">${l}</span><span class="t-s">${s}</span></article>`;
+R.$('#strip').innerHTML = [
+  tile('Hormuz', 'Day ' + hz.value, 'Strait closed to normal shipping', `${dt(hz.date)} · 3 transits a day against 85`, 'var(--bad)'),
+  tile('Freight', '$' + R.num(usw.now), 'Shanghai to Los Angeles, 40-ft', `spot ${R.num(usw.now / usw.pre, 1)}× pre-war · contract $${R.num(usw.contract)}`, 'var(--c1)'),
+  tile('Duty', '0%', 'US duty on laptops, every origin', 'no China-only gap since Feb 2026', 'var(--c3)'),
+  tile('Memory', '×' + R.num(mem.dram_index, 1), 'DRAM contract price since Q2 2025', `NAND ×${R.num(mem.nand_index, 1)} · ${mem.quarter.slice(4)} ${mem.quarter.slice(0, 4)}`, 'var(--c2)'),
+  tile('Demand', pcs.change.split(' ')[0].replace('-', '−') , 'Global PC shipments, Q3 2026', `${pcs.value}M units (IDC); Omdia sees −24% in Q4`, 'var(--c4)'),
+  tile('Footprint', off.value + '%', 'Notebooks built outside China', '24% in 2025; drifting back to China', 'var(--c5)'),
+].join('');
+
+// ---------------------------------------------------------------- freight
+const LANE_NAME = { 'FE-USWC': 'US West Coast', 'FE-NEUR': 'North Europe', 'FE-JP': 'Japan', 'FE-SEA': 'Singapore', 'FE-FE': 'Intra-Asia', 'FE-ANZ': 'Australia', 'FE-SAEC': 'Brazil', 'FE-INDIA': 'India', 'FE-GULF': 'Gulf (bypass)' };
+const lanes = D.lanes.filter((l) => l.lane !== 'FE-FE').sort((a, b) => b.now - a.now);
+R.$('#h-lanes').textContent = 'From the Far East · USD per 40-ft · sorted by spot';
+R.chart('c-lanes', (t) => {
+  const o = R.base(t);
+  const S = [['pre', 'Pre-war, Feb 2026', t.c[6]], ['contract', 'Long-term contract, Aug 2026 (plans pay this)', t.c[0]], ['now', 'Spot, Nov 2026', t.c[1]]];
+  return {
+    ...o, legend: { ...o.legend, data: S.map((s) => s[1]) }, grid: { ...o.grid, top: 40, left: 8 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const l = lanes[ps[0].dataIndex]; return R.tip(t, S.map(([k, n, c]) => [c, n, '$' + R.num(l[k])]).concat([[t.muted, 'Spot ÷ pre-war', R.num(l.now / l.pre, 1) + '×']]), 'Far East → ' + LANE_NAME[l.lane]); } },
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: lanes.map((l) => LANE_NAME[l.lane]), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12, fontFamily: t.fBody } }),
+    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + R.num(v / 1e3, 0) + 'k' } }),
+    series: S.map(([k, n, c], i) => ({ type: 'bar', name: n, barWidth: 7, barGap: '40%', itemStyle: { color: c, borderRadius: [0, 4, 4, 0] }, data: lanes.map((l) => l[k]),
+      label: k === 'now' ? { show: true, position: 'right', color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => R.num(lanes[p.dataIndex].now / lanes[p.dataIndex].pre, 1) + '×' } : undefined })),
+  };
+});
+const readRow = (r) => `<tr><td class="txt"><div class="reading"><b>${R.esc(r.indicator)}</b><span class="feeds">${R.esc(r.change)}</span><span class="src"><a href="${R.esc(r.source_url)}">${R.esc(r.source_name)}</a> · ${dt(r.date)}</span></div></td><td>${fmtVal(r)}<small>${R.esc(r.unit)}</small></td></tr>`;
+const fmtVal = (r) => { const v = +r.value; return isNaN(v) ? R.esc(r.value) : Math.abs(v) >= 1000 ? R.num(v) : R.esc(r.value); };
+const tbl = (id, rows, head) => { R.$(id).innerHTML = `<thead><tr><th class="txt">${head}</th><th>Value</th></tr></thead><tbody>` + rows.map(readRow).join('') + '</tbody>'; };
+tbl('#t-freight', W.filter((r) => r.group === 'Freight' || r.group === 'Hormuz').filter((r, i) => i < 9), 'Reading');
+
+// ---------------------------------------------------------------- duties
+const TH = D.tariff_history.map((r) => ({ from: r.from, to: r.to, cn: +r.china_extra_pct, ot: +r.others_extra_pct, note: r.note }));
+R.chart('c-duty', (t) => {
+  const o = R.base(t);
+  const pts = (k) => TH.flatMap((r) => [[r.from, r[k]], [r.to, r[k]]]);
+  return {
+    ...o, legend: { ...o.legend, data: ['China-made laptop', 'Every other origin'] }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, formatter: (ps) => { const d = ps[0].value[0]; const r = TH.find((x) => x.from <= d && d <= x.to) || TH[TH.length - 1]; return R.tip(t, ps.map((p) => [p.color, p.seriesName, p.value[1] + '%']), dt(d)) + `<div style="max-width:300px;white-space:normal;margin-top:4px;color:${t.ink2}">${R.esc(r.note)}</div>`; } },
+    xAxis: R.axis(t, { type: 'time', splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: '{MMM} {yy}' } }),
+    yAxis: R.axis(t, { type: 'value', max: 30, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: '{value}%' } }),
+    series: [
+      { type: 'line', name: 'China-made laptop', data: pts('cn'), symbol: 'none', lineStyle: { width: 2.5, color: t.c[1] }, itemStyle: { color: t.c[1] }, areaStyle: { color: t.c[1], opacity: 0.12 } },
+      { type: 'line', name: 'Every other origin', data: pts('ot'), symbol: 'none', lineStyle: { width: 2, color: t.c[0], type: 'dashed' }, itemStyle: { color: t.c[0] } },
+    ],
+  };
+});
+R.chart('c-scen', (t) => {
+  const o = R.base(t), sc = D.scenarios.slice().sort((a, b) => b.probability - a.probability);
+  return {
+    ...o, grid: { ...o.grid, top: 8, right: 44 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.pct(v) },
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: sc.map((s) => s.label), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12, fontFamily: t.fBody, width: 250, overflow: 'truncate' } }),
+    xAxis: R.axis(t, { type: 'value', max: 0.5, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => R.pct(v) } }),
+    series: [{ type: 'bar', barWidth: 12, data: sc.map((s) => s.probability), itemStyle: { color: t.c[0], borderRadius: [0, 4, 4, 0] },
+      label: { show: true, position: 'right', color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => R.pct(p.value) } }],
+  };
+});
+R.$('#t-duty').innerHTML = '<thead><tr><th class="txt">Reading</th><th class="txt">What changed</th><th class="txt">Feeds</th><th>Value</th></tr></thead><tbody>' +
+  W.filter((r) => r.group === 'Tariffs').map((r) => `<tr><td class="txt"><b>${R.esc(r.indicator)}</b><small><a href="${R.esc(r.source_url)}">${R.esc(r.source_name)}</a> · ${dt(r.date)}</small></td><td class="txt">${R.esc(r.change)}</td><td class="txt feeds">${R.esc(r.feeds)}</td><td>${fmtVal(r)}<small>${R.esc(r.unit)}</small></td></tr>`).join('') + '</tbody>';
+
+// ---------------------------------------------------------------- memory
+const QL = (q) => q.slice(4) + ' ' + q.slice(2, 4);
+R.chart('c-mem', (t) => {
+  const o = R.base(t), Q = D.memory;
+  const ser = (k, n, c) => ({ type: 'line', name: n, data: Q.map((q) => q[k]), symbol: 'circle', symbolSize: 8, lineStyle: { width: 2.5, color: c }, itemStyle: { color: c, borderColor: t.panel, borderWidth: 2 },
+    endLabel: { show: true, color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => `${n.split(' ')[0]} ×${R.num(p.value, 1)}` } });
+  return {
+    ...o, legend: { ...o.legend, data: ['DRAM (16GB memory)', 'NAND (512GB SSD)'] }, grid: { ...o.grid, top: 40, right: 70 },
+    tooltip: { ...o.tooltip, valueFormatter: (v) => '×' + R.num(v, 2) },
+    xAxis: R.axis(t, { type: 'category', data: Q.map((q) => QL(q.quarter)), boundaryGap: false, splitLine: { show: false } }),
+    yAxis: R.axis(t, { type: 'value', min: 0, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: '×{value}' } }),
+    series: [ser('dram_index', 'DRAM (16GB memory)', t.c[1]), ser('nand_index', 'NAND (512GB SSD)', t.c[3])],
+  };
+});
+const MODELS = Object.keys(B.units);
+R.chart('c-bom', (t) => {
+  const o = R.base(t);
+  const cats = MODELS.flatMap((m) => [m + '\n2025', m + '\nQ4 26']);
+  const val = (k) => MODELS.flatMap((m) => [k(B.units[m]), k(N.units[m])]);
+  return {
+    ...o, legend: { ...o.legend, data: ['Memory and SSD', 'Rest of the BOM'] }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => '$' + R.num(v) },
+    xAxis: R.axis(t, { type: 'category', data: cats, splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 11, fontFamily: t.fMono, interval: 0 } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: '${value}' } }),
+    series: [
+      { type: 'bar', name: 'Rest of the BOM', stack: 'b', barWidth: '52%', data: val((u) => u.bom - u.memory), itemStyle: { color: t.c[6], borderColor: t.panel, borderWidth: 1 } },
+      { type: 'bar', name: 'Memory and SSD', stack: 'b', data: val((u) => u.memory), itemStyle: { color: t.c[1], borderRadius: [4, 4, 0, 0], borderColor: t.panel, borderWidth: 1 },
+        label: { show: true, position: 'top', color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => { const m = MODELS[Math.floor(p.dataIndex / 2)], u = p.dataIndex % 2 ? N.units[m] : B.units[m]; return R.pct(u.memory_share); } } },
+    ],
+  };
+});
+
+// ---------------------------------------------------------------- lens
+const chip = (moved) => moved ? '<span class="chip warn">decision moves</span>' : '<span class="chip good">same decision</span>';
+const stake = '<span class="chip">bigger stakes</span>';
+const cut = (id) => id === 'stay' ? 'stay in China' : 'week ' + id.slice(1);
+const cov = (r, g) => MODELS.map((m) => r.m6[m + '|' + g].cover).join(' / ');
+const p14b = B.units['P1-14'], p14n = N.units['P1-14'];
+const LROWS = [
+  ['Unit', 'P1-14 bill of materials', `$${R.num(p14b.bom)} <small>memory ${R.pct(p14b.memory_share)}</small>`, `$${R.num(p14n.bom)} <small>memory ${R.pct(p14n.memory_share)}</small>`, stake],
+  ['Unit', 'P1-14 main board (memory on board)', `$${R.num(p14b.board)}`, `$${R.num(p14n.board)}`, stake],
+  ['Unit', 'P1-14 customs value, the US tariff base', `$${R.num(p14b.customs)}`, `$${R.num(p14n.customs)}`, stake],
+  ['Module 1', 'US leaves China: material freed / MWD', `${M$(B.m1.freed)} <small>MWD ${M$(B.m1.mwd)}</small>`, `${M$(N.m1.freed)} <small>MWD ${M$(N.m1.mwd)}</small>`, B.m1.mwd === N.m1.mwd ? '<span class="chip good">MWD unchanged</span><small>memory is shared, so it is absorbed</small>' : stake],
+  ['Module 2', 'Cheapest cutover week at a 25% tariff', `${cut('C' + B.m2.best_week)} <small>${M$(B.m2.best_total)}</small>`, `${cut('C' + N.m2.best_week)} <small>${M$(N.m2.best_total)}</small>`, chip(B.m2.best_week !== N.m2.best_week)],
+  ['Module 3', 'Transfer-year net at 25% / break-even tariff', `${M$(B.m3.net_year1)} <small>break-even ${R.pct(B.m3.breakeven, 1)}</small>`, `${M$(N.m3.net_year1)} <small>break-even ${R.pct(N.m3.breakeven, 1)}</small>`, stake],
+  ['Module 4', 'Avoidable finished-goods cost at launch (sales lock)', M$(B.m4.avoidable), M$(N.m4.avoidable), stake],
+  ['Module 5', 'Cutover pick: BU / company (25% tariff)', `${cut(B.m5.bu)} / ${cut(B.m5.company)}`, `${cut(N.m5.bu)} / ${cut(N.m5.company)}`, chip(B.m5.bu !== N.m5.bu || B.m5.company !== N.m5.company)],
+  ['Module 6', 'Weeks of boards per SMT run, strong GSM (' + MODELS.join(' / ') + ')', cov(B, 1), cov(N, 1), chip(cov(B, 1) !== cov(N, 1))],
+  ['Module 6', 'Same with a weak GSM', cov(B, 0), cov(N, 0), chip(cov(B, 0) !== cov(N, 0))],
+  ['Module 6', 'Ramp pull-in worth paying for', B.m6.ramp_pull + ' weeks', N.m6.ramp_pull + ' weeks', chip(B.m6.ramp_pull !== N.m6.ramp_pull)],
+  ['Module 7', 'Lowest expected-cost footprint', `${B.m7.best} <small>${M$(B.m7.best_expected, 1)} a year</small>`, `${N.m7.best} <small>${M$(N.m7.best_expected, 1)} a year</small>`, chip(B.m7.best !== N.m7.best)],
+  ['Module 7', 'Most robust footprint (least worst-case regret)', `${B.m7.robust} <small>${M$(B.m7.robust_regret, 1)} at worst</small>`, `${N.m7.robust} <small>${M$(N.m7.robust_regret, 1)} at worst</small>`, chip(B.m7.robust !== N.m7.robust)],
+];
+const ixq = L.index;
+R.$('#t-lens').innerHTML = `<thead><tr><th class="txt">Where</th><th class="txt">Decision or value</th><th>2025 base</th><th>${QL(ixq.quarter)} contract<small>DRAM ×${R.num(ixq.dram, 1)} · NAND ×${R.num(ixq.nand, 1)}</small></th><th class="txt">Effect</th></tr></thead><tbody>` +
+  LROWS.map(([w, d, a, b, c]) => `<tr><td class="txt"><code>${w}</code></td><td class="txt"><b>${d}</b></td><td>${a}</td><td>${b}</td><td class="txt">${c}</td></tr>`).join('') + '</tbody>';
+const p16 = (r, g) => r.m6['P1-16|' + g].cover;
+R.$('#insight').innerHTML = `
+  <p><b>Memory doubles what is at stake in a move, but changes few decisions.</b> A P1-14 costs $${R.num(p14n.bom)} in parts instead of $${R.num(p14b.bom)}, and memory is ${R.pct(p14n.memory_share)} of it. Because the US tariff is charged on the customs value, a ${R.pct(0.25)} tariff on China-made units costs about ${R.num(p14n.customs / p14b.customs, 1)} times as much per unit, so moving is worth more (transfer-year net ${M$(B.m3.net_year1)} → ${M$(N.m3.net_year1)}) and the break-even tariff falls to ${R.pct(N.m3.breakeven, 1)}. The cutover picks stay where they were: the claimed MWD doubles with the memory in it (${M$(B.m1.freed)} → ${M$(N.m1.freed)} freed), but memory is a shared part that other plans absorb, so the physical MWD stays at ${M$(N.m1.mwd)}, and the tariff on the other side of the scale grows too.</p>
+  <p><b>Where it bites is boards and footprint.</b> Memory sits on the main board, so a stranded board now costs ${R.num(N.units['P1-16'].board / B.units['P1-16'].board, 1)} times as much: for the risky P1-16 the recommended board run falls from ${p16(B, 1)} to ${p16(N, 1)} weeks with a strong GSM${p16(N, 0) === p16(B, 0) ? `, while with a weak GSM the risk that the ODM moves the line still keeps it at ${p16(N, 0)}` : ''}. In the footprint, higher customs values raise every duty in dollars, which ${B.m7.best === N.m7.best ? 'leaves the lowest-cost footprint as it was' : `moves the lowest-cost footprint from ${B.m7.best} to ${N.m7.best}`}.</p>`;
+
+// ---------------------------------------------------------------- imports and demand
+const H = D.history.filter((r) => r.series === 'hs8471_share');
+const CTRY = [['china', 'China'], ['vietnam', 'Vietnam'], ['mexico', 'Mexico'], ['taiwan', 'Taiwan'], ['thailand', 'Thailand']];
+R.chart('c-imp', (t) => {
+  const o = R.base(t), op = [0.35, 0.65, 1];
+  return {
+    ...o, legend: { ...o.legend, data: H.map((h) => h.period) }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.num(v, 1) + '%' },
+    xAxis: R.axis(t, { type: 'category', data: CTRY.map((c) => c[1]), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12, fontFamily: t.fBody } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: '{value}%' } }),
+    series: H.map((h, i) => ({ type: 'bar', name: h.period, barWidth: 14, barGap: '20%', itemStyle: { color: t.c[0], opacity: op[i] ?? 1, borderRadius: [4, 4, 0, 0] }, data: CTRY.map((c) => +h[c[0]]) })),
+  };
+});
+tbl('#t-dem', W.filter((r) => r.group === 'Demand' || r.group === 'Footprint' || r.group === 'Memory'), 'Reading');
+</script>
+
+</body>
+</html>

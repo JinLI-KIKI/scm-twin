@@ -11,6 +11,7 @@
 .topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
   font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab-sep { flex: none; width: 1px; margin: 13px 5px; background: var(--rule); }
 .topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
 .topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
 .topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }

@@ -12,11 +12,13 @@ Build the linked report pages in docs/ from the model modules.
   docs/demand.html           Module 5: tariff -> price -> units; BU scorecard vs company cost, live
   docs/ramp.html             Module 6: new-site ramp with pull-in, board-build cover per model, live
   docs/footprint.html        Module 7: six sites, nine markets, real duties, footprints live
+  docs/year.html             Roadmap A4: one fiscal year week by week across Modules 1-7, live
+  docs/market.html           Market monitor: the 2026 readings behind the inputs, memory lens
   docs/rules.html            Rules register, numbers and question log from ASSUMPTIONS.md
 
 Each page is one self-contained HTML file: data embedded as JSON, charts drawn with
 ECharts from cdnjs. Scenario grids are precomputed here, so slicers on most pages only
-filter (as in a BI report). The four studio pages (fg-live, demand, ramp, footprint)
+filter (as in a BI report). The five studio pages (fg-live, demand, ramp, footprint, year)
 embed a JavaScript port of their model and recompute in the browser; tests/ check the ports match Python.
 
 Run:  python3 src/build_dashboards.py            (about two minutes; Module 4 grid dominates)
@@ -36,10 +38,12 @@ import finished_goods as FG
 import demand_kpi as DK
 import ramp_board as RB
 import footprint as FP
+import market as MK
 import mwd_engine as E
 import scenarios as SC
 import site_chrome as S
 import transfer as TR
+import year_run as YR
 
 ROOT = S.ROOT
 DATA = os.path.join(ROOT, "data")
@@ -56,6 +60,34 @@ def rnd(x, n=0):
 def read_csv(name):
     with open(os.path.join(DATA, name), newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
+
+
+def compact(x):
+    """Round floats for embedding: dollars and units to whole numbers, small values to 4 places."""
+    if isinstance(x, float):
+        return int(round(x)) if abs(x) >= 100 else round(x, 4)
+    if isinstance(x, list):
+        return [compact(v) for v in x]
+    if isinstance(x, dict):
+        return {k: compact(v) for k, v in x.items()}
+    return x
+
+
+def both_memory(fn):
+    """The same input under the 2025 base memory prices and the latest quarter (memory lens)."""
+    out = []
+    for level in (0, 1):
+        with E.memory_market(level):
+            out.append(fn())
+    return out
+
+
+def memory_info():
+    ix = E.memory_index()
+    default = int(E.load()[5]["memory_market"])
+    with E.memory_market(1):
+        delta = E.load()[1]["P1-14"]["memory_delta"]
+    return {**ix, "default": default, "delta_p1_14": delta}
 
 
 # ----------------------------------------------------------------------------- Module 1
@@ -254,7 +286,7 @@ def data_lanes():
                    "barrier": t.get("other_barrier") or "", "note": t.get("note") or "",
                    "share": round(weekly.get(m, 0) / tot, 4), "port": net["nodes"][v["port"]]["name"],
                    "airport": net["nodes"][v["airport"]]["code"]}
-    fpi = FP.fp_input()                           # ocean rate per 40-ft on every lane, pre-war and Oct 2026
+    fpi = FP.fp_input()                           # ocean rate per 40-ft on every lane, pre-war, contract and Nov 2026 spot
     rate = lambda leg, basis: FP.feu_rate(fpi, {**fpi["P"], "freight_basis": basis}, leg["lane"], leg["nm"])
     routes = []
     for r in net["routes"]:
@@ -336,17 +368,19 @@ def data_rules():
 
 
 # ----------------------------------------------------------------------------- overview
+LATEST_BATCH = 39                 # first question of the batch sent to the practitioner on day 6
+
 ROADMAP = [
     ("Modules 1–4 + atlas", "MWD, transfer timing, business case, finished goods, network map", "done"),
     ("Module 7 · Footprint", "Six ODM sites, nine markets, real duties, 2026 freight and Hormuz, back-tested on US imports", "done"),
     ("Module 5 · Demand & KPI", "Tariff → price → units → shipment gap; BU scorecard vs company cost", "done"),
-    ("Module 6 · Ramp & boards", "Three-month ramp with pull-in and three gates; board-build cover per model", "done"),
-    ("A · Core loop", "A2, A3 done · A4 first link done (Modules 2–4 price Module 7) · full weekly run next", "active"),
+    ("Module 6 · Ramp & boards", "Three-month ramp with pull-in; board cover per model with the ODM capacity risk", "done"),
+    ("A · Core loop", "A2, A3 and A4 done: one fiscal year week by week across Modules 1–7", "done"),
+    ("E · Calibration", "US import back-test, Nov 2026 market monitor, memory price lens · replace placeholders next", "active"),
+    ("F · Product", "Four live studios and the year run · BI exports, CI next", "active"),
     ("B · Breadth", "AI servers, rail and sea-air (more origins and markets done)", "next"),
     ("C · Decision engine", "Inventory policy, forecast module (footprint optimiser done)", "next"),
     ("D · Risk and cost", "Disruption Monte Carlo, carbon per lane (landed cost, Hormuz bypass done)", "next"),
-    ("E · Calibration", "US import back-test done · replace placeholders, scheduled data refresh", "active"),
-    ("F · Product", "Two live studios done · BI exports, CI", "active"),
     ("G · Packaging", "Case studies, methodology note", "next"),
 ]
 
@@ -380,7 +414,36 @@ def data_rb_summary():
     r0, rb = r["rows"][0], next(x for x in r["rows"] if x["pull"] == r["best"])
     return {"pull": r["best"], "t0": r0["T_p50"], "tb": rb["T_p50"], "saved": r0["total"] - rb["total"],
             "covers": {b["model"]: b["best"] for b in RB.boards(inp, inp["P"])},
+            "covers_weak": {b["model"]: b["best"] for b in RB.boards(inp, dict(inp["P"], gsm_strong=0))},
             "std": inp["P"]["board_cover_std_weeks"]}
+
+
+def data_market():
+    fpi = FP.fp_input()
+    lanes = [{"lane": r["lane"], "pre": float(r["normal_usd_feu"]), "contract": float(r["contract_usd_feu"]),
+              "now": float(r["now_usd_feu"]), "now_basis": r["now_basis"]} for r in read_csv("freight_lanes.csv")]
+    return compact({"watch": MK.watch(), "memory": MK.memory_series(), "lens": MK.memory_lens(),
+                    "lanes": lanes, "history": read_csv("us_import_history.csv"),
+                    "tariff_history": read_csv("us_laptop_tariff_history.csv"),
+                    "scenarios": [{"id": x["id"], "label": x["label"], "probability": x["probability"]}
+                                  for x in fpi["scenarios"]],
+                    "hormuz_closed": fpi["P"]["hormuz_closed"], "freight_basis": fpi["P"]["freight_basis"]})
+
+
+def data_market_strip():
+    w = {r["indicator"]: r for r in MK.watch()}
+    pick = lambda k: next(r for n, r in w.items() if n.startswith(k))
+    lane = {r["lane"]: r for r in read_csv("freight_lanes.csv")}["FE-USWC"]
+    mem = MK.memory_series()[-1]
+    return compact({"hormuz": pick("Strait of Hormuz"), "pcs": pick("Global PC shipments"),
+                    "outside": pick("Notebook output outside China"), "duty": pick("US duty on laptops"),
+                    "usw": {"now": float(lane["now_usd_feu"]), "pre": float(lane["normal_usd_feu"]),
+                            "contract": float(lane["contract_usd_feu"])},
+                    "memory": mem, "asof": max(r["date"] for r in w.values() if len(r["date"]) == 10)})
+
+
+def data_year():
+    return {"inputs": both_memory(YR.inputs), "cats": YR.CATS, "memory": memory_info()}
 
 
 def data_overview(mwd, tr, bc, fg, lanes, rules, fp, dk=None, rb=None):
@@ -396,7 +459,8 @@ def data_overview(mwd, tr, bc, fg, lanes, rules, fp, dk=None, rb=None):
         counts[r["kind"]] = counts.get(r["kind"], 0) + 1
     rank = lambda q: (0 if re.sub("<[^>]+>", "", q["a"]).upper().startswith("OPEN") else
                       1 if re.sub("<[^>]+>", "", q["a"]).upper().startswith("QUEUED") else 2,
-                      -int(re.sub(r"\D", "", q["id"]) or 0))
+                      0 if int(re.sub(r"\D", "", q["id"]) or 0) >= LATEST_BATCH else 1,
+                      int(re.sub(r"\D", "", q["id"]) or 0))
     open_q = sorted([q for q in rules["questions"] if q["kind"] == "open"], key=rank)
     return {
         "mwd": {k: {"total": v["total_cost_usd"], "mwd": v["mwd_claimed_usd"]} for k, v in sc.items()},
@@ -410,7 +474,7 @@ def data_overview(mwd, tr, bc, fg, lanes, rules, fp, dk=None, rb=None):
                    "excess": fgk(s)["excess_units"][0], "lost": fgk(s)["lost_units"][0],
                    "mwd": fgk(s)["mwd_usd"][0]} for s in fg["strategies"]},
         "fp": fp, "dk": dk, "rb": rb,
-        "status_counts": counts, "open_questions": open_q[:3],
+        "status_counts": counts, "open_questions": open_q[:4], "open_count": len(open_q),
         "roadmap": [{"name": a, "scope": b, "state": c} for a, b, c in ROADMAP],
     }
 
@@ -427,6 +491,7 @@ def render(page_file, key, title_tag, data, extra_head=""):
             .replace("/*__FPENGINE__*/", S.read("fp_engine.js"))
             .replace("/*__DKENGINE__*/", S.read("dk_engine.js"))
             .replace("/*__RBENGINE__*/", S.read("rb_engine.js"))
+            .replace("/*__YRENGINE__*/", S.read("yr_engine.js"))
             .replace("/*__DATA__*/null", json.dumps(data, separators=(",", ":"), ensure_ascii=False)
                      .replace("</", "<\\/"))
             .replace("__TODAY__", TODAY))
@@ -458,17 +523,27 @@ def main():
     mwd, tr, lanes, rules = data_mwd(), data_transfer(), data_lanes(), data_rules()
     lk = FP.fp_input()["linkage"]                 # src/integrate.py: what Module 7 takes from Modules 2-4
     bc, fg, tr = {**bc, "linkage": lk}, {**fg, "linkage": lk}, {**tr, "linkage": lk}
+    with E.memory_market(0):                      # the footprint page adds the memory dollars itself
+        base_fp = FP.fp_input()
     ov = data_overview(mwd, tr, bc, fg, lanes, rules, data_fp_summary(), data_dk_summary(), data_rb_summary())
+    ov["market"] = data_market_strip()
+    yr = YR.run_year(0.25, 1)
+    ov["year"] = compact({"tariff": yr["tariff"], "T50": yr["T50"], "pull": yr["pull"], "target": yr["target"],
+                          "strategies": [{k: s[k] for k in ("key", "label", "id", "cutover", "company_cost", "bu_cost",
+                                                            "attainment", "cumulative")} for s in yr["strategies"]]})
     for page_file, key, data in [
         ("index.html", "overview", ov), ("lanes.html", "lanes", lanes), ("mwd.html", "mwd", mwd),
         ("transfer.html", "transfer", tr), ("business-case.html", "business", bc),
         ("finished-goods.html", "fg", fg), ("rules.html", "rules", rules),
-        ("fg-live.html", "fglive", {"input": FG.engine_input(), "ranges": read_csv("fg_ranges.csv"),
-                                    "params": read_csv("fg_params.csv")}),
-        ("demand.html", "demand", {"input": DK.dk_input()}),
-        ("ramp.html", "ramp", {"input": RB.rb_input()}),
-        ("footprint.html", "footprint", {"input": FP.fp_input(), "history": read_csv("us_import_history.csv"),
-                                         "tariff_history": read_csv("us_laptop_tariff_history.csv")}),
+        ("fg-live.html", "fglive", {"inputs": both_memory(FG.engine_input), "memory": memory_info(),
+                                    "ranges": read_csv("fg_ranges.csv"), "params": read_csv("fg_params.csv")}),
+        ("demand.html", "demand", {"inputs": both_memory(DK.dk_input), "memory": memory_info()}),
+        ("ramp.html", "ramp", {"inputs": both_memory(RB.rb_input), "memory": memory_info()}),
+        ("footprint.html", "footprint", {"input": base_fp, "history": read_csv("us_import_history.csv"),
+                                         "tariff_history": read_csv("us_laptop_tariff_history.csv"),
+                                         "memory": memory_info()}),
+        ("year.html", "year", data_year()),
+        ("market.html", "market", data_market()),
     ]:
         n = render(page_file, key, None, data)
         print(f"  docs/{page_file:<22}{n / 1e3:>8.0f} kB")

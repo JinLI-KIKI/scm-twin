@@ -140,6 +140,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border-radius: 3px; }
 .legend-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
 .sw { width: 12px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+/* section headers (pages that use .sec): stack the note under the title on phones */
+@media (max-width: 640px) { main .sec { flex-wrap: wrap; row-gap: 2px; } main .sec .rule { display: none; } main .sec .note { flex-basis: 100%; text-align: left; max-width: none; } }
 
 /* Top navigation shared by every page, including the atlas. Uses the page's own tokens. */
 .topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1200; display: flex; align-items: stretch; gap: 14px;
@@ -154,6 +156,7 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
 .topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
   font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab-sep { flex: none; width: 1px; margin: 13px 5px; background: var(--rule); }
 .topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
 .topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
 .topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }
@@ -191,7 +194,7 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
 @media (max-width: 860px) { .mrow { grid-template-columns: 1fr; } }</style>
 <header class="topbar">
   <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
-  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html">Overview</a><a class="tab" href="atlas.html">Network atlas</a><a class="tab" href="lanes.html">Lanes & lead time</a><a class="tab" href="mwd.html">MWD</a><a class="tab" href="transfer.html">Transfer timing</a><a class="tab" href="business-case.html">Business case</a><a class="tab" href="finished-goods.html">Finished goods</a><a class="tab" href="fg-live.html">FG simulator</a><a class="tab" href="demand.html">Demand & KPI</a><a class="tab" href="ramp.html" aria-current="page">Ramp & boards</a><a class="tab" href="footprint.html">Footprint</a><a class="tab" href="rules.html">Rules register</a></nav>
+  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html" data-group="start">Overview</a><a class="tab" href="year.html" data-group="start">Year run</a><a class="tab" href="market.html" data-group="start">Market</a><span class="tab-sep" aria-hidden="true" title="Network"></span><a class="tab" href="atlas.html" data-group="network">Atlas</a><a class="tab" href="lanes.html" data-group="network">Lanes</a><a class="tab" href="footprint.html" data-group="network">Footprint</a><span class="tab-sep" aria-hidden="true" title="Transfer"></span><a class="tab" href="mwd.html" data-group="transfer">MWD</a><a class="tab" href="transfer.html" data-group="transfer">Transfer</a><a class="tab" href="business-case.html" data-group="transfer">Business case</a><a class="tab" href="demand.html" data-group="transfer">Demand & KPI</a><a class="tab" href="ramp.html" aria-current="page" data-group="transfer">Ramp & boards</a><span class="tab-sep" aria-hidden="true" title="End of life"></span><a class="tab" href="finished-goods.html" data-group="eol">Finished goods</a><a class="tab" href="fg-live.html" data-group="eol">FG sim</a><span class="tab-sep" aria-hidden="true" title="Sources"></span><a class="tab" href="rules.html" data-group="ref">Rules</a></nav>
   <a class="repo" href="https://github.com/jinli-kiki/scm-twin">GitHub</a>
 </header>
 <script>(function(){var a=document.querySelector(".topbar .tab[aria-current]");if(a){var n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.clientWidth)/2;}})();</script>
@@ -201,15 +204,16 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
     <div>
       <p class="eyebrow">Module 6 · new-site ramp and risk board hedge</p>
       <h1>Ramp Up, Board Up</h1>
-      <p class="sub">A new site takes about three months from the first trial build to full volume, and it can be pulled in; material rhythm, yield and supplier readiness are what hold it back. While it ramps, China builds the rest and pays the tariff. On the board side, every SMT run locks CPU and memory into boards: short runs keep material loose for uncertain models, long runs keep the ODM's capacity. Both are simulated live below.</p>
+      <p class="sub">A new site takes about three months from the first trial build to full volume, and it can be pulled in; material rhythm, yield and supplier readiness are what hold it back. While it ramps, China builds the rest and pays the tariff. On the board side, every SMT run locks CPU and memory into boards: short runs keep material loose for uncertain models, long runs keep the ODM's capacity. Push builds back and the ODM may give the line to another customer, and capacity drops: with a weak GSM that risk is large. Both are simulated live below.</p>
     </div>
-    <div class="asof">Model run 2026-10-20 · US region for the ramp, all regions for the boards · <a href="rules.html">rules R13, R16, R19, R21, R46, R47</a></div>
+    <div class="asof">Model run 2026-11-13 · US region for the ramp, all regions for the boards · <a href="rules.html">rules R13, R16, R19, R21, R46, R47</a></div>
   </div>
 
   <section class="slicers" aria-label="Inputs">
     <div class="ctl-grid" id="ctl"></div>
     <div class="ctl-foot">
       <div class="slicer"><span class="s-label" id="l-g">GSM</span><div class="seg" role="group" aria-labelledby="l-g" id="f-g"></div></div>
+      <div class="slicer"><span class="s-label" id="l-mem">Memory prices</span><div class="seg" role="group" aria-labelledby="l-mem" id="f-mem"></div></div>
       <button type="button" class="btn" id="reset">Reset all</button>
       <span class="status" id="status"></span>
     </div>
@@ -231,14 +235,14 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
       <div id="c-gate" class="chart short"></div>
     </div>
 
-    <div class="sec"><span class="n">02</span><h3>How many weeks of boards per SMT run</h3><span class="rule"></span><span class="note">Short runs keep CPU and memory loose; the ODM takes away capacity it is not loaded with</span></div>
+    <div class="sec"><span class="n">02</span><h3>How many weeks of boards per SMT run</h3><span class="rule"></span><span class="note">Short runs keep CPU and memory loose; the ODM may give the line to another customer</span></div>
     <div class="viz w12">
       <div class="viz-h"><h2>Models</h2><span class="hint">Forecast bias at 16 weeks, error multiplier, chance the model is cut early</span></div>
       <div id="mods"></div>
     </div>
     <div class="cards" id="cards-b" aria-live="polite"></div>
     <div class="viz w7">
-      <div class="viz-h"><h2>Expected cost by weeks of boards per run</h2><span class="hint">Each model over the year · ring = recommended</span></div>
+      <div class="viz-h"><h2>Cost by weeks of boards per run</h2><span class="hint" id="h-cover"></span></div>
       <div id="c-cover" class="chart tall"></div>
     </div>
     <div class="viz w5">
@@ -246,8 +250,16 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
       <div class="slicer" style="margin:2px 0 4px"><div class="seg" role="group" aria-label="Model" id="f-m"></div></div>
       <div id="c-parts" class="chart"></div>
     </div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Chance the ODM moves the line in a year</h2><span class="hint" id="h-loss"></span></div>
+      <div id="c-loss" class="chart"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Strong against weak GSM</h2><span class="hint">Recommended cover and its risk, same models and runs</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-g"></table></div>
+    </div>
     <div class="viz w12">
-      <div class="viz-h"><h2>Board ledger</h2><span class="hint">Expected cost per model and cover, $k · boxed = recommended</span></div>
+      <div class="viz-h"><h2>Board ledger</h2><span class="hint" id="h-ledger"></span></div>
       <div class="tbl-wrap"><table class="tbl" id="t-b"></table></div>
     </div>
   </section>
@@ -256,8 +268,8 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
 
   <footer class="notes">
     <p><b>Ramp (R16, R21, R46).</b> From the first trial build the new site follows an S-curve (smoothstep) to full volume over T weeks: T = the base ramp less the weeks pulled in (never below the fastest ramp), plus the slips. Each gate, material rhythm, yield and supplier readiness, slips with its own chance (times the GSM factor) by a uniform number of weeks between its bounds. China builds what the new site cannot yet and pays the tariff on its customs value (leakage). Units that fail first pass consume material: yield rises from its start to its full level with the learning time, and each failed unit costs a share of its BOM value. Pulling in costs per unit of weekly volume for every week pulled, rising by the growth rate for each further week. The pull-in with the lowest expected cost is marked.</p>
-    <p><b>Board runs (R13, R19, R47).</b> Each SMT run builds boards for the next N weeks of forecast; forecasts get worse with the horizon (accuracy 68% at 16 weeks, falling with its square root) and run high for models that sold badly. A board locks CPU and memory to the model and the site's origin: when the model ends (end of life, or an early cut), boards left over cost their full value as MWD, where loose parts would mostly migrate (Module 5: 90%). The ODM builds about 8 weeks of boards per run by default and the brand can push builds later; runs shorter than the standard cost setups and capacity: the ODM keeps back a share of SMT capacity it is not loaded with (smaller with a strong GSM). Short of boards, rush boards cover up to the flex share of the run's planned volume at a premium; the rest ships late or is lost at gross margin. Boards on hand carry at the carrying rate. The cover with the lowest expected cost is recommended.</p>
-    <p><b>Status.</b> The three-month ramp, the three gates and the risk-board rule are practitioner input; the 8-week standard cover is practitioner input; the capacity the ODM takes back, slip sizes, yields, pull-in and SMT costs are placeholders (<code>data/ramp_params.csv</code>, <code>data/board_models.csv</code>). Code in <code>src/ramp_board.py</code>, mirrored in <code>src/dash/rb_engine.js</code> and checked by <code>tests/test_rb_parity.py</code>.</p>
+    <p><b>Board runs (R13, R19, R47).</b> Each SMT run builds boards for the next N weeks of forecast; forecasts get worse with the horizon (accuracy 68% at 16 weeks, falling with its square root) and run high for models that sold badly. A board locks CPU and memory to the model and the site's origin: when the model ends (end of life, or an early cut), boards left over cost their full value as MWD, where loose parts would mostly migrate (Module 5: 90%). The ODM builds about 8 weeks of boards per run by default and the brand can push builds later; runs shorter than the standard cost setups and capacity, and how much depends heavily on the GSM (Q38). In every run the ODM gives a share of the line time it is not loaded with to other customers. On top, each week the model sells there is a chance, rising with how far builds are pushed back, that the ODM moves the model's line to another customer: for about a quarter both builds and rush capacity drop. Short of boards, rush boards cover up to the flex share of the run's planned volume at a premium; the rest ships late or is lost at gross margin. Boards on hand carry at the carrying rate. The recommended cover has the lowest score, a blend of the expected cost and the P90, so the bad years count too.</p>
+    <p><b>Status.</b> The three-month ramp, the three gates and the risk-board rule are practitioner input; the 8-week standard cover and the direction of the capacity risk (much larger with a weak GSM) are practitioner input; how much capacity the ODM takes and for how long, the weight on the bad case, slip sizes, yields, pull-in and SMT costs are placeholders (<code>data/ramp_params.csv</code>, <code>data/board_models.csv</code>). Code in <code>src/ramp_board.py</code>, mirrored in <code>src/dash/rb_engine.js</code> and checked by <code>tests/test_rb_parity.py</code>.</p>
   </footer>
 </main>
 <script>/* Shared helpers for the report pages: theme-aware ECharts, number formats, slicers. */
@@ -426,7 +438,7 @@ const RBE = (() => {
 
   // ---------------------------------------------------------------- Part B: board cover
   function boardDraws(inp, P, m, seed) {
-    const rng = makeRng(seed), runs = [];
+    const rng = makeRng(seed), rngCap = makeRng(seed + 5000), runs = [];
     for (let r = 0; r < Math.trunc(P.board_runs); r++) {
       const z = [], u = [];
       for (let w = 0; w < inp.weeks; w++) z.push(rng.gauss());
@@ -435,18 +447,23 @@ const RBE = (() => {
       const live = []; for (let w = 0; w < inp.weeks; w++) if (m.plan[w] > 0) live.push(w);
       let cut = null;
       if (c1 < m.cut_prob && live.length > 8) cut = live[0] + 4 + Math.trunc(c2 * (live.length - 4));
-      runs.push([z, u, cut]);
+      const v = []; for (let w = 0; w < inp.weeks; w++) v.push(rngCap.random());
+      runs.push([z, u, cut, v]);
     }
     return runs;
   }
   function boardRun(inp, P, m, cover, draw) {
-    const [z, u, cut] = draw, W = inp.weeks;
+    const [z, u, cut, v] = draw, W = inp.weeks;
     const s16 = P.forecast_mape_16w * Math.sqrt(Math.PI / 2) * m.sigma_mult;
     const D = [];
     for (let w = 0; w < W; w++) D.push(cut !== null && w >= cut ? 0 : m.plan[w] * Math.max(0, 1 + P.demand_noise * z[w]));
-    const kappa = P.gsm_strong >= 0.5 ? P.capacity_cut_strong : P.capacity_cut_weak;
-    const cutcap = kappa * Math.max(0, (P.board_cover_std_weeks - cover) / P.board_cover_std_weeks);
+    const strong = P.gsm_strong >= 0.5;
+    const push = Math.max(0, (P.board_cover_std_weeks - cover) / P.board_cover_std_weeks);
+    const cutcap = (strong ? P.capacity_cut_strong : P.capacity_cut_weak) * push;
+    const hazard = (strong ? P.capacity_loss_hazard_strong : P.capacity_loss_hazard_weak) * push;
+    const drop = strong ? P.capacity_loss_strong : P.capacity_loss_weak, span = Math.trunc(P.capacity_loss_weeks);
     let inv = 0, setups = 0, rush = 0, lost = 0, carry = 0, budget = 0;
+    let until = -1, events = 0, downWeeks = 0;   // last week of a capacity loss under way
     const forecast = (w, h, d) => {
       if (m.eol !== null && w >= m.eol) return 0;
       if (cut !== null && d >= cut) return 0;
@@ -455,13 +472,17 @@ const RBE = (() => {
       return base * Math.max(0, 1 + m.bias * g + s16 * g * u[w]);
     };
     for (let w = 0; w < W; w++) {
+      const live = m.plan[w] > 0 && !(cut !== null && w >= cut);
+      if (live && w > until && v[w] < hazard) { until = w + span - 1; events += 1; budget *= 1 - drop; }  // the line goes to another customer
+      const down = w <= until ? drop : 0;
+      if (down > 0 && live) downWeeks += 1;
       if (w % cover === 0) {
         let need = 0;
         for (let j = 0; j < cover; j++) if (w + j < W) need += forecast(w + j, j + 1, w);
-        const build = Math.min(Math.max(0, need - inv), need * (1 - cutcap));
+        const build = Math.min(Math.max(0, need - inv), need * (1 - cutcap) * (1 - down));
         if (build > 1e-9) { inv += build; setups += P.setup_usd_per_run; }
         let pl = 0; for (let j = 0; j < cover; j++) if (w + j < W) pl += m.plan[w + j];
-        budget = P.smt_flex * pl;
+        budget = P.smt_flex * pl * (1 - down);
       }
       const use = Math.min(inv, D[w]);
       inv -= use;
@@ -478,7 +499,7 @@ const RBE = (() => {
     const stranded = ended ? inv : 0;
     const lock = (m.board_value - m.onboard_parts * (1 - P.migration)) * P.mwd_cost_rate;
     const parts = { setups, rush, lost, carry, stranded: stranded * lock };
-    return { parts, total: parts.setups + parts.rush + parts.lost + parts.carry + parts.stranded, stranded_boards: stranded };
+    return { parts, total: parts.setups + parts.rush + parts.lost + parts.carry + parts.stranded, stranded_boards: stranded, events, down_weeks: downWeeks };
   }
   function boardEval(inp, P, m, seed) {
     const draws = boardDraws(inp, P, m, seed), rows = [];
@@ -489,10 +510,13 @@ const RBE = (() => {
       const tot = runs.map((r) => r.total);
       let st = 0; for (const r of runs) st += r.stranded_boards;
       let tt = 0; for (const x of tot) tt += x;
-      rows.push({ cover, parts, total: tt / n, p90: pct(tot, 0.9), stranded_boards: st / n });
+      let lc = 0, dw = 0; for (const r of runs) { if (r.events > 0) lc += 1; dw += r.down_weeks; }
+      const mean = tt / n, p90 = pct(tot, 0.9);
+      rows.push({ cover, parts, total: mean, p90, score: (1 - P.risk_weight) * mean + P.risk_weight * p90,
+        stranded_boards: st / n, loss_chance: lc / n, down_weeks: dw / n });
     }
     let best = rows[0];
-    for (const r of rows) if (r.total < best.total || (r.total === best.total && -r.cover < -best.cover)) best = r;
+    for (const r of rows) if (r.score < best.score || (r.score === best.score && -r.cover < -best.cover)) best = r;
     return { model: m.model, risk: m.risk, rows, best: best.cover };
   }
   const boards = (inp, P) => inp.models.map((m, i) => boardEval(inp, P, m, 101 + i));
@@ -501,8 +525,11 @@ const RBE = (() => {
 if (typeof module !== 'undefined') module.exports = RBE;
 </script>
 <script>
-const D = {"input":{"models":[{"model":"P1-14","risk":"normal","bias":0.0,"sigma_mult":1.0,"cut_prob":0.0,"eol":30,"board_value":195.0,"onboard_parts":160.0,"margin":162.5,"plan":[5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,3750.0,2500.0,1250.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","risk":"risky","bias":0.1,"sigma_mult":1.5,"cut_prob":0.15,"eol":30,"board_value":198.0,"onboard_parts":160.0,"margin":190.0,"plan":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","risk":"new","bias":0.05,"sigma_mult":1.3,"cut_prob":0.1,"eol":null,"board_value":211.0,"onboard_parts":175.0,"margin":176.0,"plan":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1500.0,3000.0,4500.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0]}],"region":{"weekly_units":2800.0,"customs":502.85714285714283,"bom":372.7142857142857},"P":{"ramp_base_weeks":13.0,"ramp_min_weeks":6.0,"pull_cost_usd_per_unit":6.0,"pull_cost_growth":0.5,"slip_material_prob":0.4,"slip_material_lo":1.0,"slip_material_hi":4.0,"slip_yield_prob":0.3,"slip_yield_lo":1.0,"slip_yield_hi":3.0,"slip_supplier_prob":0.5,"slip_supplier_lo":2.0,"slip_supplier_hi":6.0,"gsm_strong":1.0,"gsm_mult_strong":0.6,"gsm_mult_weak":1.4,"yield_start":0.85,"yield_full":0.98,"yield_tau_weeks":4.0,"scrap_share_of_bom":0.3,"ramp_tariff":0.25,"ramp_runs":1000.0,"board_cover_std_weeks":8.0,"forecast_mape_16w":0.32,"demand_noise":0.1,"capacity_cut_strong":0.35,"capacity_cut_weak":0.8,"smt_flex":0.2,"rush_premium_usd":8.0,"setup_usd_per_run":1500.0,"lost_share":0.5,"board_runs":400.0,"carry":0.2,"migration":0.9,"mwd_cost_rate":0.9},"covers":[1,2,3,4,5,6,7,8],"weeks":52,"ramp_weeks":40}};
-const IN = D.input;
+const D = {"inputs":[{"models":[{"model":"P1-14","risk":"normal","bias":0.0,"sigma_mult":1.0,"cut_prob":0.0,"eol":30,"board_value":195.0,"onboard_parts":160.0,"margin":162.5,"plan":[5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,3750.0,2500.0,1250.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","risk":"risky","bias":0.1,"sigma_mult":1.5,"cut_prob":0.15,"eol":30,"board_value":198.0,"onboard_parts":160.0,"margin":190.0,"plan":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","risk":"new","bias":0.05,"sigma_mult":1.3,"cut_prob":0.1,"eol":null,"board_value":211.0,"onboard_parts":175.0,"margin":176.0,"plan":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1500.0,3000.0,4500.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0]}],"region":{"weekly_units":2800.0,"customs":502.85714285714283,"bom":372.7142857142857},"P":{"ramp_base_weeks":13.0,"ramp_min_weeks":6.0,"pull_cost_usd_per_unit":6.0,"pull_cost_growth":0.5,"slip_material_prob":0.4,"slip_material_lo":1.0,"slip_material_hi":4.0,"slip_yield_prob":0.3,"slip_yield_lo":1.0,"slip_yield_hi":3.0,"slip_supplier_prob":0.5,"slip_supplier_lo":2.0,"slip_supplier_hi":6.0,"gsm_strong":1.0,"gsm_mult_strong":0.6,"gsm_mult_weak":1.4,"yield_start":0.85,"yield_full":0.98,"yield_tau_weeks":4.0,"scrap_share_of_bom":0.3,"ramp_tariff":0.25,"ramp_runs":1000.0,"board_cover_std_weeks":8.0,"forecast_mape_16w":0.32,"demand_noise":0.1,"capacity_cut_strong":0.35,"capacity_cut_weak":0.8,"capacity_loss_hazard_strong":0.005,"capacity_loss_hazard_weak":0.03,"capacity_loss_strong":0.25,"capacity_loss_weak":0.5,"capacity_loss_weeks":13.0,"smt_flex":0.2,"rush_premium_usd":8.0,"setup_usd_per_run":1500.0,"lost_share":0.5,"board_runs":400.0,"risk_weight":0.25,"carry":0.2,"migration":0.9,"mwd_cost_rate":0.9},"covers":[1,2,3,4,5,6,7,8],"weeks":52,"ramp_weeks":40},{"models":[{"model":"P1-14","risk":"normal","bias":0.0,"sigma_mult":1.0,"cut_prob":0.0,"eol":30,"board_value":425.64,"onboard_parts":390.64,"margin":284.8134114583333,"plan":[5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,3750.0,2500.0,1250.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","risk":"risky","bias":0.1,"sigma_mult":1.5,"cut_prob":0.15,"eol":30,"board_value":428.64,"onboard_parts":390.64,"margin":312.5822321428571,"plan":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","risk":"new","bias":0.05,"sigma_mult":1.3,"cut_prob":0.1,"eol":null,"board_value":441.64,"onboard_parts":405.64,"margin":298.2844615384615,"plan":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1500.0,3000.0,4500.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0]}],"region":{"weekly_units":2800.0,"customs":864.1521428571428,"bom":734.0092857142857},"P":{"ramp_base_weeks":13.0,"ramp_min_weeks":6.0,"pull_cost_usd_per_unit":6.0,"pull_cost_growth":0.5,"slip_material_prob":0.4,"slip_material_lo":1.0,"slip_material_hi":4.0,"slip_yield_prob":0.3,"slip_yield_lo":1.0,"slip_yield_hi":3.0,"slip_supplier_prob":0.5,"slip_supplier_lo":2.0,"slip_supplier_hi":6.0,"gsm_strong":1.0,"gsm_mult_strong":0.6,"gsm_mult_weak":1.4,"yield_start":0.85,"yield_full":0.98,"yield_tau_weeks":4.0,"scrap_share_of_bom":0.3,"ramp_tariff":0.25,"ramp_runs":1000.0,"board_cover_std_weeks":8.0,"forecast_mape_16w":0.32,"demand_noise":0.1,"capacity_cut_strong":0.35,"capacity_cut_weak":0.8,"capacity_loss_hazard_strong":0.005,"capacity_loss_hazard_weak":0.03,"capacity_loss_strong":0.25,"capacity_loss_weak":0.5,"capacity_loss_weeks":13.0,"smt_flex":0.2,"rush_premium_usd":8.0,"setup_usd_per_run":1500.0,"lost_share":0.5,"board_runs":400.0,"risk_weight":0.25,"carry":0.2,"migration":0.9,"mwd_cost_rate":0.9},"covers":[1,2,3,4,5,6,7,8],"weeks":52,"ramp_weeks":40}],"memory":{"quarter":"2026Q4","dram":6.766,"nand":4.733,"default":0,"delta_p1_14":361.29499999999996}};
+const MEMI = D.memory;
+let MEM = (() => { const v = R.load().mem; return v === 0 || v === 1 ? v : MEMI.default; })();
+let IN = D.inputs[MEM];
+const MEMLAB = (m) => [['0', '2025 base'], ['1', m.quarter.slice(4) + ' ' + m.quarter.slice(0, 4) + ' contract']];
 const P0 = { ...IN.P };
 const M0 = JSON.parse(JSON.stringify(IN.models));
 const M$ = (v, d = 2) => (v < 0 ? '−' : '') + '$' + R.num(Math.abs(v) / 1e6, d) + 'M';
@@ -523,14 +550,20 @@ const CTL = [
   [null, 'Board runs'],
   ['board_cover_std_weeks', "ODM's standard weeks of boards per run", 1, 8, 1, 'wk'],
   ['forecast_mape_16w', 'Forecast error at 16 weeks', 0.05, 0.6, 0.01, 'pct'],
-  ['capacity_cut_strong', 'Capacity the ODM keeps back, strong GSM', 0, 1, 0.01, 'pct'],
-  ['capacity_cut_weak', 'Capacity the ODM keeps back, weak GSM', 0, 1, 0.01, 'pct'],
+  ['capacity_cut_strong', 'Line time given away per run, strong GSM', 0, 1, 0.01, 'pct'],
+  ['capacity_cut_weak', 'Line time given away per run, weak GSM', 0, 1, 0.01, 'pct'],
+  ['capacity_loss_hazard_strong', 'Chance the line moves, strong GSM', 0, 0.1, 0.001, 'wkp'],
+  ['capacity_loss_hazard_weak', 'Chance the line moves, weak GSM', 0, 0.1, 0.001, 'wkp'],
+  ['capacity_loss_strong', 'Capacity lost when it moves, strong GSM', 0, 1, 0.05, 'pct'],
+  ['capacity_loss_weak', 'Capacity lost when it moves, weak GSM', 0, 1, 0.05, 'pct'],
+  ['capacity_loss_weeks', 'Weeks until the capacity comes back', 1, 26, 1, 'wk'],
+  ['risk_weight', 'Weight on the bad case (P90) in the pick', 0, 1, 0.05, 'pct'],
   ['smt_flex', 'Rush SMT capacity, share of the run’s plan', 0, 0.6, 0.01, 'pct'],
   ['rush_premium_usd', 'Rush premium per board', 0, 40, 0.5, 'usd'],
   ['setup_usd_per_run', 'Setup cost per SMT run', 0, 10000, 100, 'usd'],
   ['lost_share', 'Share of short units lost', 0, 1, 0.05, 'pct'],
 ];
-const fmt = (k, v) => ({ pct: () => R.pct(v), wk: () => R.num(v) + ' wk', usd: () => '$' + R.num(v, v < 10 && v % 1 ? 1 : 0) }[k])();
+const fmt = (k, v) => ({ pct: () => R.pct(v), wkp: () => R.pct(v, 1) + '/wk', wk: () => R.num(v) + ' wk', usd: () => '$' + R.num(v, v < 10 && v % 1 ? 1 : 0) }[k])();
 const saved = R.load();
 const S = { P: { ...P0 }, models: JSON.parse(JSON.stringify(M0)), sel: 1 };
 if (saved.P) for (const k of Object.keys(S.P)) if (Number.isFinite(saved.P[k])) S.P[k] = saved.P[k];
@@ -543,10 +576,15 @@ R.$('#ctl').innerHTML = CTL.map(([k, l, mn, mx, st]) => k === null ? `<div class
 CTL.forEach(([k]) => k && R.$('#p-' + k).addEventListener('input', (e) => { S.P[k] = +e.target.value; paintCtl(); schedule(); }));
 const segG = R.seg(R.$('#f-g'), [['1', 'Strong (capacity kept, fewer slips)'], ['0', 'Weak']], String(S.P.gsm_strong >= 0.5 ? 1 : 0), (v) => { S.P.gsm_strong = +v; schedule(); });
 const MS = [['bias', 'Forecast runs high by', -0.2, 0.4, 0.01], ['sigma_mult', 'Forecast error ×', 0.5, 3, 0.05], ['cut_prob', 'Chance of an early cut', 0, 0.8, 0.01]];
-R.$('#mods').innerHTML = S.models.map((m, i) => `<div class="mrow" data-i="${i}"><span class="mname">${m.model}<small>${m.risk}${m.eol !== null ? ' · EOL week ' + m.eol : ''}</small></span>` +
+R.$('#mods').innerHTML = S.models.map((m, i) => `<div class="mrow" data-i="${i}"><span class="mname">${m.model}<small>${m.risk}${m.eol !== null ? ' · EOL week ' + m.eol : ''}</small><small>board <span id="bv-${i}"></span></small></span>` +
   MS.map(([k, l, mn, mx, st]) => `<div class="sl"><span class="s-label"><label for="m-${i}-${k}">${l}</label><output id="om-${i}-${k}"></output></span><input type="range" id="m-${i}-${k}" min="${mn}" max="${mx}" step="${st}" value="${m[k]}"></div>`).join('') + '</div>').join('');
 S.models.forEach((m, i) => MS.forEach(([k]) => R.$(`#m-${i}-${k}`).addEventListener('input', (e) => { S.models[i][k] = +e.target.value; paintCtl(); schedule(); })));
-const segM = R.seg(R.$('#f-m'), S.models.map((m, i) => [String(i), m.model]), String(S.sel), (v) => { S.sel = +v; persist(); R.update(cParts); });
+R.seg(R.$('#f-mem'), MEMLAB(MEMI), String(MEM), (v) => {
+  MEM = +v; IN = D.inputs[MEM];
+  S.models.forEach((m, i) => { for (const k of ['board_value', 'onboard_parts', 'margin', 'plan', 'eol']) m[k] = IN.models[i][k]; });
+  paintCtl(); schedule();
+});
+const segM = R.seg(R.$('#f-m'), S.models.map((m, i) => [String(i), m.model]), String(S.sel), (v) => { S.sel = +v; persist(); R.update(cParts); R.update(cLoss); });
 R.$('#reset').addEventListener('click', () => {
   S.P = { ...P0 }; S.models = JSON.parse(JSON.stringify(M0));
   CTL.forEach(([k]) => { if (k) R.$('#p-' + k).value = S.P[k]; });
@@ -555,16 +593,19 @@ R.$('#reset').addEventListener('click', () => {
 });
 function paintCtl() {
   CTL.forEach(([k, , , , , f]) => { if (!k) return; R.$('#o-' + k).textContent = fmt(f, S.P[k]); R.$(`.sl[data-k="${k}"]`).classList.toggle('changed', Math.abs(S.P[k] - P0[k]) > 1e-12); });
+  S.models.forEach((m, i) => { R.$('#bv-' + i).textContent = '$' + R.num(m.board_value); });
   S.models.forEach((m, i) => MS.forEach(([k]) => { const o = R.$(`#om-${i}-${k}`); o.textContent = k === 'sigma_mult' ? R.num(m[k], 2) + '×' : (k === 'bias' && m[k] > 0 ? '+' : '') + R.pct(m[k]); o.closest('.sl').classList.toggle('changed', Math.abs(m[k] - M0[i][k]) > 1e-12); }));
 }
-const persist = () => { try { R.save({ P: S.P, models: S.models, sel: S.sel }); } catch (e) { /* storage blocked */ } };
+const persist = () => { try { R.save({ P: S.P, models: S.models, sel: S.sel, mem: MEM }); } catch (e) { /* storage blocked */ } };
 function schedule() { persist(); clearTimeout(timer); R.$('#status').textContent = 'running…'; timer = setTimeout(compute, 60); }
 function compute() {
   const t0 = performance.now();
   const inp = { ...IN, models: S.models };
   const ramp = RBE.rampSweep(inp, S.P);
   const bd = RBE.boards(inp, S.P);
-  RES = { inp, ramp, bd, ms: performance.now() - t0 };
+  const other = RBE.boards(inp, { ...S.P, gsm_strong: S.P.gsm_strong >= 0.5 ? 0 : 1 });
+  const strong = S.P.gsm_strong >= 0.5;
+  RES = { inp, ramp, bd, gsm: { strong: strong ? bd : other, weak: strong ? other : bd }, ms: performance.now() - t0 };
   draw();
 }
 
@@ -631,14 +672,16 @@ function cardsB() {
   const std = S.P.board_cover_std_weeks;
   R.$('#cards-b').innerHTML = RES.bd.map((b, i) => {
     const best = b.rows.find((r) => r.cover === b.best), stdR = b.rows.find((r) => r.cover === std);
-    const vs = stdR && stdR !== best ? `boards pushed back from the standard ${std} weeks, saving ${K$(stdR.total - best.total)}` : `the ODM's standard cover`;
-    return `<article class="card" style="--acc:var(--c${i + 1})"><span class="eye">${b.model} · ${b.risk}</span><span class="big">${b.best} week${b.best === 1 ? '' : 's'} per run</span><p class="why">${vs}; expected ${K$(best.total)} a year, P90 ${K$(best.p90)}, ${R.num(best.stranded_boards)} boards stranded on average</p></article>`;
+    const vs = stdR && stdR !== best ? `boards pushed back from the standard ${std} weeks, expected ${K$(stdR.total - best.total)} less` : `the ODM's standard cover`;
+    const risk = best.cover < std ? `; the ODM moves the line in ${R.pct(best.loss_chance)} of years` : '';
+    return `<article class="card" style="--acc:var(--c${i + 1})"><span class="eye">${b.model} · ${b.risk}</span><span class="big">${b.best} week${b.best === 1 ? '' : 's'} per run</span><p class="why">${vs}; expected ${K$(best.total)} a year, P90 ${K$(best.p90)}${risk}; ${R.num(best.stranded_boards)} boards stranded on average</p></article>`;
   }).join('');
 }
 const cCover = R.chart('c-cover', (t) => {
   const o = R.base(t);
   if (!RES) return o;
   const cols = MCOL(t), covers = IN.covers;
+  R.$('#h-cover').textContent = `Each model over the year · solid expected, dashed P90 · ring = recommended (${R.pct(1 - S.P.risk_weight)} expected + ${R.pct(S.P.risk_weight)} P90)`;
   return {
     ...o, legend: { ...o.legend, data: RES.bd.map((b) => b.model) }, grid: { ...o.grid, top: 40 },
     tooltip: { ...o.tooltip, valueFormatter: (v) => K$(v) },
@@ -646,9 +689,29 @@ const cCover = R.chart('c-cover', (t) => {
     yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + R.num(v / 1e3, 0) + 'k' } }),
     series: RES.bd.map((b, i) => ({ type: 'line', name: b.model, data: b.rows.map((r) => ({ value: r.total, symbolSize: r.cover === b.best ? 14 : 6, itemStyle: r.cover === b.best ? { color: t.panel, borderColor: cols[i], borderWidth: 3 } : { color: cols[i] } })),
       lineStyle: { color: cols[i], width: 2 }, itemStyle: { color: cols[i] }, symbol: 'circle',
-      markLine: i === 0 ? { silent: true, symbol: 'none', lineStyle: { color: t.muted, type: 'dashed' }, label: { formatter: 'ODM standard', color: t.muted, fontSize: 11 }, data: [{ xAxis: String(S.P.board_cover_std_weeks) }] } : undefined })),
+      markLine: i === 0 ? { silent: true, symbol: 'none', lineStyle: { color: t.muted, type: 'dashed' }, label: { formatter: 'ODM standard', color: t.muted, fontSize: 11 }, data: [{ xAxis: String(S.P.board_cover_std_weeks) }] } : undefined }))
+      .concat(RES.bd.map((b, i) => ({ type: 'line', name: b.model + ' P90', data: b.rows.map((r) => r.p90), symbol: 'none', lineStyle: { color: cols[i], width: 1.2, type: 'dashed', opacity: 0.7 }, itemStyle: { color: cols[i] } }))),
   };
 });
+const cLoss = R.chart('c-loss', (t) => {
+  const o = R.base(t);
+  if (!RES) return o;
+  const i = S.sel, g = [['Strong GSM', RES.gsm.strong[i], t.c[0]], ['Weak GSM', RES.gsm.weak[i], t.bad]];
+  R.$('#h-loss').textContent = `${S.models[i].model} · share of simulated years with a capacity drop, by cover`;
+  return {
+    ...o, legend: { ...o.legend, data: g.map((x) => x[0]) }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, formatter: (ps) => { const k = ps[0].dataIndex; return R.tip(t, g.map(([n, b, c]) => [c, n, `${R.pct(b.rows[k].loss_chance)} · ${R.num(b.rows[k].down_weeks, 1)} wk down`]), `${IN.covers[k]} week${IN.covers[k] === 1 ? '' : 's'} of boards per run`); } },
+    xAxis: R.axis(t, { type: 'category', name: 'weeks of boards per SMT run', nameLocation: 'middle', nameGap: 24, data: IN.covers.map(String), splitLine: { show: false }, axisLabel: { fontFamily: t.fMono, fontSize: 11, color: t.muted } }),
+    yAxis: R.axis(t, { type: 'value', min: 0, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => R.pct(v) } }),
+    series: g.map(([n, b, c]) => ({ type: 'line', name: n, symbol: 'circle', symbolSize: 6, lineStyle: { color: c, width: 2.5 }, itemStyle: { color: c },
+      data: b.rows.map((r) => ({ value: r.loss_chance, symbolSize: r.cover === b.best ? 13 : 6, itemStyle: r.cover === b.best ? { color: t.panel, borderColor: c, borderWidth: 3 } : { color: c } })) })),
+  };
+});
+function gsmTable() {
+  const row = (lab, b) => { const r = b.rows.find((x) => x.cover === b.best); return `<td><b>${b.best} wk</b><small>${lab}</small></td><td>${K$(r.total)}<small>P90 ${K$(r.p90)}</small></td><td>${R.pct(r.loss_chance)}<small>${R.num(r.down_weeks, 1)} wk down</small></td>`; };
+  R.$('#t-g').innerHTML = '<thead><tr><th class="txt">Model</th><th>Cover</th><th>Expected</th><th>Line moved</th></tr></thead><tbody>' +
+    S.models.map((m, i) => `<tr><td class="txt" rowspan="2"><b>${m.model}</b><small>${m.risk}</small></td>${row('strong GSM', RES.gsm.strong[i])}</tr><tr>${row('weak GSM', RES.gsm.weak[i])}</tr>`).join('') + '</tbody>';
+}
 const BPARTS = [['setups', 'Setups', (t) => t.c[6]], ['rush', 'Rush runs', (t) => t.c[4]], ['lost', 'Late and lost units', (t) => t.bad], ['carry', 'Carrying boards', (t) => t.c[3]], ['stranded', 'Stranded boards (MWD)', (t) => t.c[1]]];
 const cParts = R.chart('c-parts', (t) => {
   const o = R.base(t);
@@ -665,8 +728,9 @@ const cParts = R.chart('c-parts', (t) => {
 });
 function ledger() {
   const covers = IN.covers;
+  R.$('#h-ledger').textContent = `Expected cost, P90 and chance the line is moved, $k · boxed = recommended (${R.pct(1 - S.P.risk_weight)} expected + ${R.pct(S.P.risk_weight)} P90)`;
   R.$('#t-b').innerHTML = '<thead><tr><th class="txt">Model</th>' + covers.map((c) => `<th>${c} wk<small>${c === S.P.board_cover_std_weeks ? 'ODM standard' : c < S.P.board_cover_std_weeks ? 'pushed back' : 'longer'}</small></th>`).join('') + '<th>Recommended</th></tr></thead><tbody>' +
-    RES.bd.map((b) => `<tr><td class="txt"><b>${b.model}</b><small>${b.risk}</small></td>` + b.rows.map((r) => `<td class="${r.cover === b.best ? 'best' : ''}">${K$(r.total)}<small>P90 ${K$(r.p90)}</small></td>`).join('') + `<td><b>${b.best} wk</b></td></tr>`).join('') + '</tbody>';
+    RES.bd.map((b) => `<tr><td class="txt"><b>${b.model}</b><small>${b.risk}</small></td>` + b.rows.map((r) => `<td class="${r.cover === b.best ? 'best' : ''}">${K$(r.total)}<small>P90 ${K$(r.p90)}</small><small>${r.loss_chance > 0 ? 'moved ' + R.pct(r.loss_chance) : '–'}</small></td>`).join('') + `<td><b>${b.best} wk</b></td></tr>`).join('') + '</tbody>';
 }
 function insight() {
   const { ramp, bd } = RES, r0 = ramp.rows[0], rb = ramp.rows.find((r) => r.pull === ramp.best), std = S.P.board_cover_std_weeks;
@@ -674,12 +738,13 @@ function insight() {
   const stretched = bd.filter((b) => b.best < std), longer = bd.filter((b) => b.best > std);
   R.$('#insight').innerHTML = `
     <p><b>${ramp.best ? `Pull the ramp in by ${ramp.best} week${ramp.best === 1 ? '' : 's'}: it saves ${M$(r0.total - rb.total)} at a ${R.pct(S.P.ramp_tariff)} tariff.` : `At a ${R.pct(S.P.ramp_tariff)} tariff pulling in does not pay.`}</b> Without pull-in the median ramp is ${R.num(r0.T_p50, 1)} weeks against a base of ${S.P.ramp_base_weeks}; ${GATES[gi].toLowerCase()} adds the most (${R.num(ramp.slip_mean[gi], 1)} weeks expected). Every week the site is not at full volume, China builds the gap and pays the tariff, so the higher the tariff the further it pays to pull in.</p>
-    <p><b>${stretched.length ? `Push board builds back from the standard ${std} weeks: ${stretched.map((b) => `${b.model} to ${b.best} week${b.best === 1 ? '' : 's'}`).join(', ')}` : `Keep every model on the standard ${std} weeks of boards`}${stretched.length && stretched.length < bd.length ? `; keep ${bd.filter((b) => b.best === std).map((b) => b.model).join(', ') || 'the rest'} on ${std}` : ''}.</b> ${longer.length ? `${longer.map((b) => b.model).join(', ')} even pay${longer.length === 1 ? 's' : ''} for longer runs. ` : ''}Shorter runs strand fewer boards when a model ends or is cut, and build on fresher forecasts; they cost setups and the SMT capacity the ODM keeps back${S.P.gsm_strong >= 0.5 ? ', which a strong GSM keeps small' : ', which with a weak GSM is large enough to keep every model on the standard runs'}.</p>`;
+    <p><b>${stretched.length ? `Push board builds back from the standard ${std} weeks: ${stretched.map((b) => `${b.model} to ${b.best} week${b.best === 1 ? '' : 's'}`).join(', ')}` : `Keep every model on the standard ${std} weeks of boards`}${stretched.length && stretched.length < bd.length ? `; keep ${bd.filter((b) => b.best === std).map((b) => b.model).join(', ') || 'the rest'} on ${std}` : ''}.</b> ${longer.length ? `${longer.map((b) => b.model).join(', ')} even pay${longer.length === 1 ? 's' : ''} for longer runs. ` : ''}Shorter runs strand fewer boards when a model ends or is cut, and build on fresher forecasts; they cost setups, the line time the ODM gives away, and the risk that the ODM moves the line to another customer for ${R.num(S.P.capacity_loss_weeks)} weeks.</p>
+    <p><b>The GSM decides how far the push can go.</b> ${S.models.map((m, i) => { const a = RES.gsm.strong[i], w = RES.gsm.weak[i], ra = a.rows.find((r) => r.cover === a.best), rw = w.rows.find((r) => r.cover === w.best); return `${m.model}: ${a.best} weeks with a strong GSM (line moved in ${R.pct(ra.loss_chance)} of years), ${w.best} with a weak one (${R.pct(rw.loss_chance)})`; }).join('; ')}. At the same push the line is about ${R.num(S.P.capacity_loss_hazard_weak / Math.max(1e-9, S.P.capacity_loss_hazard_strong), 0)} times as likely to move with a weak GSM, and more of it goes, so the weak case keeps runs near the standard.</p>`;
 }
 function draw() {
-  cardsA(); cardsB(); ledger(); insight();
-  [cBand, cPull, cGate, cCover, cParts].forEach(R.update);
-  R.$('#status').textContent = `${R.num(S.P.ramp_runs)} ramp runs × ${RES.ramp.rows.length} pull-ins · ${R.num(S.P.board_runs)} board runs × ${IN.covers.length} covers × ${S.models.length} models in ${R.num(RES.ms, 0)} ms`;
+  cardsA(); cardsB(); ledger(); gsmTable(); insight();
+  [cBand, cPull, cGate, cCover, cParts, cLoss].forEach(R.update);
+  R.$('#status').textContent = `${R.num(S.P.ramp_runs)} ramp runs × ${RES.ramp.rows.length} pull-ins · ${R.num(S.P.board_runs)} board runs × ${IN.covers.length} covers × ${S.models.length} models × 2 GSMs in ${R.num(RES.ms, 0)} ms`;
 }
 paintCtl();
 compute();

@@ -1,0 +1,306 @@
+<title>The Year, Week by Week</title>
+<!--__HEAD__-->
+<style>/*__CSS__*/
+.sec { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; margin: 8px 0 -4px; min-width: 0; }
+.sec .n { font: 500 12px var(--f-mono); color: var(--muted); }
+.sec h3 { font: 600 21px/1.1 var(--f-display); letter-spacing: .02em; margin: 0; }
+.sec .rule { flex: 1 1 40px; border-bottom: 1px solid var(--rule); transform: translateY(-5px); min-width: 24px; }
+.sec .note { font-size: 12px; color: var(--muted); text-align: right; max-width: 56ch; }
+.strat { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 1000px) { .strat { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .strat { grid-template-columns: minmax(0, 1fr); } }
+.scard { all: unset; box-sizing: border-box; cursor: pointer; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px 12px 18px; display: grid; gap: 3px; position: relative; overflow: hidden; min-width: 0; }
+.scard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--acc); }
+.scard:hover { border-color: var(--ink-2); }
+.scard[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.scard:focus-visible { outline: 2px solid var(--sea); outline-offset: 2px; }
+.scard .eye { font: 500 11px var(--f-mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+.scard .big { font: 600 30px/1.05 var(--f-display); font-variant-numeric: tabular-nums; }
+.scard .why { font-size: 12.5px; color: var(--ink-2); }
+.scard .tag { font: 500 10.5px var(--f-body); letter-spacing: .02em; text-transform: none; }
+.ctl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 22px; align-items: end; width: 100%; }
+.ctl-h { grid-column: 1 / -1; font: 600 12px var(--f-body); color: var(--ink); text-transform: uppercase; letter-spacing: .06em; border-top: 1px dashed var(--rule); padding-top: 8px; margin-top: 2px; }
+.sl { display: grid; gap: 2px; min-width: 0; }
+.sl .s-label { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+.sl .s-label output { font: 600 12.5px var(--f-mono); color: var(--ink); white-space: nowrap; }
+.sl.changed .s-label output { color: var(--c2); }
+.sl input[type="range"] { width: 100%; accent-color: var(--ink); margin: 3px 0 0; }
+.sl.big .s-label { font-size: 13px; color: var(--ink-2); }
+.sl.big .s-label output { font: 600 20px/1 var(--f-display); }
+.ctl-top { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end; width: 100%; }
+.ctl-top .sl.big { flex: 1 1 260px; max-width: 420px; }
+.btn { font: 500 12px var(--f-body); color: var(--ink-2); background: transparent; border: 1px solid var(--rule); border-radius: 5px; padding: 3px 9px; cursor: pointer; }
+.btn:hover { background: var(--chip); color: var(--ink); }
+.status { font: 12px var(--f-mono); color: var(--muted); margin-left: auto; }
+details.more { width: 100%; }
+details.more > summary { cursor: pointer; font: 500 12.5px var(--f-body); color: var(--ink-2); padding: 4px 0; }
+.events { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.events li { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 13px; color: var(--ink-2); }
+.events li:last-child { border-bottom: 0; }
+.events code { justify-self: start; align-self: start; }
+.events li.hit { color: var(--ink); }
+.att td.miss { color: var(--bad); font-weight: 600; }
+.att td.made { color: var(--good); }
+.att tr.sel td { background: var(--hl); }
+</style>
+<!--__NAV__-->
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Roadmap A4 · Modules 1–7 in one fiscal year</p>
+      <h1>The Year, Week by Week</h1>
+      <p class="sub">A US tariff on China-made laptops starts in week 0. The year is replayed week by week four ways: stay in China, the company's pick, the BU's pick, or wait for the model change. Module 5 turns the price rise into units and the second-half catch-up; Module 6 ramps the new site on its S-curve; Modules 1–2 price the cancelled plans and settle MWD at year-end; Module 3 adds expediting and the longer chain; Module 4 the finished goods left at end of life; Module 7 the longer transit and today's memory prices.</p>
+    </div>
+    <div class="asof">Built __TODAY__ · US region · China to Indonesia · recomputes live · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/year_run.md">formulas</a></div>
+  </div>
+
+  <section class="slicers" aria-label="Scenario">
+    <div class="ctl-top">
+      <div class="sl big" data-k="tariff"><span class="s-label"><label for="p-tariff">US tariff on China-made laptops</label><output id="o-tariff"></output></span><input type="range" id="p-tariff" min="0" max="0.5" step="0.01"></div>
+      <div class="slicer"><span class="s-label" id="l-g">GSM</span><div class="seg" role="group" aria-labelledby="l-g" id="f-g"></div></div>
+      <div class="slicer"><span class="s-label" id="l-mem">Memory prices</span><div class="seg" role="group" aria-labelledby="l-mem" id="f-mem"></div></div>
+      <button type="button" class="btn" id="reset">Reset all</button>
+      <span class="status" id="status"></span>
+    </div>
+    <details class="more" id="more"><summary>More inputs: price, target and ramp</summary><div class="ctl-grid" id="ctl"></div></details>
+  </section>
+
+  <section class="strat" id="strat" aria-label="Strategies; pick one to follow it through the year"></section>
+
+  <section class="canvas">
+    <div class="viz w12">
+      <div class="viz-h"><h2>Where the US volume is built, week by week</h2><span class="hint" id="h-tl"></span></div>
+      <div id="c-tl" class="chart tall"></div>
+    </div>
+
+    <div class="sec"><span class="n">01</span><h3>What the year costs</h3><span class="rule"></span><span class="note">Company view: every cost an expected value over the negotiated and the absorbed tariff (R44)</span></div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Cost to date</h2><span class="hint">Cumulative, each strategy · the bold line is the one you follow</span></div>
+      <div id="c-cum" class="chart tall"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Cost by kind, full year</h2><span class="hint">$M per strategy</span></div>
+      <div id="c-kind" class="chart tall"></div>
+    </div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>When the costs land</h2><span class="hint" id="h-wk"></span></div>
+      <div id="c-wk" class="chart"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Shipments against the plan</h2><span class="hint" id="h-att"></span></div>
+      <div class="tbl-wrap"><table class="tbl att" id="t-att"></table></div>
+    </div>
+
+    <div class="sec"><span class="n">02</span><h3>Why these weeks</h3><span class="rule"></span><span class="note">Every cutover option replayed with the Module 6 ramp, scored the way Module 5 scores it</span></div>
+    <div class="viz w8">
+      <div class="viz-h"><h2>Every cutover week, scored twice</h2><span class="hint">Company cost and the BU's MWD + price-point cost · hollow = misses the target</span></div>
+      <div id="c-opt" class="chart"></div>
+    </div>
+    <div class="viz w4">
+      <div class="viz-h"><h2>The year's events</h2><span class="hint" id="h-ev"></span></div>
+      <ul class="events" id="ev"></ul>
+    </div>
+  </section>
+
+  <section class="insight" id="insight"></section>
+
+  <footer class="notes">
+    <p><b>How the year is replayed.</b> Weekly US units per model come from Module 1's lifecycle curves. From the repricing week the channel price rises by the negotiated pass-through × tariff × the share of the week's units still made in China; units follow a constant elasticity (Module 5). After the cutover, the new site's share follows the median S-curve of Module 6's Monte Carlo, with the pull-in Module 6 recommends at this tariff and GSM. From week 26 a channel discount, up to the cap, closes the gap to the fiscal-year target (R42, R45). Costs: the tariff the company absorbs (paid on China-made units, less what the price recovers), gross margin on units lost to the price rise, the catch-up discount, holding, relocation and rework of the plans cancelled at the cutover (Module 2), the physical MWD at the year-end reconciliation (R8), pull-in and yield scrap during the ramp (Module 6), parts expediting at the cutover, the longer chain week by week (end-of-life MWD of the longer window and pipeline carrying, Module 3), the new site's conversion uplift, and the extra finished goods at platform P1's end of life from the longer transit (Module 4 linkage × extra transit, Module 7 routes). With a chance the company ends up absorbing the tariff, every cost is the expected value over the two cases (R44).</p>
+    <p><b>Picks.</b> Company: the lowest company cost among the options that make the target. BU: the lowest MWD as the BU weighs it (claimed MWD less the share that migrates, plus the longer window's end-of-life MWD, at what a dollar of MWD costs it) plus the price points it funds, among the options that make the target (R43, R45). These are Module 5's rules; the ramp is Module 6's instead of a straight line, so the picks can differ by a few weeks from the <a href="demand.html">Demand &amp; KPI</a> page.</p>
+    <p><b>Status.</b> Composition only: every number comes from Modules 1–7 and their sources (<a href="rules.html">rules register</a>). A weak GSM doubles the parts expediting per unit (Module 3) and slows the ramp (Module 6). The page runs <code>src/dash/yr_engine.js</code>, a port of <code>src/year_run.py</code> built on the Module 5 and 6 engines; <code>tests/test_yr_parity.py</code> checks both give the same numbers.</p>
+  </footer>
+</main>
+<script>/*__JS__*/</script>
+<script>/*__DKENGINE__*/</script>
+<script>/*__RBENGINE__*/</script>
+<script>/*__YRENGINE__*/</script>
+<script>
+const D = /*__DATA__*/null;
+const M$ = (v, d = 2) => (v < 0 ? '−' : '') + '$' + R.num(Math.abs(v) / 1e6, d) + 'M';
+const saved = R.load();
+const P50 = D.inputs[0].dk.P, P60 = D.inputs[0].rb.P;
+// [key, label, min, max, step, format, which] ; null key = group heading
+const CTL = [
+  [null, 'Price and target (Module 5)'],
+  ['passthrough', 'Negotiated share of the tariff in the price', 0, 1, 0.05, 'pct', 5],
+  ['absorb_prob', 'Chance the company absorbs the tariff itself', 0, 1, 0.05, 'pct', 5],
+  ['reprice_lag_weeks', 'Weeks until the new price', 0, 12, 1, 'wk', 5],
+  ['target_tolerance', 'Fiscal-year target as a share of the plan', 0.9, 1.05, 0.005, 'pct1', 5],
+  ['max_promo_discount', 'Largest catch-up discount', 0, 0.3, 0.005, 'pct1', 5],
+  ['mwd_transferability', 'Share of claimed MWD that migrates', 0.45, 0.95, 0.01, 'pct', 5],
+  ['mwd_cost_rate', 'What $1 of MWD costs the BU', 0, 1.5, 0.05, 'usd2', 5],
+  ['conv_uplift', 'New-site conversion uplift', 0, 0.2, 0.005, 'pct1', 5],
+  [null, 'Ramp (Module 6)'],
+  ['ramp_base_weeks', 'Base ramp, trial build to full volume', 4, 30, 1, 'wk', 6],
+  ['ramp_min_weeks', 'Fastest ramp when pulled in', 2, 20, 1, 'wk', 6],
+  ['pull_cost_usd_per_unit', 'Cost per week pulled, per weekly unit', 0, 60, 1, 'usd', 6],
+  ['slip_supplier_prob', 'Chance supplier readiness slips', 0, 1, 0.05, 'pct', 6],
+  ['slip_material_prob', 'Chance material rhythm slips', 0, 1, 0.05, 'pct', 6],
+];
+const fmt = (k, v) => ({ pct: () => R.pct(v), pct1: () => R.pct(v, 1), wk: () => R.num(v) + ' wk', usd: () => '$' + R.num(v), usd2: () => '$' + R.num(v, 2) }[k])();
+const S = { t: 0.25, g: 1, m: D.memory.default, f: 'company', P5: { ...P50 }, P6: { ...P60 } };
+if (Number.isFinite(saved.t)) S.t = saved.t;
+if (saved.g === 0 || saved.g === 1) S.g = saved.g;
+if (saved.m === 0 || saved.m === 1) S.m = saved.m;
+if (['stay', 'company', 'bu', 'model_change'].includes(saved.f)) S.f = saved.f;
+for (const [P, src] of [[S.P5, saved.P5], [S.P6, saved.P6]]) if (src) for (const k of Object.keys(P)) if (Number.isFinite(src[k])) P[k] = src[k];
+const persist = () => R.save({ t: S.t, g: S.g, m: S.m, f: S.f, P5: S.P5, P6: S.P6 });
+let RES = null, timer = null;
+const run = () => RES;
+const pset = (which) => (which === 5 ? S.P5 : S.P6);
+const p0 = (which) => (which === 5 ? P50 : P60);
+R.$('#ctl').innerHTML = CTL.map(([k, l, mn, mx, st, , w]) => k === null ? `<div class="ctl-h">${l}</div>` : `<div class="sl" data-k="${k}"><span class="s-label"><label for="p-${k}">${l}</label><output id="o-${k}"></output></span><input type="range" id="p-${k}" min="${mn}" max="${mx}" step="${st}" value="${pset(w)[k]}"></div>`).join('');
+CTL.forEach(([k, , , , , , w]) => k && R.$('#p-' + k).addEventListener('input', (e) => { pset(w)[k] = +e.target.value; paintCtl(); schedule(); }));
+R.$('#p-tariff').value = S.t;
+R.$('#p-tariff').addEventListener('input', (e) => { S.t = +e.target.value; paintCtl(); schedule(); });
+function paintCtl() {
+  R.$('#o-tariff').textContent = R.pct(S.t);
+  CTL.forEach(([k, , , , , f, w]) => { if (!k) return; R.$('#o-' + k).textContent = fmt(f, pset(w)[k]); R.$(`.sl[data-k="${k}"]`).classList.toggle('changed', Math.abs(pset(w)[k] - p0(w)[k]) > 1e-12); });
+}
+const segG = R.seg(R.$('#f-g'), [['1', 'Strong'], ['0', 'Weak']], String(S.g), (v) => { S.g = +v; schedule(); });
+const segMem = R.seg(R.$('#f-mem'), [['0', '2025 base'], ['1', D.memory.quarter.slice(4) + ' ' + D.memory.quarter.slice(0, 4) + ' contract']], String(S.m), (v) => { S.m = +v; schedule(); });
+R.$('#reset').addEventListener('click', () => {
+  Object.assign(S, { t: 0.25, g: 1, m: D.memory.default, P5: { ...P50 }, P6: { ...P60 } });
+  R.$('#p-tariff').value = S.t; CTL.forEach(([k, , , , , , w]) => { if (k) R.$('#p-' + k).value = pset(w)[k]; });
+  segG.set(String(S.g)); segMem.set(String(S.m)); paintCtl(); schedule();
+});
+function schedule() { persist(); clearTimeout(timer); R.$('#status').textContent = 'running…'; timer = setTimeout(compute, 50); }
+function compute() {
+  const t0 = performance.now();
+  RES = YRE.runYear(D.inputs[S.m], S.t, S.g, S.P5, S.P6);
+  draw();
+  R.$('#status').textContent = `${D.inputs[0].dk.options.length} cutover options × 2 tariff cases × 52 weeks, ${R.num(S.P6.ramp_runs)} ramp runs in ${R.num(performance.now() - t0, 0)} ms`;
+}
+const SC = { stay: 6, company: 3, bu: 1, model_change: 4 };            // fixed colour slot per strategy
+const scol = (t, k) => t.c[SC[k]];
+const GROUPS = [['Tariff absorbed', ['tariff'], 0], ['Lost margin and price points', ['lost_margin', 'promotion'], 1],
+  ['Cutover and MWD', ['transfer', 'mwd'], 2], ['Ramp and expediting', ['ramp', 'expedite'], 3], ['Longer chain and end of life', ['chain', 'conversion', 'fg_eol'], 4]];
+const gsum = (s, keys, w) => keys.reduce((a, k) => a + (w === undefined ? s.totals[k] : s.cost[k][w]), 0);
+const cutTxt = (s) => (s.cutover === null ? 'no transfer this year' : `cutover in week ${s.cutover}`);
+const WK = Array.from({ length: 52 }, (_, w) => 'W' + w);
+
+function cards() {
+  const r = run(), stay = r.strategies[0];
+  R.$('#strat').innerHTML = r.strategies.map((s) => {
+    const save = stay.company_cost - s.company_cost;
+    const tags = [s.key === 'company' ? 'lowest company cost' : '', s.key === 'bu' ? "BU's KPIs" : ''].filter(Boolean).join(' · ');
+    return `<button type="button" class="scard" data-k="${s.key}" aria-pressed="${s.key === S.f}" style="--acc:var(--c${SC[s.key] + 1})"><span class="eye">${R.esc(s.label)}<span class="tag">${tags}</span></span><span class="big">${M$(s.company_cost)}</span><span class="why">${cutTxt(s)} · ${s.key === 'stay' ? 'the cost of doing nothing' : (save >= 0 ? M$(save) + ' less than staying' : M$(-save) + ' more than staying')} · BU ${M$(s.bu_cost)} · shipped ${R.pct(s.attainment, 1)} of plan</span></button>`;
+  }).join('');
+  document.querySelectorAll('.scard').forEach((b) => b.addEventListener('click', () => { S.f = b.dataset.k; draw(); }));
+}
+const focus = () => run().strategies.find((s) => s.key === S.f);
+
+const cTl = R.chart('c-tl', (t) => {
+  const o = R.base(t);
+  if (!RES) return o;
+  const r = run(), s = focus();
+  const marks = [[s.cutover, 'Cutover'], [26, 'Successor launch'], [30, 'P1 end of life']].filter(([w]) => w !== null && w !== undefined);
+  R.$('#h-tl').textContent = `${s.label}: ${cutTxt(s)} · Module 6 ramp: median ${R.num(r.T50, 1)} weeks, P90 ${R.num(r.T90, 1)}, pulled in ${r.pull} · units per week`;
+  return {
+    ...o, legend: { ...o.legend, data: ['Built in China', 'Built in Indonesia', 'Plan before the tariff'] }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, formatter: (ps) => { const w = ps[0].dataIndex; return R.tip(t, [[t.c[0], 'Built in China', R.num(s.cn_units[w])], [t.c[2], 'Built in Indonesia', R.num(s.units[w] - s.cn_units[w])], [t.muted, 'Plan before the tariff', R.num(s.plan[w])], [t.ink2, 'Price rise per unit', '$' + R.num(s.rise[w])], [t.ink2, 'Week cost', M$(GROUPS.reduce((a, g) => a + gsum(s, g[1], w), 0), 2)]], 'Week ' + w); } },
+    xAxis: R.axis(t, { type: 'category', data: WK, boundaryGap: false, splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, interval: 3 } }),
+    yAxis: R.axis(t, { type: 'value', min: 0, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => R.kunits(v) } }),
+    series: [
+      { type: 'line', name: 'Built in China', stack: 'u', data: s.cn_units, symbol: 'none', lineStyle: { width: 0 }, itemStyle: { color: t.c[0] }, areaStyle: { color: t.c[0], opacity: 0.55 },
+        markLine: { silent: true, symbol: 'none', lineStyle: { color: t.ink2, type: 'dashed', width: 1 }, label: { color: t.ink2, fontSize: 11, formatter: '{b}', position: 'insideEndTop' }, data: marks.map(([w, n]) => ({ name: n, xAxis: 'W' + w })) },
+        markArea: { silent: true, itemStyle: { color: t.chip, opacity: 0.5 }, label: { color: t.muted, fontSize: 11, position: 'insideTopRight' }, data: [[{ name: 'Second-half catch-up', xAxis: 'W' + r.catchup_from }, { xAxis: 'W51' }]] } },
+      { type: 'line', name: 'Built in Indonesia', stack: 'u', data: s.units.map((u, w) => u - s.cn_units[w]), symbol: 'none', lineStyle: { width: 0 }, itemStyle: { color: t.c[2] }, areaStyle: { color: t.c[2], opacity: 0.7 } },
+      { type: 'line', name: 'Plan before the tariff', data: s.plan, symbol: 'none', lineStyle: { color: t.ink, width: 1.5, type: [4, 3] }, itemStyle: { color: t.ink } },
+    ],
+  };
+});
+
+const cCum = R.chart('c-cum', (t) => {
+  const o = R.base(t), r = run();
+  if (!r) return o;
+  return {
+    ...o, legend: { ...o.legend, data: r.strategies.map((s) => s.label) }, grid: { ...o.grid, top: 40, right: 80 },
+    tooltip: { ...o.tooltip, valueFormatter: (v) => M$(v) },
+    xAxis: R.axis(t, { type: 'category', data: WK, boundaryGap: false, splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, interval: 3 } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + R.num(v / 1e6, 0) + 'M' } }),
+    series: r.strategies.map((s) => ({ type: 'line', name: s.label, data: s.cumulative, symbol: 'none', z: s.key === S.f ? 5 : 2,
+      lineStyle: { color: scol(t, s.key), width: s.key === S.f ? 3 : 1.5, opacity: s.key === S.f ? 1 : 0.75 }, itemStyle: { color: scol(t, s.key) },
+      endLabel: { show: true, color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => M$(p.value, 1) } })),
+  };
+});
+
+const cKind = R.chart('c-kind', (t) => {
+  const o = R.base(t), r = run();
+  if (!r) return o;
+  return {
+    ...o, legend: { ...o.legend, type: 'plain', itemGap: 10, data: GROUPS.map((g) => g[0]) }, grid: { ...o.grid, top: (document.getElementById('c-kind').clientWidth < 520 ? 84 : 62), right: 56 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => M$(v) },
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: r.strategies.map((s) => s.label), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12, fontFamily: t.fBody, fontWeight: (v) => 400 } }),
+    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + R.num(v / 1e6, 0) + 'M' } }),
+    series: GROUPS.map(([n, keys, ci], i) => ({ type: 'bar', name: n, stack: 'k', barWidth: 18, itemStyle: { color: t.c[ci], borderColor: t.panel, borderWidth: 1, borderRadius: i === GROUPS.length - 1 ? [0, 4, 4, 0] : 0 },
+      data: r.strategies.map((s) => Math.max(0, gsum(s, keys))),
+      label: i === GROUPS.length - 1 ? { show: true, position: 'right', color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => M$(r.strategies[p.dataIndex].company_cost, 1) } : undefined })),
+  };
+});
+
+const cWk = R.chart('c-wk', (t) => {
+  if (!RES) return R.base(t);
+  const o = R.base(t), s = focus();
+  R.$('#h-wk').textContent = `${s.label} · cost per week by kind`;
+  return {
+    ...o, legend: { ...o.legend, data: GROUPS.map((g) => g[0]) }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => '$' + R.num(v / 1e3, 0) + 'k' },
+    xAxis: R.axis(t, { type: 'category', data: WK, splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, interval: 3 } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + R.num(v / 1e3, 0) + 'k' } }),
+    series: GROUPS.map(([n, keys, ci]) => ({ type: 'bar', name: n, stack: 'w', barWidth: '70%', itemStyle: { color: t.c[ci] }, data: WK.map((_, w) => gsum(s, keys, w)) })),
+  };
+});
+
+function attTable() {
+  const r = run();
+  R.$('#h-att').textContent = `Sell-in units against the pre-tariff plan · target ${R.pct(r.target)} of plan for the year`;
+  const cell = (q) => (q[0] ? `<td class="${q[1] / q[0] >= r.target - 1e-9 ? 'made' : 'miss'}">${R.pct(q[1] / q[0], 1)}</td>` : '<td>–</td>');
+  R.$('#t-att').innerHTML = '<thead><tr><th class="txt">Strategy</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Year</th></tr></thead><tbody>' +
+    r.strategies.map((s) => `<tr class="${s.key === S.f ? 'sel' : ''}"><td class="txt"><span class="sw" style="background:var(--c${SC[s.key] + 1})"></span>${R.esc(s.label)}<small>${s.discount > 0 ? 'catch-up ' + R.pct(s.discount, 1) + ' off from week ' + r.catchup_from : 'no catch-up needed'}</small></td>` +
+      s.quarters.map(cell).join('') + `<td class="${s.attainment >= r.target - 1e-9 ? 'made' : 'miss'}"><b>${R.pct(s.attainment, 1)}</b></td></tr>`).join('') + '</tbody>';
+}
+
+const cOpt = R.chart('c-opt', (t) => {
+  if (!RES) return R.base(t);
+  const o = R.base(t), r = run(), ops = r.options;
+  const lab = (x) => (x.cutover === null ? 'Stay' : 'W' + x.cutover);
+  const co = r.strategies.find((s) => s.key === 'company'), bu = r.strategies.find((s) => s.key === 'bu');
+  const pt = (x, k, c) => ({ value: x[k], symbol: 'circle', symbolSize: (k === 'company_cost' && x.id === co.id) || (k === 'bu_cost' && x.id === bu.id) ? 14 : 7,
+    itemStyle: x.attainment >= r.target - 1e-9 ? { color: c, borderColor: t.panel, borderWidth: 1.5 } : { color: t.panel, borderColor: c, borderWidth: 2 } });
+  return {
+    ...o, legend: { ...o.legend, data: ['Company cost', 'BU cost (MWD + price points)'] }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, formatter: (ps) => { const x = ops[ps[0].dataIndex]; return R.tip(t, ps.map((p) => [p.color, p.seriesName, M$(p.value)]).concat([[t.muted, 'Shipped of plan', R.pct(x.attainment, 1) + (x.attainment >= r.target - 1e-9 ? '' : ' (misses the target)')]]), x.cutover === null ? 'No transfer this year' : 'Cutover in week ' + x.cutover); } },
+    xAxis: R.axis(t, { type: 'category', data: ops.map(lab), splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11 } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + R.num(v / 1e6, 0) + 'M' } }),
+    series: [
+      { type: 'line', name: 'Company cost', data: ops.map((x) => pt(x, 'company_cost', scol(t, 'company'))), lineStyle: { color: scol(t, 'company'), width: 2 }, itemStyle: { color: scol(t, 'company') } },
+      { type: 'line', name: 'BU cost (MWD + price points)', data: ops.map((x) => pt(x, 'bu_cost', scol(t, 'bu'))), lineStyle: { color: scol(t, 'bu'), width: 2 }, itemStyle: { color: scol(t, 'bu') } },
+    ],
+  };
+});
+
+function events() {
+  const r = run(), s = focus();
+  R.$('#h-ev').textContent = `${R.pct(r.tariff)} tariff · ${S.g ? 'strong' : 'weak'} GSM`;
+  const mine = (txt) => (s.key === 'company' && txt.includes("company's pick")) || (s.key === 'bu' && txt.includes("BU's pick"));
+  R.$('#ev').innerHTML = r.events.map(([w, e]) => `<li class="${mine(e) ? 'hit' : ''}"><code>W${w}</code><span>${R.esc(e)}</span></li>`).join('');
+}
+
+function insight() {
+  const r = run(), [stay, co, bu, mc] = r.strategies;
+  const cross = co.cumulative.findIndex((v, w) => v < stay.cumulative[w] && co.cumulative.slice(w).every((x, k) => x <= stay.cumulative[w + k]));
+  R.$('#insight').innerHTML = `
+    <p><b>${co.cutover === null ? 'At this tariff the company stays in China.' : `At a ${R.pct(r.tariff)} tariff the company moves the US volume in week ${co.cutover} and saves ${M$(stay.company_cost - co.company_cost)} on the year against staying.`}</b> ${co.cutover !== null && cross >= 0 ? `Moving costs more up front (cutover, expediting, the ramp), and its running cost falls below staying from week ${cross} on. ` : ''}Staying ships ${R.pct(stay.attainment, 1)} of the plan${stay.attainment < r.target - 1e-9 ? ', short of the target even with the largest catch-up discount' : ''}; the price rise on China-made units costs ${M$(stay.totals.lost_margin + stay.totals.promotion)} in lost margin and price points.</p>
+    <p><b>${bu.id === co.id ? 'The BU and the company agree.' : `The BU waits until ${bu.cutover === null ? 'next year' : 'week ' + bu.cutover}.`}</b> ${bu.id === co.id ? 'Its MWD and price-point cost is lowest at the same week.' : `Every week it waits cancels fewer plans inside the liability window, so its claimed MWD falls; the company pays ${M$(bu.company_cost - co.company_cost)} more for that wait, mostly tariff on units still built in China.`} Waiting for the model change (week 26) costs ${M$(mc.company_cost)}: nothing is cancelled, but half a year of tariff is paid first.</p>
+    <p><b>The ramp matters as much as the week.</b> Module 6 brings the new site to full volume in ${R.num(r.T50, 1)} weeks (median, ${r.pull} weeks pulled in); until then China builds the rest and pays the tariff. The longer transit (${R.num(r.extra_transit_days, 1)} more days to the US MGI) leaves more finished goods at platform P1's end of life (week 30).</p>`;
+}
+
+function draw() {
+  persist();
+  cards(); attTable(); events(); insight();
+  [cTl, cCum, cKind, cWk, cOpt].forEach(R.update);
+}
+paintCtl();
+compute();
+</script>

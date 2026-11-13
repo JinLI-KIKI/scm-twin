@@ -137,9 +137,9 @@
     <div>
       <p class="eyebrow">Module 7 · sites, markets and real duties</p>
       <h1>Factory Footprint Studio</h1>
-      <p class="sub">China plus five candidate ODM sites, nine regional distribution centres, and the laptop duties, ocean rates and Hormuz closure of October 2026, with tariff scenarios and duty ranges you stretch by hand up to the April 2025 peak. A laptop takes the origin of its main board, so a site that only assembles China-made boards does not escape a China tariff. Three costs come from Modules 2–4, and the model is checked against where US imports actually moved. Everything below recomputes as you move an input.</p>
+      <p class="sub">China plus five candidate ODM sites, nine regional distribution centres, and the laptop duties, ocean rates and Hormuz closure of November 2026, with tariff scenarios and duty ranges you stretch by hand up to the April 2025 peak. A laptop takes the origin of its main board, so a site that only assembles China-made boards does not escape a China tariff. Three costs come from Modules 2–4, and the model is checked against where US imports actually moved. Everything below recomputes as you move an input.</p>
     </div>
-    <div class="asof">Built __TODAY__ · duties checked Oct 2026 · <a href="rules.html">sources</a> · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/footprint.md">formulas</a></div>
+    <div class="asof">Built __TODAY__ · duties checked 13 Nov 2026 · <a href="rules.html">sources</a> · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/footprint.md">formulas</a></div>
   </div>
 
   <div class="sim">
@@ -179,6 +179,7 @@
         <div class="slicer"><span class="s-label" id="l-s">Duty scenario</span><div class="seg" role="group" aria-labelledby="l-s" id="f-s"></div></div>
         <div class="slicer"><span class="s-label" id="l-r">Red Sea</span><div class="seg" role="group" aria-labelledby="l-r" id="f-r"></div></div>
         <div class="slicer"><span class="s-label" id="l-h">Strait of Hormuz</span><div class="seg" role="group" aria-labelledby="l-h" id="f-h"></div></div>
+        <div class="slicer"><span class="s-label" id="l-mem">Memory prices</span><div class="seg" role="group" aria-labelledby="l-mem" id="f-mem"></div></div>
         <div class="slicer"><span class="s-label" id="l-m">Grid mode</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
         <div class="slicer"><span class="s-label" id="l-v">Grid shows</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
         <div class="slicer slider-ctl"><span class="s-label"><label for="runs">Duty draws</label><output id="o-runs"></output></span><input type="range" id="runs" min="50" max="1000" step="50"></div>
@@ -273,7 +274,7 @@
       <section class="insight" id="insight"></section>
 
       <footer class="notes">
-        <p><b>Landed cost</b> = factory value (China customs value, conversion cost scaled by the site's index and, at other sites, the parts shipped from China: freight, carrying while they sail and import duty on parts; plus the extra cost of making the main board on site) + freight to the market + duty (on CIF where the market values imports that way) + carrying in transit + the longer chain at non-China sites (end-of-life material from Module 3, per week of parts feed plus one) + end-of-life stock from Module 4 (per week of transit beyond China's to the same market; a credit when the site is closer) + an optional chokepoint premium. <b>Freight</b> per 40-ft runs from the pre-war rate (basis 0) through the long-term contract rate (1, the default: a shipper on annual contracts) to the October 2026 spot (2), from lane benchmarks by port region; lanes without a benchmark use the distance formula. With Hormuz closed, Gulf cargo lands at Khor Fakkan and is trucked to Dubai. <b>Duty</b> = (1 − w) × the site's own rate + w × the China rate, where w is the board-origin weight for a site that imports China-made boards (1 under the US customs rulings) and 0 for a site that makes its boards or sells in its own country.</p>
+        <p><b>Landed cost</b> = factory value (China customs value, conversion cost scaled by the site's index and, at other sites, the parts shipped from China: freight, carrying while they sail and import duty on parts; plus the extra cost of making the main board on site) + freight to the market + duty (on CIF where the market values imports that way) + carrying in transit + the longer chain at non-China sites (end-of-life material from Module 3, per week of parts feed plus one) + end-of-life stock from Module 4 (per week of transit beyond China's to the same market; a credit when the site is closer) + an optional chokepoint premium. <b>Freight</b> per 40-ft runs from the pre-war rate (basis 0) through the long-term contract rate (1, the default: a shipper on annual contracts) to the November 2026 spot (2), from lane benchmarks by port region; lanes without a benchmark use the distance formula. With Hormuz closed, Gulf cargo lands at Khor Fakkan and is trucked to Dubai. <b>Duty</b> = (1 − w) × the site's own rate + w × the China rate, where w is the board-origin weight for a site that imports China-made boards (1 under the US customs rulings) and 0 for a site that makes its boards or sells in its own country.</p>
         <p><b>Allocation</b> is a minimum-cost flow from open sites to markets within capacity. A new site is either an ODM line on the ODM's existing campus (price index on the China line, NRE = the line's share of the campus fit-out plus qualification, program cost, and a volume commitment with a take-or-pay fee per unit below it) or a bought electronics plant (price from the capex per laptop of capacity of recent Vietnam campuses; it saves the ODM's operating margin, pays depreciation, capital and its own overhead, and the idle labour below the planned load). The flow fills commitments first when that is cheaper than the fee. <b>Footprints</b> are every set of open sites that can cover demand, with boards imported or made on site, priced over 52 weeks plus the yearly program cost, the set-up (NRE) spread over the horizon, and board lines. <b>Duty ranges</b>: in each draw and market, with the change probability set on the left, the market moves all its duties to the same point of their ranges (as the US did in April 2025); otherwise today's rates stay. Regret is the gap to the cheapest footprint in the same draw or scenario. <b>Build now or wait</b> compares opening today with keeping the footprint that is cheapest under current duties and opening only once a scenario arrives: the old cost runs through the ramp-up, a rush premium is paid, and the volume moved out of China in a hurry pays the urgent transfer cost from Modules 1–3. <b>China parts curbs</b> add a premium to China-made parts at every other site. <b>Back-test</b>: the 2025 China-only gap (20%) and the 2026 gap (0) against US imports by origin from the Census Bureau.</p>
         <p><b>Duties</b> are current rates for laptops (HTS 8471.30): the US exempts computers from the July 2026 Section 301 action and China's 2019 list on laptops stays suspended; the EU, UK, Japan, Australia, Singapore and India charge nothing; Brazil charges 16%; the UAE 5%. <b>Ceilings</b> follow the April 2025 peak in the US: China 145% (125% reciprocal + 20% fentanyl; laptops were exempted from the reciprocal part on 11 April and paid 20%), Vietnam 46%, Indonesia 32%, Malaysia 24%, Brazil and the UAE 10% (Brazil later 50%). Ocean rates: SCFI, Drewry WCI and Xeneta readings (<code>data/freight_lanes.csv</code>). ODM and plant terms: capex per unit of capacity from the Wistron (Ha Nam) and Quanta (Nam Dinh) campuses, the Tata–Wistron India deal and Compal's operating margin (<code>data/footprint_params.csv</code>). Scenario weights, the change probability, ODM price indices, program cost, capacities, commitments, the take-or-pay fee, qualification, overhead, ramp months and board costs are placeholders. Sources in the <a href="rules.html">Rules register</a>; code in <code>src/footprint.py</code>, mirrored in <code>src/dash/fp_engine.js</code> and checked number for number by <code>tests/test_fp_parity.py</code>.</p>
       </footer>
@@ -287,7 +288,13 @@ const D = /*__DATA__*/null;
 const IN = D.input;
 const ORG = IN.origins, MK = IN.markets, NONCN = ORG.filter((o) => o !== 'CN');
 const TKEYS = [...new Set(MK.map((m) => m.tkey))];
-const P0 = { ...IN.P };
+const MEMI = D.memory;
+const saved0 = R.load();
+let MEM = saved0.mem === 0 || saved0.mem === 1 ? saved0.mem : MEMI.default;
+// memory prices raise the China customs value and the parts shipped to other sites by the same dollars
+const P0M = (lv) => ({ ...IN.P, customs_value_cn_usd: IN.P.customs_value_cn_usd + lv * MEMI.delta_p1_14, parts_value_usd: IN.P.parts_value_usd + lv * MEMI.delta_p1_14 });
+let P0 = P0M(MEM);
+const MEMLAB = (m) => [['0', '2025 base'], ['1', m.quarter.slice(4) + ' ' + m.quarter.slice(0, 4) + ' contract']];
 const SITES0 = JSON.parse(JSON.stringify(IN.sites));
 const DEM0 = Object.fromEntries(MK.map((m) => [m.market, m.weekly_units]));
 const PROB0 = Object.fromEntries(IN.scenarios.map((s) => [s.id, s.probability]));
@@ -317,7 +324,7 @@ for (const k in (saved.P || {})) if (k in P0 && typeof saved.P[k] === 'number') 
 for (const k in (saved.dem || {})) if (k in DEM0) S.dem[k] = saved.dem[k];
 for (const k in (saved.prob || {})) if (k in PROB0) S.prob[k] = saved.prob[k];
 if (saved.sites) for (const o of ORG) if (saved.sites[o]) for (const k of ['open', 'board_local', 'mode', 'capacity', 'conv_index', 'parts_duty', 'fixed_cost', 'nre', 'buy_price', 'min_load']) if (k in saved.sites[o]) S.sites[o][k] = saved.sites[o][k];
-const persist = () => R.save({ torwho: typeof TORWHO === 'undefined' ? 'best' : TORWHO, sc: S.sc, rs: S.rs, mode: S.mode, view: S.view, runs: S.runs, P: S.P, sites: S.sites, dem: S.dem, prob: S.prob, ranges: S.ranges, edits: S.edits, selm: S.selm, rm: S.rm });
+const persist = () => R.save({ torwho: typeof TORWHO === 'undefined' ? 'best' : TORWHO, sc: S.sc, rs: S.rs, mode: S.mode, view: S.view, runs: S.runs, P: S.P, sites: S.sites, dem: S.dem, prob: S.prob, ranges: S.ranges, edits: S.edits, selm: S.selm, rm: S.rm, mem: MEM });
 const openSites = () => ORG.filter((o) => S.sites[o].open);
 const fpKey = (open, board) => open.join('+') + (board && open.some((o) => o !== 'CN') ? ' · boards' : '');
 const fpLabel = (open, board) => open.map((o) => SNAME[o]).join(' + ') + (board && open.some((o) => o !== 'CN') ? ' · own boards' : '');
@@ -349,9 +356,9 @@ const todayDuties = () => FPE.dutyMatrix(currentInput(), currentInput().scenario
 // ---------------------------------------------------------------- inputs panel
 const RANGE = {
   duty_change_prob: ['Chance a market changes its duties', 0, 1, 0.05, 'pct', '_rng'],
-  customs_value_cn_usd: ['China customs value per unit', 300, 900, 5, 'usd', 'Cost base'],
+  customs_value_cn_usd: ['China customs value per unit', 300, 1300, 5, 'usd', 'Cost base'],
   conversion_cost_cn_usd: ['China conversion cost per unit', 5, 80, 1, 'usd', 'Cost base'],
-  parts_value_usd: ['Parts shipped to a non-China site', 150, 700, 5, 'usd', 'Cost base'],
+  parts_value_usd: ['Parts shipped to a non-China site', 150, 1200, 5, 'usd', 'Cost base'],
   carrying_rate_annual: ['Carrying rate per year', 0.05, 0.4, 0.01, 'pct', 'Cost base'],
   board_origin_weight: ['Origin follows the main board (0–1)', 0, 1, 0.05, 'n2', 'Origin and main boards'],
   board_extra_usd: ['Extra cost per unit to make the board on site', 0, 30, 0.5, 'usd2', 'Origin and main boards'],
@@ -369,12 +376,12 @@ const RANGE = {
   air_usd_per_kg_base: ['Air freight per kg, fixed part', 0.5, 8, 0.1, 'usd2', 'Freight'],
   air_usd_per_kg_per_1000km: ['Air freight per kg per 1,000 km', 0, 1, 0.01, 'usd2', 'Freight'],
   kg_per_unit: ['Chargeable kg per laptop', 1, 6, 0.1, 'n1', 'Freight'],
-  freight_basis: ['Ocean rates: 0 = pre-war, 1 = long-term contract, 2 = Oct 2026 spot', 0, 2, 0.05, 'n2', 'Freight and routing'],
+  freight_basis: ['Ocean rates: 0 = pre-war, 1 = long-term contract, 2 = Nov 2026 spot', 0, 2, 0.05, 'n2', 'Freight and routing'],
   hormuz_closed: ['Strait of Hormuz closed (1) or open (0)', 0, 1, 1, 'n', 'Freight and routing'],
   bypass_truck_usd_feu: ['Khor Fakkan–Dubai trucking per 40-ft while Hormuz is closed', 0, 4000, 50, 'usd', 'Freight and routing'],
   gulf_surcharge_feu: ['Extra Gulf surcharge per 40-ft', 0, 6000, 100, 'usd', 'Freight and routing'],
   fallback_contract_factor: ['Lanes without a benchmark: contract / pre-war', 1, 3, 0.01, 'n2', 'Freight and routing'],
-  fallback_now_factor: ['Lanes without a benchmark: Oct 2026 spot / pre-war', 1, 6, 0.1, 'n1', 'Freight and routing'],
+  fallback_now_factor: ['Lanes without a benchmark: Nov 2026 spot / pre-war', 1, 6, 0.1, 'n1', 'Freight and routing'],
   shortfall_fee_usd: ['Take-or-pay fee per unit below the commitment', 0, 60, 1, 'usd', 'ODM terms'],
   capex_odm_line_usd_per_annual_unit: ['Line fit-out capex per laptop of yearly capacity (sets NRE)', 0, 20, 0.1, 'usd2', 'ODM terms'],
   qualification_usd: ['Program qualification at a new line (in NRE)', 0, 3000000, 50000, 'usdm', 'ODM terms'],
@@ -529,6 +536,7 @@ if (matchMedia('(max-width: 980px)').matches) R.$('#inputs').classList.add('fold
 R.seg(R.$('#f-s'), IN.scenarios.map((s) => [s.id, SHORT[s.id] || s.id]), S.sc, (v) => { S.sc = v; buildRates(); buildDutyTable(); schedule(); });
 R.seg(R.$('#f-r'), [['cape', 'Avoid (Cape)'], ['suez', 'Through Suez']], S.rs, (v) => { S.rs = v; schedule(); });
 const segH = R.seg(R.$('#f-h'), [['1', 'Closed (since Feb 2026)'], ['0', 'Open']], String(S.P.hormuz_closed >= 0.5 ? 1 : 0), (v) => { S.P.hormuz_closed = +v; R.$('#p-hormuz_closed').value = +v; paint(); schedule(); });
+R.seg(R.$('#f-mem'), MEMLAB(MEMI), String(MEM), (v) => { const d = (+v - MEM) * MEMI.delta_p1_14; MEM = +v; P0 = P0M(MEM); S.P.customs_value_cn_usd += d; S.P.parts_value_usd += d; buildInputs(); schedule(); });
 R.seg(R.$('#f-m'), [['sea', 'Ocean'], ['air', 'Air']], S.mode, (v) => { S.mode = v; persist(); draw(); });
 R.seg(R.$('#f-v'), [['total', 'Landed $'], ['duty', 'Duty $'], ['freight', 'Freight $'], ['days', 'Days']], S.view, (v) => { S.view = v; persist(); draw(); });
 R.$('#runs').value = S.runs; R.$('#o-runs').textContent = S.runs;
@@ -1073,8 +1081,8 @@ function lanesTable() {
   const keys = Object.keys(L).sort((a, b) => (L[b].bench - L[a].bench) || (L[b].fin + L[b].kits - L[a].fin - L[a].kits) || a.localeCompare(b));
   const used = keys.filter((k) => L[k].bench || L[k].fin + L[k].kits > 0);
   const rest = keys.length - used.length;
-  R.$('#h-lanes').textContent = `USD per 40-ft · freight basis ${R.num(P.freight_basis, 2)} (0 = pre-war, 1 = long-term contract, 2 = Oct 2026 spot) · Hormuz ${hz === 'closed' ? 'closed: Gulf cargo lands at Khor Fakkan and is trucked' : 'open'}`;
-  R.$('#t-lanes').innerHTML = '<thead><tr><th class="txt">Lane</th><th>Pre-war<small>late Feb 2026</small></th><th>Contract<small>long-term, Aug 2026</small></th><th>Spot<small>Oct 2026</small></th><th>Model uses<small>incl. Gulf extras</small></th><th>Per laptop<small>' + R.num(P.units_per_feu) + ' a box</small></th><th>Laptops<small>per week</small></th><th>Parts kits<small>per week</small></th></tr></thead><tbody>' +
+  R.$('#h-lanes').textContent = `USD per 40-ft · freight basis ${R.num(P.freight_basis, 2)} (0 = pre-war, 1 = long-term contract, 2 = Nov 2026 spot) · Hormuz ${hz === 'closed' ? 'closed: Gulf cargo lands at Khor Fakkan and is trucked' : 'open'}`;
+  R.$('#t-lanes').innerHTML = '<thead><tr><th class="txt">Lane</th><th>Pre-war<small>late Feb 2026</small></th><th>Contract<small>long-term, Aug 2026</small></th><th>Spot<small>Nov 2026</small></th><th>Model uses<small>incl. Gulf extras</small></th><th>Per laptop<small>' + R.num(P.units_per_feu) + ' a box</small></th><th>Laptops<small>per week</small></th><th>Parts kits<small>per week</small></th></tr></thead><tbody>' +
     used.map((k) => { const x = L[k]; return `<tr><td class="txt"><b>${laneName(k)}</b><small>${x.bench ? 'benchmark index' : 'no benchmark: distance formula × ' + R.num(P.fallback_contract_factor, 2) + ' / × ' + R.num(P.fallback_now_factor, 1)}${x.extra ? ' · + Gulf extras' : ''}</small></td>` +
       `<td>${rng(x.pre)}</td><td>${rng(x.con)}</td><td>${rng(x.spot)}</td><td><b>${rng(x.used)}</b></td><td>${rng(x.used.map((v) => v / P.units_per_feu), 2)}</td><td>${x.fin ? R.num(x.fin) : '–'}</td><td>${x.kits ? R.num(x.kits) : '–'}</td></tr>`; }).join('') +
     (rest ? `<tr><td class="txt" colspan="8"><small>${rest} more lane${rest > 1 ? 's' : ''} without a benchmark carr${rest > 1 ? 'y' : 'ies'} no volume in this network.</small></td></tr>` : '') + '</tbody>';

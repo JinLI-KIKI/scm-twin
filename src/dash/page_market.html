@@ -1,0 +1,245 @@
+<title>The 2026 Market</title>
+<!--__HEAD__-->
+<style>/*__CSS__*/
+.sec { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; margin: 8px 0 -4px; min-width: 0; }
+.sec .n { font: 500 12px var(--f-mono); color: var(--muted); }
+.sec h3 { font: 600 21px/1.1 var(--f-display); letter-spacing: .02em; margin: 0; }
+.sec .rule { flex: 1 1 40px; border-bottom: 1px solid var(--rule); transform: translateY(-5px); min-width: 24px; }
+.sec .note { font-size: 12px; color: var(--muted); text-align: right; max-width: 56ch; }
+.strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1180px) { .strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } }
+.tile { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px 11px; display: grid; gap: 2px; align-content: start; min-width: 0; position: relative; overflow: hidden; }
+.tile::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--acc, var(--rule)); }
+.tile .t-g { font: 500 11px var(--f-mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.tile .t-v { font: 600 28px/1.08 var(--f-display); font-variant-numeric: tabular-nums; }
+.tile .t-l { font-size: 12.5px; color: var(--ink); font-weight: 500; }
+.tile .t-s { font-size: 12px; color: var(--ink-2); }
+.lens td.txt b { font-weight: 600; }
+.lens td.arrow { color: var(--muted); padding-inline: 2px; }
+.reading { display: grid; gap: 2px; }
+.tbl td .src { font: 11.5px var(--f-body); color: var(--muted); }
+.feeds { font: 12px var(--f-body); color: var(--ink-2); }
+</style>
+<!--__NAV__-->
+<main class="report">
+  <div class="report-head">
+    <div>
+      <p class="eyebrow">Market monitor · the readings behind the inputs</p>
+      <h1>The 2026 Market</h1>
+      <p class="sub">The model runs on 2026 as it is: the Strait of Hormuz closed since February, ocean rates several times their pre-war level, no US duty on laptops from any origin after the Supreme Court ruling, and a memory price surge that has multiplied what DRAM and SSDs cost. Each reading below is dated, sourced and tied to the input it feeds. The last section runs every module twice, with memory at 2025 prices and at today's contract prices, and shows which decisions move.</p>
+    </div>
+    <div class="asof">Readings to <span id="asof"></span> · page built __TODAY__ · every source linked below</div>
+  </div>
+
+  <section class="strip" id="strip" aria-label="Headline readings"></section>
+
+  <section class="canvas">
+    <div class="sec"><span class="n">01</span><h3>Freight and the Strait of Hormuz</h3><span class="rule"></span><span class="note">Ocean rates per 40-ft container by lane: before the war, the long-term contract a plan pays, and spot today</span></div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Ocean rate by lane</h2><span class="hint" id="h-lanes"></span></div>
+      <div id="c-lanes" class="chart tall"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Freight and Hormuz readings</h2><span class="hint">Latest print, with the input it feeds</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-freight"></table></div>
+    </div>
+
+    <div class="sec"><span class="n">02</span><h3>US duties on laptops</h3><span class="rule"></span><span class="note">Extra US duty on a China-made laptop against every other origin, and the scenarios the footprint is scored in</span></div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Extra US duty on laptops since 2025</h2><span class="hint">HS 8471.30 · percentage points on top of the zero MFN rate</span></div>
+      <div id="c-duty" class="chart"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Tariff scenarios the footprint weighs</h2><span class="hint">Chance over the three-year horizon · <a href="footprint.html">Footprint</a></span></div>
+      <div id="c-scen" class="chart"></div>
+    </div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Duty readings</h2><span class="hint">What changed, what did not</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-duty"></table></div>
+    </div>
+
+    <div class="sec"><span class="n">03</span><h3>Memory prices</h3><span class="rule"></span><span class="note">Contract prices compounded from TrendForce's quarterly changes, against the 2025 BOM prices of the model</span></div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>DRAM and NAND contract price index</h2><span class="hint">Q2 2025 = 1 · Q4 2026 is TrendForce's forecast</span></div>
+      <div id="c-mem" class="chart"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>What memory does to a laptop's BOM</h2><span class="hint">Per unit, 2025 base against Q4 2026 contract</span></div>
+      <div id="c-bom" class="chart"></div>
+    </div>
+
+    <div class="sec"><span class="n">04</span><h3>What the memory market changes</h3><span class="rule"></span><span class="note">Every module run twice on the same inputs; only memory prices differ</span></div>
+    <div class="viz w12">
+      <div class="viz-h"><h2>Decisions at 2025 and at Q4 2026 memory prices</h2><span class="hint">Memory dollars pass to the customs value at cost; channel prices keep their markup · switch it on the <a href="year.html">Year run</a>, <a href="demand.html">Demand</a>, <a href="ramp.html">Ramp</a>, <a href="footprint.html">Footprint</a> and <a href="fg-live.html">FG simulator</a> pages</span></div>
+      <div class="tbl-wrap"><table class="tbl lens" id="t-lens"></table></div>
+    </div>
+    <section class="insight" id="insight" style="grid-column: 1 / -1"></section>
+
+    <div class="sec"><span class="n">05</span><h3>Demand and where notebooks are built</h3><span class="rule"></span><span class="note">The back-test of the footprint model and the demand shock behind the elasticity</span></div>
+    <div class="viz w7">
+      <div class="viz-h"><h2>Share of US computer imports by origin</h2><span class="hint">HS 8471, Census via import.tax · Mexico and Taiwan are mostly servers</span></div>
+      <div id="c-imp" class="chart"></div>
+    </div>
+    <div class="viz w5">
+      <div class="viz-h"><h2>Demand and production readings</h2><span class="hint">With the input each one checks</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-dem"></table></div>
+    </div>
+  </section>
+
+  <footer class="notes">
+    <p><b>How readings enter the model.</b> Ocean rates by lane sit in <code>data/freight_lanes.csv</code> (pre-war, long-term contract, spot); a plan pays the contract rate. The Hormuz switch, the bypass truck leg and the fallback factor sit in <code>data/footprint_params.csv</code>. Duties by market and origin sit in <code>data/tariffs.csv</code>, scenarios in <code>data/duty_scenarios.csv</code>. Memory prices sit in <code>data/memory_prices.csv</code>; <code>memory_market</code> in <code>data/params.csv</code> sets the default (0 = 2025 base), and DRAM parts (MEM_*) and NAND parts (SSD_*) take the index of the latest quarter when it is 1. The readings themselves are in <code>data/market_watch.csv</code>; code in <code>src/market.py</code>.</p>
+    <p><b>Memory lens.</b> With Q4 2026 memory prices, the ODM passes the extra memory dollars on at cost, so each model's customs value rises by the same amount and the US tariff base grows with it; channel prices keep their markup (the 2026 sell-in price data show a smaller rise so far, because brands cut memory configurations and absorbed part of it). Boards carry their memory, so stranded boards and boards on hand cost more. Finished-goods values follow the unit cost. Freight, duties and every practitioner rule are the same in both runs.</p>
+    <p><b>Caveat.</b> Several readings come from secondary reports of the original data (noted per row). Quarterly contract changes are midpoints of TrendForce's ranges, compounded; the NAND series is anchored on one client SSD contract price because the 2025 quarters were not found.</p>
+  </footer>
+</main>
+<script>/*__JS__*/</script>
+<script>
+const D = /*__DATA__*/null;
+const W = D.watch, L = D.lens, B = L.base, N = L.now;
+const M$ = (v, d = 2) => (v < 0 ? '−' : '') + '$' + R.num(Math.abs(v) / 1e6, d) + 'M';
+const find = (s) => W.find((r) => r.indicator.startsWith(s));
+const dt = (d) => { const x = new Date(d + 'T00:00:00Z'); return isNaN(x) ? d : x.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); };
+R.$('#asof').textContent = dt(W.map((r) => r.date).filter((d) => /^\d{4}-\d\d-\d\d$/.test(d)).sort().pop());
+
+// ---------------------------------------------------------------- headline strip
+const lane = (k) => D.lanes.find((l) => l.lane === k);
+const usw = lane('FE-USWC'), mem = D.memory[D.memory.length - 1];
+const pcs = find('Global PC shipments'), off = find('Notebook output outside China'), hz = find('Strait of Hormuz');
+const tile = (g, v, l, s, acc) => `<article class="tile" style="--acc:${acc}"><span class="t-g">${g}</span><span class="t-v">${v}</span><span class="t-l">${l}</span><span class="t-s">${s}</span></article>`;
+R.$('#strip').innerHTML = [
+  tile('Hormuz', 'Day ' + hz.value, 'Strait closed to normal shipping', `${dt(hz.date)} · 3 transits a day against 85`, 'var(--bad)'),
+  tile('Freight', '$' + R.num(usw.now), 'Shanghai to Los Angeles, 40-ft', `spot ${R.num(usw.now / usw.pre, 1)}× pre-war · contract $${R.num(usw.contract)}`, 'var(--c1)'),
+  tile('Duty', '0%', 'US duty on laptops, every origin', 'no China-only gap since Feb 2026', 'var(--c3)'),
+  tile('Memory', '×' + R.num(mem.dram_index, 1), 'DRAM contract price since Q2 2025', `NAND ×${R.num(mem.nand_index, 1)} · ${mem.quarter.slice(4)} ${mem.quarter.slice(0, 4)}`, 'var(--c2)'),
+  tile('Demand', pcs.change.split(' ')[0].replace('-', '−') , 'Global PC shipments, Q3 2026', `${pcs.value}M units (IDC); Omdia sees −24% in Q4`, 'var(--c4)'),
+  tile('Footprint', off.value + '%', 'Notebooks built outside China', '24% in 2025; drifting back to China', 'var(--c5)'),
+].join('');
+
+// ---------------------------------------------------------------- freight
+const LANE_NAME = { 'FE-USWC': 'US West Coast', 'FE-NEUR': 'North Europe', 'FE-JP': 'Japan', 'FE-SEA': 'Singapore', 'FE-FE': 'Intra-Asia', 'FE-ANZ': 'Australia', 'FE-SAEC': 'Brazil', 'FE-INDIA': 'India', 'FE-GULF': 'Gulf (bypass)' };
+const lanes = D.lanes.filter((l) => l.lane !== 'FE-FE').sort((a, b) => b.now - a.now);
+R.$('#h-lanes').textContent = 'From the Far East · USD per 40-ft · sorted by spot';
+R.chart('c-lanes', (t) => {
+  const o = R.base(t);
+  const S = [['pre', 'Pre-war, Feb 2026', t.c[6]], ['contract', 'Long-term contract, Aug 2026 (plans pay this)', t.c[0]], ['now', 'Spot, Nov 2026', t.c[1]]];
+  return {
+    ...o, legend: { ...o.legend, data: S.map((s) => s[1]) }, grid: { ...o.grid, top: 40, left: 8 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, formatter: (ps) => { const l = lanes[ps[0].dataIndex]; return R.tip(t, S.map(([k, n, c]) => [c, n, '$' + R.num(l[k])]).concat([[t.muted, 'Spot ÷ pre-war', R.num(l.now / l.pre, 1) + '×']]), 'Far East → ' + LANE_NAME[l.lane]); } },
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: lanes.map((l) => LANE_NAME[l.lane]), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12, fontFamily: t.fBody } }),
+    xAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => '$' + R.num(v / 1e3, 0) + 'k' } }),
+    series: S.map(([k, n, c], i) => ({ type: 'bar', name: n, barWidth: 7, barGap: '40%', itemStyle: { color: c, borderRadius: [0, 4, 4, 0] }, data: lanes.map((l) => l[k]),
+      label: k === 'now' ? { show: true, position: 'right', color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => R.num(lanes[p.dataIndex].now / lanes[p.dataIndex].pre, 1) + '×' } : undefined })),
+  };
+});
+const readRow = (r) => `<tr><td class="txt"><div class="reading"><b>${R.esc(r.indicator)}</b><span class="feeds">${R.esc(r.change)}</span><span class="src"><a href="${R.esc(r.source_url)}">${R.esc(r.source_name)}</a> · ${dt(r.date)}</span></div></td><td>${fmtVal(r)}<small>${R.esc(r.unit)}</small></td></tr>`;
+const fmtVal = (r) => { const v = +r.value; return isNaN(v) ? R.esc(r.value) : Math.abs(v) >= 1000 ? R.num(v) : R.esc(r.value); };
+const tbl = (id, rows, head) => { R.$(id).innerHTML = `<thead><tr><th class="txt">${head}</th><th>Value</th></tr></thead><tbody>` + rows.map(readRow).join('') + '</tbody>'; };
+tbl('#t-freight', W.filter((r) => r.group === 'Freight' || r.group === 'Hormuz').filter((r, i) => i < 9), 'Reading');
+
+// ---------------------------------------------------------------- duties
+const TH = D.tariff_history.map((r) => ({ from: r.from, to: r.to, cn: +r.china_extra_pct, ot: +r.others_extra_pct, note: r.note }));
+R.chart('c-duty', (t) => {
+  const o = R.base(t);
+  const pts = (k) => TH.flatMap((r) => [[r.from, r[k]], [r.to, r[k]]]);
+  return {
+    ...o, legend: { ...o.legend, data: ['China-made laptop', 'Every other origin'] }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, formatter: (ps) => { const d = ps[0].value[0]; const r = TH.find((x) => x.from <= d && d <= x.to) || TH[TH.length - 1]; return R.tip(t, ps.map((p) => [p.color, p.seriesName, p.value[1] + '%']), dt(d)) + `<div style="max-width:300px;white-space:normal;margin-top:4px;color:${t.ink2}">${R.esc(r.note)}</div>`; } },
+    xAxis: R.axis(t, { type: 'time', splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: '{MMM} {yy}' } }),
+    yAxis: R.axis(t, { type: 'value', max: 30, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: '{value}%' } }),
+    series: [
+      { type: 'line', name: 'China-made laptop', data: pts('cn'), symbol: 'none', lineStyle: { width: 2.5, color: t.c[1] }, itemStyle: { color: t.c[1] }, areaStyle: { color: t.c[1], opacity: 0.12 } },
+      { type: 'line', name: 'Every other origin', data: pts('ot'), symbol: 'none', lineStyle: { width: 2, color: t.c[0], type: 'dashed' }, itemStyle: { color: t.c[0] } },
+    ],
+  };
+});
+R.chart('c-scen', (t) => {
+  const o = R.base(t), sc = D.scenarios.slice().sort((a, b) => b.probability - a.probability);
+  return {
+    ...o, grid: { ...o.grid, top: 8, right: 44 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.pct(v) },
+    yAxis: R.axis(t, { type: 'category', inverse: true, data: sc.map((s) => s.label), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12, fontFamily: t.fBody, width: 250, overflow: 'truncate' } }),
+    xAxis: R.axis(t, { type: 'value', max: 0.5, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: (v) => R.pct(v) } }),
+    series: [{ type: 'bar', barWidth: 12, data: sc.map((s) => s.probability), itemStyle: { color: t.c[0], borderRadius: [0, 4, 4, 0] },
+      label: { show: true, position: 'right', color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => R.pct(p.value) } }],
+  };
+});
+R.$('#t-duty').innerHTML = '<thead><tr><th class="txt">Reading</th><th class="txt">What changed</th><th class="txt">Feeds</th><th>Value</th></tr></thead><tbody>' +
+  W.filter((r) => r.group === 'Tariffs').map((r) => `<tr><td class="txt"><b>${R.esc(r.indicator)}</b><small><a href="${R.esc(r.source_url)}">${R.esc(r.source_name)}</a> · ${dt(r.date)}</small></td><td class="txt">${R.esc(r.change)}</td><td class="txt feeds">${R.esc(r.feeds)}</td><td>${fmtVal(r)}<small>${R.esc(r.unit)}</small></td></tr>`).join('') + '</tbody>';
+
+// ---------------------------------------------------------------- memory
+const QL = (q) => q.slice(4) + ' ' + q.slice(2, 4);
+R.chart('c-mem', (t) => {
+  const o = R.base(t), Q = D.memory;
+  const ser = (k, n, c) => ({ type: 'line', name: n, data: Q.map((q) => q[k]), symbol: 'circle', symbolSize: 8, lineStyle: { width: 2.5, color: c }, itemStyle: { color: c, borderColor: t.panel, borderWidth: 2 },
+    endLabel: { show: true, color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => `${n.split(' ')[0]} ×${R.num(p.value, 1)}` } });
+  return {
+    ...o, legend: { ...o.legend, data: ['DRAM (16GB memory)', 'NAND (512GB SSD)'] }, grid: { ...o.grid, top: 40, right: 70 },
+    tooltip: { ...o.tooltip, valueFormatter: (v) => '×' + R.num(v, 2) },
+    xAxis: R.axis(t, { type: 'category', data: Q.map((q) => QL(q.quarter)), boundaryGap: false, splitLine: { show: false } }),
+    yAxis: R.axis(t, { type: 'value', min: 0, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: '×{value}' } }),
+    series: [ser('dram_index', 'DRAM (16GB memory)', t.c[1]), ser('nand_index', 'NAND (512GB SSD)', t.c[3])],
+  };
+});
+const MODELS = Object.keys(B.units);
+R.chart('c-bom', (t) => {
+  const o = R.base(t);
+  const cats = MODELS.flatMap((m) => [m + '\n2025', m + '\nQ4 26']);
+  const val = (k) => MODELS.flatMap((m) => [k(B.units[m]), k(N.units[m])]);
+  return {
+    ...o, legend: { ...o.legend, data: ['Memory and SSD', 'Rest of the BOM'] }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => '$' + R.num(v) },
+    xAxis: R.axis(t, { type: 'category', data: cats, splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 11, fontFamily: t.fMono, interval: 0 } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: '${value}' } }),
+    series: [
+      { type: 'bar', name: 'Rest of the BOM', stack: 'b', barWidth: '52%', data: val((u) => u.bom - u.memory), itemStyle: { color: t.c[6], borderColor: t.panel, borderWidth: 1 } },
+      { type: 'bar', name: 'Memory and SSD', stack: 'b', data: val((u) => u.memory), itemStyle: { color: t.c[1], borderRadius: [4, 4, 0, 0], borderColor: t.panel, borderWidth: 1 },
+        label: { show: true, position: 'top', color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => { const m = MODELS[Math.floor(p.dataIndex / 2)], u = p.dataIndex % 2 ? N.units[m] : B.units[m]; return R.pct(u.memory_share); } } },
+    ],
+  };
+});
+
+// ---------------------------------------------------------------- lens
+const chip = (moved) => moved ? '<span class="chip warn">decision moves</span>' : '<span class="chip good">same decision</span>';
+const stake = '<span class="chip">bigger stakes</span>';
+const cut = (id) => id === 'stay' ? 'stay in China' : 'week ' + id.slice(1);
+const cov = (r, g) => MODELS.map((m) => r.m6[m + '|' + g].cover).join(' / ');
+const p14b = B.units['P1-14'], p14n = N.units['P1-14'];
+const LROWS = [
+  ['Unit', 'P1-14 bill of materials', `$${R.num(p14b.bom)} <small>memory ${R.pct(p14b.memory_share)}</small>`, `$${R.num(p14n.bom)} <small>memory ${R.pct(p14n.memory_share)}</small>`, stake],
+  ['Unit', 'P1-14 main board (memory on board)', `$${R.num(p14b.board)}`, `$${R.num(p14n.board)}`, stake],
+  ['Unit', 'P1-14 customs value, the US tariff base', `$${R.num(p14b.customs)}`, `$${R.num(p14n.customs)}`, stake],
+  ['Module 1', 'US leaves China: material freed / MWD', `${M$(B.m1.freed)} <small>MWD ${M$(B.m1.mwd)}</small>`, `${M$(N.m1.freed)} <small>MWD ${M$(N.m1.mwd)}</small>`, B.m1.mwd === N.m1.mwd ? '<span class="chip good">MWD unchanged</span><small>memory is shared, so it is absorbed</small>' : stake],
+  ['Module 2', 'Cheapest cutover week at a 25% tariff', `${cut('C' + B.m2.best_week)} <small>${M$(B.m2.best_total)}</small>`, `${cut('C' + N.m2.best_week)} <small>${M$(N.m2.best_total)}</small>`, chip(B.m2.best_week !== N.m2.best_week)],
+  ['Module 3', 'Transfer-year net at 25% / break-even tariff', `${M$(B.m3.net_year1)} <small>break-even ${R.pct(B.m3.breakeven, 1)}</small>`, `${M$(N.m3.net_year1)} <small>break-even ${R.pct(N.m3.breakeven, 1)}</small>`, stake],
+  ['Module 4', 'Avoidable finished-goods cost at launch (sales lock)', M$(B.m4.avoidable), M$(N.m4.avoidable), stake],
+  ['Module 5', 'Cutover pick: BU / company (25% tariff)', `${cut(B.m5.bu)} / ${cut(B.m5.company)}`, `${cut(N.m5.bu)} / ${cut(N.m5.company)}`, chip(B.m5.bu !== N.m5.bu || B.m5.company !== N.m5.company)],
+  ['Module 6', 'Weeks of boards per SMT run, strong GSM (' + MODELS.join(' / ') + ')', cov(B, 1), cov(N, 1), chip(cov(B, 1) !== cov(N, 1))],
+  ['Module 6', 'Same with a weak GSM', cov(B, 0), cov(N, 0), chip(cov(B, 0) !== cov(N, 0))],
+  ['Module 6', 'Ramp pull-in worth paying for', B.m6.ramp_pull + ' weeks', N.m6.ramp_pull + ' weeks', chip(B.m6.ramp_pull !== N.m6.ramp_pull)],
+  ['Module 7', 'Lowest expected-cost footprint', `${B.m7.best} <small>${M$(B.m7.best_expected, 1)} a year</small>`, `${N.m7.best} <small>${M$(N.m7.best_expected, 1)} a year</small>`, chip(B.m7.best !== N.m7.best)],
+  ['Module 7', 'Most robust footprint (least worst-case regret)', `${B.m7.robust} <small>${M$(B.m7.robust_regret, 1)} at worst</small>`, `${N.m7.robust} <small>${M$(N.m7.robust_regret, 1)} at worst</small>`, chip(B.m7.robust !== N.m7.robust)],
+];
+const ixq = L.index;
+R.$('#t-lens').innerHTML = `<thead><tr><th class="txt">Where</th><th class="txt">Decision or value</th><th>2025 base</th><th>${QL(ixq.quarter)} contract<small>DRAM ×${R.num(ixq.dram, 1)} · NAND ×${R.num(ixq.nand, 1)}</small></th><th class="txt">Effect</th></tr></thead><tbody>` +
+  LROWS.map(([w, d, a, b, c]) => `<tr><td class="txt"><code>${w}</code></td><td class="txt"><b>${d}</b></td><td>${a}</td><td>${b}</td><td class="txt">${c}</td></tr>`).join('') + '</tbody>';
+const p16 = (r, g) => r.m6['P1-16|' + g].cover;
+R.$('#insight').innerHTML = `
+  <p><b>Memory doubles what is at stake in a move, but changes few decisions.</b> A P1-14 costs $${R.num(p14n.bom)} in parts instead of $${R.num(p14b.bom)}, and memory is ${R.pct(p14n.memory_share)} of it. Because the US tariff is charged on the customs value, a ${R.pct(0.25)} tariff on China-made units costs about ${R.num(p14n.customs / p14b.customs, 1)} times as much per unit, so moving is worth more (transfer-year net ${M$(B.m3.net_year1)} → ${M$(N.m3.net_year1)}) and the break-even tariff falls to ${R.pct(N.m3.breakeven, 1)}. The cutover picks stay where they were: the claimed MWD doubles with the memory in it (${M$(B.m1.freed)} → ${M$(N.m1.freed)} freed), but memory is a shared part that other plans absorb, so the physical MWD stays at ${M$(N.m1.mwd)}, and the tariff on the other side of the scale grows too.</p>
+  <p><b>Where it bites is boards and footprint.</b> Memory sits on the main board, so a stranded board now costs ${R.num(N.units['P1-16'].board / B.units['P1-16'].board, 1)} times as much: for the risky P1-16 the recommended board run falls from ${p16(B, 1)} to ${p16(N, 1)} weeks with a strong GSM${p16(N, 0) === p16(B, 0) ? `, while with a weak GSM the risk that the ODM moves the line still keeps it at ${p16(N, 0)}` : ''}. In the footprint, higher customs values raise every duty in dollars, which ${B.m7.best === N.m7.best ? 'leaves the lowest-cost footprint as it was' : `moves the lowest-cost footprint from ${B.m7.best} to ${N.m7.best}`}.</p>`;
+
+// ---------------------------------------------------------------- imports and demand
+const H = D.history.filter((r) => r.series === 'hs8471_share');
+const CTRY = [['china', 'China'], ['vietnam', 'Vietnam'], ['mexico', 'Mexico'], ['taiwan', 'Taiwan'], ['thailand', 'Thailand']];
+R.chart('c-imp', (t) => {
+  const o = R.base(t), op = [0.35, 0.65, 1];
+  return {
+    ...o, legend: { ...o.legend, data: H.map((h) => h.period) }, grid: { ...o.grid, top: 40 },
+    tooltip: { ...o.tooltip, axisPointer: { type: 'shadow' }, valueFormatter: (v) => R.num(v, 1) + '%' },
+    xAxis: R.axis(t, { type: 'category', data: CTRY.map((c) => c[1]), splitLine: { show: false }, axisLabel: { color: t.ink2, fontSize: 12, fontFamily: t.fBody } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: '{value}%' } }),
+    series: H.map((h, i) => ({ type: 'bar', name: h.period, barWidth: 14, barGap: '20%', itemStyle: { color: t.c[0], opacity: op[i] ?? 1, borderRadius: [4, 4, 0, 0] }, data: CTRY.map((c) => +h[c[0]]) })),
+  };
+});
+tbl('#t-dem', W.filter((r) => r.group === 'Demand' || r.group === 'Footprint' || r.group === 'Memory'), 'Reading');
+</script>

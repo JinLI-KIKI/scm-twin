@@ -1,0 +1,17 @@
+== Memory lens: 2025 base vs 2026Q4 contract (DRAM x6.77, NAND x4.73)
+  P1-14: BOM $367 -> $728 (memory 20% -> 60%) · board $195 -> $426 · customs $480 -> $841
+  P1-16: BOM $387 -> $748 (memory 19% -> 58%) · board $198 -> $429 · customs $560 -> $921
+  P2-14: BOM $386 -> $747 (memory 19% -> 58%) · board $211 -> $442 · customs $520 -> $881
+  M1 US transfer: freed $16.70M -> $32.88M, MWD $1.16M -> $1.16M
+  M2 cutover at 25%: week 0 ($0.57M) -> week 0 ($0.94M)
+  M3 year-1 net at 25%: $14.27M -> $25.09M; break-even tariff 3.0% -> 2.4%
+  M4 FG avoidable cost (lock): $7.93M -> $10.46M
+  M5 picks: BU C11 / company C0 -> BU C11 / company C0
+  M6 P1-14|1: cover 6 -> 6 weeks
+  M6 P1-16|1: cover 6 -> 3 weeks
+  M6 P2-14|1: cover 5 -> 5 weeks
+  M6 P1-14|0: cover 7 -> 7 weeks
+  M6 P1-16|0: cover 7 -> 7 weeks
+  M6 P2-14|0: cover 8 -> 8 weeks
+  M6 ramp pull-in: 7 -> 7 weeks
+  M7 best: CN + BR -> CN + MY + BR · own boards; robust: CN + MY · own boards -> CN + MY + BR · own boards

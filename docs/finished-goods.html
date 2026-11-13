@@ -140,6 +140,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border-radius: 3px; }
 .legend-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
 .sw { width: 12px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+/* section headers (pages that use .sec): stack the note under the title on phones */
+@media (max-width: 640px) { main .sec { flex-wrap: wrap; row-gap: 2px; } main .sec .rule { display: none; } main .sec .note { flex-basis: 100%; text-align: left; max-width: none; } }
 
 /* Top navigation shared by every page, including the atlas. Uses the page's own tokens. */
 .topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1200; display: flex; align-items: stretch; gap: 14px;
@@ -154,6 +156,7 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
 .topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
   font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab-sep { flex: none; width: 1px; margin: 13px 5px; background: var(--rule); }
 .topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
 .topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
 .topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }
@@ -169,7 +172,7 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
 </style>
 <header class="topbar">
   <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
-  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html">Overview</a><a class="tab" href="atlas.html">Network atlas</a><a class="tab" href="lanes.html">Lanes & lead time</a><a class="tab" href="mwd.html">MWD</a><a class="tab" href="transfer.html">Transfer timing</a><a class="tab" href="business-case.html">Business case</a><a class="tab" href="finished-goods.html" aria-current="page">Finished goods</a><a class="tab" href="fg-live.html">FG simulator</a><a class="tab" href="demand.html">Demand & KPI</a><a class="tab" href="ramp.html">Ramp & boards</a><a class="tab" href="footprint.html">Footprint</a><a class="tab" href="rules.html">Rules register</a></nav>
+  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html" data-group="start">Overview</a><a class="tab" href="year.html" data-group="start">Year run</a><a class="tab" href="market.html" data-group="start">Market</a><span class="tab-sep" aria-hidden="true" title="Network"></span><a class="tab" href="atlas.html" data-group="network">Atlas</a><a class="tab" href="lanes.html" data-group="network">Lanes</a><a class="tab" href="footprint.html" data-group="network">Footprint</a><span class="tab-sep" aria-hidden="true" title="Transfer"></span><a class="tab" href="mwd.html" data-group="transfer">MWD</a><a class="tab" href="transfer.html" data-group="transfer">Transfer</a><a class="tab" href="business-case.html" data-group="transfer">Business case</a><a class="tab" href="demand.html" data-group="transfer">Demand & KPI</a><a class="tab" href="ramp.html" data-group="transfer">Ramp & boards</a><span class="tab-sep" aria-hidden="true" title="End of life"></span><a class="tab" href="finished-goods.html" aria-current="page" data-group="eol">Finished goods</a><a class="tab" href="fg-live.html" data-group="eol">FG sim</a><span class="tab-sep" aria-hidden="true" title="Sources"></span><a class="tab" href="rules.html" data-group="ref">Rules</a></nav>
   <a class="repo" href="https://github.com/jinli-kiki/scm-twin">GitHub</a>
 </header>
 <script>(function(){var a=document.querySelector(".topbar .tab[aria-current]");if(a){var n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.clientWidth)/2;}})();</script>
@@ -181,7 +184,7 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
       <h1>Old Stock at Successor Launch</h1>
       <p class="sub">What happens to an old laptop model's finished units when its successor reaches the market: the price-protection bill, units left with the brand or with dealers, material left over (MWD) and sales lost, under six ways of running the last months.</p>
     </div>
-    <div class="asof">Model run 2026-10-20 · 200 Monte Carlo runs per cell</div>
+    <div class="asof">Model run 2026-11-13 · 200 Monte Carlo runs per cell</div>
   </div>
 
   <section class="slicers" aria-label="Filters">

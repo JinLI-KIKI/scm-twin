@@ -8,7 +8,7 @@
   AE       525.4   519.7   519.7   520.6   598.6   519.3   514.8   510.6   524.3
   cheapest: US=CN, EU=CN, UK=CN, JP=CN, BR=BR, AU=CN, SEA=CN, IN=CN, ME=CN
 
-== Current duties (Oct 2026) (p=0.45) · all six sites open
+== Current duties (Nov 2026) (p=0.45) · all six sites open
   weekly cost $6,363,160 vs China only $6,336,046  · duty $11,190/wk · avg 27.5 days
    {'CN|US': 4000, 'CN|JP': 1300, 'CN|AU': 550, 'ID|EU': 2400, 'ID|UK': 100, 'VN|UK': 600, 'VN|SEA': 800, 'MY|IN': 900, 'BR|BR': 1500, 'AE|ME': 450}
 

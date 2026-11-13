@@ -4,6 +4,7 @@
 .tbl td.rule { font: 13px/1.5 var(--f-body); text-align: left; min-width: 280px; max-width: 760px; }
 .tbl td.st { text-align: left; font: 12px/1.4 var(--f-body); color: var(--ink-2); min-width: 160px; max-width: 320px; }
 .tbl td.id { font: 500 13px var(--f-mono); white-space: nowrap; }
+#t-open td.st { width: 38%; } #t-open .chip.open, .tbl td.rule .chip.open { white-space: normal; display: inline; line-height: 1.7; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 </style>
 <!--__NAV__-->
 <main class="report">
@@ -11,7 +12,7 @@
     <div>
       <p class="eyebrow">Assumptions register</p>
       <h1>Rules Register</h1>
-      <p class="sub">Every business rule and number in the model, with where it came from. Practitioner input is generalized and virtualized; placeholders are invented and wait for calibration; open questions are asked one at a time.</p>
+      <p class="sub">Every business rule and number in the model, with where it came from. Practitioner input is generalized and virtualized; placeholders are invented and wait for calibration; open questions are collected and sent to the practitioner together.</p>
     </div>
     <div class="asof">From docs/ASSUMPTIONS.md · __TODAY__</div>
   </div>
@@ -29,7 +30,7 @@
       <div id="c-src" class="chart"></div>
     </div>
     <div class="viz w7">
-      <div class="viz-h"><h2>Open questions</h2><span class="hint">Asked one at a time</span></div>
+      <div class="viz-h"><h2>Open questions</h2><span class="hint">Sent to the practitioner together</span></div>
       <div class="tbl-wrap"><table class="tbl" id="t-open"></table></div>
     </div>
     <div class="viz w12">

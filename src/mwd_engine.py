@@ -35,6 +35,7 @@ import csv
 import math
 import os
 from collections import defaultdict
+from contextlib import contextmanager
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
@@ -48,11 +49,41 @@ def _read(name):
         return list(csv.DictReader(f))
 
 
+# Memory prices (2026 market). DRAM parts (material ids MEM_*) and NAND parts (SSD_*) are priced
+# at the 2025 base in data/materials.csv; with memory_market = 1 they take the latest quarter of
+# data/memory_prices.csv. The ODM passes the extra memory cost on at cost, so each model's customs
+# value rises by the same dollars, and channel prices keep their markup (price_scale below).
+MEMORY = {"market": None}                 # None = params.csv decides; 0 or 1 overrides (build-time lenses)
+
+
+@contextmanager
+def memory_market(level):
+    """Run the modules with memory prices at the 2025 base (0) or the latest quarter (1)."""
+    old = MEMORY["market"]
+    MEMORY["market"] = level
+    try:
+        yield
+    finally:
+        MEMORY["market"] = old
+
+
+def memory_index():
+    """DRAM and NAND contract price index of the latest quarter, against the 2025 base."""
+    last = _read("memory_prices.csv")[-1]
+    return {"quarter": last["quarter"], "dram": float(last["dram_index"]), "nand": float(last["nand_index"])}
+
+
+def price_scale(model):
+    """Channel price multiplier that keeps the markup when memory raises the customs value."""
+    return model["customs_value"] / model["customs_value_base"]
+
+
 def load():
     mats = {r["material_id"]: {
         "name": r["name"],
         "route_class": int(r["route_class"]),
         "unit_cost": float(r["unit_cost_usd"]),
+        "base_cost": float(r["unit_cost_usd"]),
         "lead_time": int(r["lead_time_weeks"]),
         "decay": r["decay_type"],
         "rework_cost": float(r["rework_cost_usd"]),
@@ -86,6 +117,18 @@ def load():
         used_by[r["material_id"]].append(r["sku"])
 
     params = {r["key"]: float(r["value"]) for r in _read("params.csv")}
+    level = params.get("memory_market", 0.0) if MEMORY["market"] is None else MEMORY["market"]
+    params["memory_market"] = float(level)
+    if level:
+        ix = memory_index()
+        for k, m in mats.items():
+            m["unit_cost"] *= ix["dram"] if k.startswith("MEM_") else ix["nand"] if k.startswith("SSD_") else 1.0
+    for k, m in models.items():                       # memory dollars added to the model's transfer price
+        sku = next(s for s in bom if s.rsplit("_", 1)[0] == k)
+        delta = sum((mats[x]["unit_cost"] - mats[x]["base_cost"]) * q for x, q in bom[sku].items())
+        m["customs_value_base"] = m["customs_value"]
+        m["memory_delta"] = delta
+        m["customs_value"] += delta
     return mats, models, locales, bom, used_by, params
 
 

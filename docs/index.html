@@ -140,6 +140,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border-radius: 3px; }
 .legend-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
 .sw { width: 12px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+/* section headers (pages that use .sec): stack the note under the title on phones */
+@media (max-width: 640px) { main .sec { flex-wrap: wrap; row-gap: 2px; } main .sec .rule { display: none; } main .sec .note { flex-basis: 100%; text-align: left; max-width: none; } }
 
 /* Top navigation shared by every page, including the atlas. Uses the page's own tokens. */
 .topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 1200; display: flex; align-items: stretch; gap: 14px;
@@ -154,6 +156,7 @@ code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border
 .topbar .tab { display: flex; align-items: center; padding: 0 11px; color: var(--ink-2); text-decoration: none; white-space: nowrap;
   font: 500 13px var(--f-body); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .topbar .tab:hover { color: var(--ink); background: var(--chip); }
+.topbar .tab-sep { flex: none; width: 1px; margin: 13px 5px; background: var(--rule); }
 .topbar .tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--sea); }
 .topbar .tab:focus-visible, .topbar .brand:focus-visible, .topbar .repo:focus-visible { outline: 2px solid var(--sea); outline-offset: -2px; }
 .topbar .repo { display: flex; align-items: center; flex: none; font: 12px var(--f-mono); color: var(--muted); text-decoration: none; }
@@ -182,10 +185,34 @@ a.mod:hover { border-color: var(--ink-2); }
 .qlist { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .qlist li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; font-size: 13px; color: var(--ink-2); }
 .qlist code { justify-self: start; align-self: start; }
+.kpis.k4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1000px) { .kpis.k4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1180px) { .strip { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } }
+.tile { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 9px 12px 10px; display: grid; gap: 1px; align-content: start; min-width: 0; position: relative; overflow: hidden; text-decoration: none; color: inherit; }
+.tile:hover { border-color: var(--ink-2); }
+.tile::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--acc, var(--rule)); }
+.tile .t-g { font: 500 11px var(--f-mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.tile .t-v { font: 600 26px/1.08 var(--f-display); font-variant-numeric: tabular-nums; }
+.tile .t-s { font-size: 12px; color: var(--ink-2); }
+.hero { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 12px; }
+.hero > .viz { grid-column: auto; }
+@media (max-width: 1000px) { .hero { grid-template-columns: minmax(0, 1fr); } }
+.hero-text { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.hero-text .lead { font: 600 25px/1.15 var(--f-display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.hero-text p { margin: 0; color: var(--ink-2); font-size: 13.5px; }
+.hero-text .go { justify-self: start; font: 500 13px var(--f-body); color: var(--ink); text-decoration: none; border: 1px solid var(--ink); border-radius: 6px; padding: 5px 12px; }
+.hero-text .go:hover { background: var(--ink); color: var(--panel); }
+.steps { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: st; }
+.steps li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; font-size: 13px; color: var(--ink-2); }
+.steps li::before { counter-increment: st; content: counter(st); font: 600 11px/18px var(--f-mono); width: 18px; height: 18px; text-align: center; border-radius: 50%; background: var(--chip); color: var(--ink); }
+.steps b { font-family: var(--f-mono); font-weight: 500; color: var(--ink); white-space: nowrap; }
+.mod .m-step { font: 600 11px var(--f-mono); color: var(--panel); background: var(--ink); border-radius: 9px; padding: 0 7px; }
 </style>
 <header class="topbar">
   <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">scm-twin</span></a>
-  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html" aria-current="page">Overview</a><a class="tab" href="atlas.html">Network atlas</a><a class="tab" href="lanes.html">Lanes & lead time</a><a class="tab" href="mwd.html">MWD</a><a class="tab" href="transfer.html">Transfer timing</a><a class="tab" href="business-case.html">Business case</a><a class="tab" href="finished-goods.html">Finished goods</a><a class="tab" href="fg-live.html">FG simulator</a><a class="tab" href="demand.html">Demand & KPI</a><a class="tab" href="ramp.html">Ramp & boards</a><a class="tab" href="footprint.html">Footprint</a><a class="tab" href="rules.html">Rules register</a></nav>
+  <nav class="tabs" aria-label="Report pages"><a class="tab" href="index.html" aria-current="page" data-group="start">Overview</a><a class="tab" href="year.html" data-group="start">Year run</a><a class="tab" href="market.html" data-group="start">Market</a><span class="tab-sep" aria-hidden="true" title="Network"></span><a class="tab" href="atlas.html" data-group="network">Atlas</a><a class="tab" href="lanes.html" data-group="network">Lanes</a><a class="tab" href="footprint.html" data-group="network">Footprint</a><span class="tab-sep" aria-hidden="true" title="Transfer"></span><a class="tab" href="mwd.html" data-group="transfer">MWD</a><a class="tab" href="transfer.html" data-group="transfer">Transfer</a><a class="tab" href="business-case.html" data-group="transfer">Business case</a><a class="tab" href="demand.html" data-group="transfer">Demand & KPI</a><a class="tab" href="ramp.html" data-group="transfer">Ramp & boards</a><span class="tab-sep" aria-hidden="true" title="End of life"></span><a class="tab" href="finished-goods.html" data-group="eol">Finished goods</a><a class="tab" href="fg-live.html" data-group="eol">FG sim</a><span class="tab-sep" aria-hidden="true" title="Sources"></span><a class="tab" href="rules.html" data-group="ref">Rules</a></nav>
   <a class="repo" href="https://github.com/jinli-kiki/scm-twin">GitHub</a>
 </header>
 <script>(function(){var a=document.querySelector(".topbar .tab[aria-current]");if(a){var n=a.parentElement;n.scrollLeft=a.offsetLeft-(n.clientWidth-a.clientWidth)/2;}})();</script>
@@ -195,15 +222,30 @@ a.mod:hover { border-color: var(--ink-2); }
     <div>
       <p class="eyebrow">Supply chain digital twin · laptops built in Asia, sold worldwide</p>
       <h1>Laptop Supply Chain Twin</h1>
-      <p class="sub">An anonymous laptop maker builds in China and is weighing a move to Indonesia because of tariffs. The model prices what a move really costs: material left without demand (MWD), timing, a longer chain, a slow ramp and old stock when the next model launches. A wider footprint view adds Vietnam, Malaysia, Brazil and the UAE as candidate ODM sites and nine regional distribution centres (MGIs), priced under the laptop duties, ocean rates and Hormuz closure of October 2026, and checked against where US imports actually moved.</p>
+      <p class="sub">An anonymous laptop maker builds in China and is weighing a move to Indonesia because of tariffs. The twin prices what a move really costs (material left without demand, timing, a slow ramp, a longer chain, old stock at the next launch) and follows one fiscal year week by week. It runs on 2026 as it is: the Strait of Hormuz closed, ocean rates several times their pre-war level, no US duty on laptops after the Supreme Court ruling, and memory prices multiplied.</p>
     </div>
-    <div class="asof">Built 2026-10-20 · rules from practitioner input, virtualized</div>
+    <div class="asof">Built 2026-11-13 · market readings to <span id="asof"></span> · rules from practitioner input, virtualized</div>
   </div>
 
-  <section class="kpis" id="kpis"></section>
+  <section class="strip" id="strip" aria-label="The 2026 market"></section>
+
+  <section class="hero" aria-labelledby="h-hero">
+    <div class="hero-text">
+      <span class="eyebrow" id="h-hero">The year in one decision · Roadmap A4</span>
+      <p class="lead" id="lead"></p>
+      <ol class="steps" id="steps"></ol>
+      <a class="go" href="year.html">Follow the year week by week →</a>
+    </div>
+    <div class="viz">
+      <div class="viz-h"><h2>Cost to date over the fiscal year</h2><span class="hint" id="h-cum"></span></div>
+      <div id="c-cum" class="chart"></div>
+    </div>
+  </section>
+
+  <section class="kpis k4" id="kpis"></section>
 
   <section class="flow-wrap" aria-labelledby="h-flow">
-    <div class="viz-h"><h2 id="h-flow">How the model fits together</h2><span class="hint">Each card opens its page</span></div>
+    <div class="viz-h"><h2 id="h-flow">How the model fits together</h2><span class="hint">In the order a tariff decision runs · each card opens its page</span></div>
     <div class="flow" id="flow"></div>
   </section>
 
@@ -221,7 +263,7 @@ a.mod:hover { border-color: var(--ink-2); }
       <ul class="road" id="road"></ul>
     </div>
     <div class="viz w5">
-      <div class="viz-h"><h2>Next questions for the practitioner</h2><span class="hint">One at a time</span></div>
+      <div class="viz-h"><h2>Next questions for the practitioner</h2><span class="hint" id="h-qs"></span></div>
       <ul class="qlist" id="qs"></ul>
     </div>
   </section>
@@ -329,7 +371,41 @@ const R = (() => {
 })();
 </script>
 <script>
-const D = {"mwd":{"A":{"total":194459,"mwd":78750},"B":{"total":1801112,"mwd":1164800},"C0":{"total":6990618,"mwd":6305800},"C":{"total":2403996,"mwd":1814800},"D":{"total":2952547,"mwd":2428400}},"transfer":{"best_week":0,"best_total":566892,"now_total":566892},"breakeven":{"strong":0.0296,"weak":0.0347},"lead":{"cn_us":31.0,"id_us":37.3,"cn_eu_cape":53.4,"cn_eu_suez":44.2},"fg":{"push":{"avoidable":3836707,"protection":2365435,"excess":1862,"lost":7649,"mwd":2484224},"plan":{"avoidable":4054476,"protection":2097256,"excess":3504,"lost":7649,"mwd":2484224},"lock":{"avoidable":7983507,"protection":1604456,"excess":12377,"lost":12990,"mwd":4110472},"lock_drain":{"avoidable":8005134,"protection":737346,"excess":12985,"lost":13130,"mwd":4110472},"lock_push":{"avoidable":7853758,"protection":1823534,"excess":11360,"lost":12988,"mwd":4110472},"lock_ibp":{"avoidable":7419408,"protection":1609484,"excess":10605,"lost":12260,"mwd":3988378}},"fp":{"best":"CN + BR","best_expected":337876523.67922854,"robust":"CN + MY · own boards","robust_regret":5205259.194631875,"hedge":"CN + MY · own boards","hedge_weight":0.5974224609968983,"n":73},"dk":{"bu":"C11","company":"C0","gap":453444.30928286025,"tariff":0.25,"passthrough":0.85,"bu_att":0.9702738408424751,"absorb_bu":"stay","absorb_company":"C0","absorb_gap":12328011.224541117},"rb":{"pull":7,"t0":14.719001155812293,"tb":7.719001155812293,"saved":881022.9487924944,"covers":{"P1-14":6,"P1-16":5,"P2-14":5},"std":8.0},"status_counts":{"prac":55,"web":38,"design":18,"ill":3,"ph":45},"open_questions":[{"id":"Q38","q":"When the brand pushes a model&#x27;s board builds later than the ODM&#x27;s 8 weeks, does the ODM take SMT capacity back, and roughly how much (strong vs weak GSM)?","a":"OPEN — modelled 35% × (8 − weeks) / 8 with a strong GSM, 80% with a weak one","kind":"open"},{"id":"Q29","q":"When a US tariff on China-made laptops is announced, how long does it take to open and qualify a new site and its board line, and is it usual to prepare one before the tariff comes?","a":"OPEN — modelled 12 months, $1M rush premium (R36)","kind":"open"},{"id":"Q28","q":"When a second factory is opened as a tariff hedge, does it have to run a minimum share of its capacity? Roughly how much, and what happens below it (staff, ODM contract, customer qualification)?","a":"OPEN — modelled 50% (R35)","kind":"open"}],"roadmap":[{"name":"Modules 1–4 + atlas","scope":"MWD, transfer timing, business case, finished goods, network map","state":"done"},{"name":"Module 7 · Footprint","scope":"Six ODM sites, nine markets, real duties, 2026 freight and Hormuz, back-tested on US imports","state":"done"},{"name":"Module 5 · Demand & KPI","scope":"Tariff → price → units → shipment gap; BU scorecard vs company cost","state":"done"},{"name":"Module 6 · Ramp & boards","scope":"Three-month ramp with pull-in and three gates; board-build cover per model","state":"done"},{"name":"A · Core loop","scope":"A2, A3 done · A4 first link done (Modules 2–4 price Module 7) · full weekly run next","state":"active"},{"name":"B · Breadth","scope":"AI servers, rail and sea-air (more origins and markets done)","state":"next"},{"name":"C · Decision engine","scope":"Inventory policy, forecast module (footprint optimiser done)","state":"next"},{"name":"D · Risk and cost","scope":"Disruption Monte Carlo, carbon per lane (landed cost, Hormuz bypass done)","state":"next"},{"name":"E · Calibration","scope":"US import back-test done · replace placeholders, scheduled data refresh","state":"active"},{"name":"F · Product","scope":"Two live studios done · BI exports, CI","state":"active"},{"name":"G · Packaging","scope":"Case studies, methodology note","state":"next"}]};
+const D = {"mwd":{"A":{"total":194459,"mwd":78750},"B":{"total":1801112,"mwd":1164800},"C0":{"total":6990618,"mwd":6305800},"C":{"total":2403996,"mwd":1814800},"D":{"total":2952547,"mwd":2428400}},"transfer":{"best_week":0,"best_total":566892,"now_total":566892},"breakeven":{"strong":0.0296,"weak":0.0347},"lead":{"cn_us":31.0,"id_us":37.3,"cn_eu_cape":53.4,"cn_eu_suez":44.2},"fg":{"push":{"avoidable":3836707,"protection":2365435,"excess":1862,"lost":7649,"mwd":2484224},"plan":{"avoidable":4054476,"protection":2097256,"excess":3504,"lost":7649,"mwd":2484224},"lock":{"avoidable":7983507,"protection":1604456,"excess":12377,"lost":12990,"mwd":4110472},"lock_drain":{"avoidable":8005134,"protection":737346,"excess":12985,"lost":13130,"mwd":4110472},"lock_push":{"avoidable":7853758,"protection":1823534,"excess":11360,"lost":12988,"mwd":4110472},"lock_ibp":{"avoidable":7419408,"protection":1609484,"excess":10605,"lost":12260,"mwd":3988378}},"fp":{"best":"CN + BR","best_expected":337876523.67922854,"robust":"CN + MY · own boards","robust_regret":5205259.194631875,"hedge":"CN + MY · own boards","hedge_weight":0.5974224609968983,"n":73},"dk":{"bu":"C11","company":"C0","gap":453444.30928286025,"tariff":0.25,"passthrough":0.85,"bu_att":0.9702738408424751,"absorb_bu":"stay","absorb_company":"C0","absorb_gap":12328011.224541117},"rb":{"pull":7,"t0":14.719001155812293,"tb":7.719001155812293,"saved":881022.9487924944,"covers":{"P1-14":6,"P1-16":6,"P2-14":5},"covers_weak":{"P1-14":7,"P1-16":7,"P2-14":8},"std":8.0},"status_counts":{"prac":56,"web":43,"design":25,"ill":3,"ph":45},"open_questions":[{"id":"Q39","q":"When the ODM gives a model&#x27;s line to another customer, how long until the capacity comes back, and how much of it is lost meanwhile (strong vs weak GSM)?","a":"OPEN — modelled 13 weeks (one quarter, to the next capacity allocation); 25% lost with a strong GSM, 50% with a weak one (R47)","kind":"open"},{"id":"Q40","q":"When planning picks how many weeks of boards to build per run, does it look at the average cost or guard against the bad case?","a":"OPEN — modelled 75% expected cost + 25% P90 (R47)","kind":"open"},{"id":"Q41","q":"With memory prices multiplied in 2026, does the ODM pass the memory cost on at cost (transfer price, so customs value, up by the same dollars), or does the brand buy memory itself and sell or consign it to the ODM?","a":"OPEN — modelled passed on at cost, so the tariff base rises (R48)","kind":"open"},{"id":"Q42","q":"Should the model run by default on today&#x27;s memory prices (Q4 2026 contract: DRAM ×6.8, NAND ×4.7 against 2025) or on the 2025 base?","a":"OPEN — 2025 base by default; every page can switch (R48)","kind":"open"}],"open_count":18,"roadmap":[{"name":"Modules 1–4 + atlas","scope":"MWD, transfer timing, business case, finished goods, network map","state":"done"},{"name":"Module 7 · Footprint","scope":"Six ODM sites, nine markets, real duties, 2026 freight and Hormuz, back-tested on US imports","state":"done"},{"name":"Module 5 · Demand & KPI","scope":"Tariff → price → units → shipment gap; BU scorecard vs company cost","state":"done"},{"name":"Module 6 · Ramp & boards","scope":"Three-month ramp with pull-in; board cover per model with the ODM capacity risk","state":"done"},{"name":"A · Core loop","scope":"A2, A3 and A4 done: one fiscal year week by week across Modules 1–7","state":"done"},{"name":"E · Calibration","scope":"US import back-test, Nov 2026 market monitor, memory price lens · replace placeholders next","state":"active"},{"name":"F · Product","scope":"Four live studios and the year run · BI exports, CI next","state":"active"},{"name":"B · Breadth","scope":"AI servers, rail and sea-air (more origins and markets done)","state":"next"},{"name":"C · Decision engine","scope":"Inventory policy, forecast module (footprint optimiser done)","state":"next"},{"name":"D · Risk and cost","scope":"Disruption Monte Carlo, carbon per lane (landed cost, Hormuz bypass done)","state":"next"},{"name":"G · Packaging","scope":"Case studies, methodology note","state":"next"}],"market":{"hormuz":{"group":"Hormuz","indicator":"Strait of Hormuz","value":"257","unit":"days closed","date":"2026-11-12","change":"3 transits a day against 85 before the war (IMF PortWatch, 8 Nov); talks deadlocked","feeds":"hormuz_closed = 1: Gulf cargo lands at Khor Fakkan and is trucked to Dubai","status":"WEB","source_name":"Straits Daily Brief","source_url":"https://straits.live/briefs/2026-11-12"},"pcs":{"group":"Demand","indicator":"Global PC shipments, Q3 2026","value":"62.7","unit":"million units","date":"2026-10-08","change":"-20.1% on the year; Omdia expects -24% in Q4 and -7% in 2027","feeds":"Elasticity and the shipment target (Module 5)","status":"WEB","source_name":"IDC via The Register","source_url":"https://www.theregister.com/personal-tech/2026/10/09/global-pc-shipments-crater-20-as-rising-prices-hammer-demand/5302264"},"outside":{"group":"Footprint","indicator":"Notebook output outside China","value":"21","unit":"% of world output (2026)","date":"2026-10-08","change":"24% in 2025, possibly below 20% in 2027: without tariff pressure brands move some capacity back to China","feeds":"Back-test of Module 7 (no China-only tariff gap in 2026)","status":"WEB","source_name":"TrendForce via AI Weekly","source_url":"https://aiweekly.co/alerts/trendforce-notebook-output-outside-china-slips-to-21-in-2026"},"duty":{"group":"Tariffs","indicator":"US duty on laptops (HS 8471.30), every origin","value":"0","unit":"%","date":"2026-11-13","change":"IEEPA tariffs struck down (Feb 2026); Section 122 expired 24 Jul; the 24 Jul Section 301 action on Asia exempts laptops","feeds":"data/tariffs.csv (USA row) and the Current duties scenario","status":"WEB","source_name":"Dimerco tariff tracker; TechNode","source_url":"https://dimerco.com/us-tariff-update-2026/"},"usw":{"now":7416,"pre":1857,"contract":2854},"memory":{"quarter":"2026Q4","dram_index":6.766,"nand_index":4.733,"dram_qoq":"0.125","nand_qoq":"0.175","status":"WEB (forecast)","dram_source":"TrendForce forecast, conventional DRAM contract +10-15%; PC DRAM +13-18% (30 Sep 2026)","nand_source":"TrendForce forecast, NAND contract +15-20% (30 Sep 2026)"},"asof":"2026-11-13"},"year":{"tariff":0.25,"T50":7.719,"pull":7,"target":0.97,"strategies":[{"key":"stay","label":"Stay in China","id":"stay","cutover":null,"company_cost":9644591,"bu_cost":4054363,"attainment":0.9432,"cumulative":[337920,675840,791125,906409,1021694,1136979,1252264,1367548,1482833,1598118,1713403,1828687,1943972,2059257,2174542,2289826,2405111,2520396,2635681,2750965,2866250,2981535,3096820,3212104,3327389,3442674,3755664,4061343,4359708,4650761,4877753,5104745,5331738,5558730,5785722,6012715,6239707,6466699,6693691,6920684,7147676,7374668,7601660,7828653,8055645,8282637,8509630,8736622,8963614,9190606,9417599,9644591]},{"key":"company","label":"Company's pick","id":"C0","cutover":0,"company_cost":4102366,"bu_cost":2195628,"attainment":0.9952,"cumulative":[1296486,1651564,1785414,1904824,2006150,2088200,2152756,2204934,2252887,2299530,2345160,2390005,2434242,2478007,2521405,2564518,2607409,2650127,2692712,2735192,2777591,2819926,2862212,2904460,2946678,2988873,3033558,3077808,3121627,3165021,3318567,3359033,3399496,3439955,3480413,3520869,3561324,3601777,3642230,3682683,3717656,3752630,3787603,3822577,3857550,3892524,3927498,3962471,3997445,4032418,4067392,4102366]},{"key":"bu","label":"BU's pick","id":"C13","cutover":13,"company_cost":4575947,"bu_cost":787851,"attainment":0.9708,"cumulative":[337920,675840,791125,906409,1021694,1136979,1252264,1367548,1482833,1598118,1713403,1828687,1943972,2519753,2662622,2796471,2915882,3017208,3099258,3163814,3215992,3263945,3310588,3356218,3401063,3445300,3491913,3537619,3582537,3626759,3724676,3765531,3806295,3846991,3887632,3928230,3968796,4009336,4049857,4090362,4130854,4171338,4211814,4252284,4292750,4333212,4373672,4414130,4454585,4495040,4535494,4575947]},{"key":"model_change","label":"Move at the model change","id":"C26","cutover":26,"company_cost":7984584,"bu_cost":3384268,"attainment":0.97,"cumulative":[337920,675840,791125,906409,1021694,1136979,1252264,1367548,1482833,1598118,1713403,1828687,1943972,2059257,2174542,2289826,2405111,2520396,2635681,2750965,2866250,2981535,3096820,3212104,3327389,3442674,4094870,4376795,4643295,4889043,5075241,5243096,5396623,5539958,5679723,5818311,5955989,6092963,6229390,6365394,6501068,6636486,6771705,6906769,7041712,7176562,7311339,7446059,7580735,7715376,7849991,7984584]}]}};
+const MK = D.market, YR = D.year;
+const dt = (d) => { const x = new Date(d + 'T00:00:00Z'); return isNaN(x) ? d : x.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); };
+R.$('#asof').textContent = dt(MK.asof);
+const tile = (g, v, s, acc) => `<a class="tile" href="market.html" style="--acc:${acc}"><span class="t-g">${g}</span><span class="t-v">${v}</span><span class="t-s">${s}</span></a>`;
+R.$('#strip').innerHTML = [
+  tile('Hormuz', 'Day ' + MK.hormuz.value, 'strait closed to normal shipping', 'var(--bad)'),
+  tile('Shanghai–LA', '$' + R.num(MK.usw.now), `per 40-ft spot, ${R.num(MK.usw.now / MK.usw.pre, 1)}× pre-war`, 'var(--c1)'),
+  tile('US laptop duty', MK.duty.value + '%', 'every origin, since Feb 2026', 'var(--c3)'),
+  tile('DRAM contract', '×' + R.num(MK.memory.dram_index, 1), `since Q2 2025 · NAND ×${R.num(MK.memory.nand_index, 1)}`, 'var(--c2)'),
+  tile('PC shipments', MK.pcs.change.split(' ')[0].replace('-', '−'), 'Q3 2026 on the year (IDC)', 'var(--c4)'),
+  tile('Built outside China', MK.outside.value + '%', 'of notebooks in 2026, from 24%', 'var(--c5)'),
+].join('');
+const [yStay, yCo, yBu, yMc] = YR.strategies;
+const wk = (s) => (s.cutover === null ? 'stays in China' : 'moves in week ' + s.cutover);
+R.$('#lead').textContent = yCo.cutover === null ? `At a ${R.pct(YR.tariff)} US tariff, staying in China is cheapest.` : `At a ${R.pct(YR.tariff)} US tariff, moving the US volume in week ${yCo.cutover} saves ${R.usd(yStay.company_cost - yCo.company_cost, 1)} on the year.`;
+R.$('#steps').innerHTML = [
+  [`Staying ships ${R.pct(yStay.attainment, 1)} of plan`, R.usd(yStay.company_cost, 1)],
+  [`The company ${wk(yCo)}; the new site is at full volume in about ${R.num(YR.T50, 0)} weeks`, R.usd(yCo.company_cost, 1)],
+  [`The BU ${wk(yBu)}: fewer cancelled plans, more tariff paid`, R.usd(yBu.company_cost, 1)],
+  [`Waiting for the model change (week 26)`, R.usd(yMc.company_cost, 1)],
+].map(([a, b]) => `<li><span>${a}</span><b>${b}</b></li>`).join('');
+R.$('#h-cum').textContent = `${R.pct(YR.tariff)} tariff · strong GSM · US region`;
+const YCOL = { stay: 6, company: 3, bu: 1, model_change: 4 };
+R.chart('c-cum', (t) => {
+  const o = R.base(t), WK = Array.from({ length: 52 }, (_, w) => 'W' + w);
+  return {
+    ...o, legend: { ...o.legend, data: YR.strategies.map((s) => s.label) }, grid: { ...o.grid, top: 40, right: 70 },
+    tooltip: { ...o.tooltip, valueFormatter: (v) => R.usd(v, 2) },
+    xAxis: R.axis(t, { type: 'category', data: WK, boundaryGap: false, splitLine: { show: false }, axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, interval: 7 } }),
+    yAxis: R.axis(t, { type: 'value', axisLabel: { color: t.muted, fontFamily: t.fMono, fontSize: 11, formatter: R.axUsd } }),
+    series: YR.strategies.map((s) => ({ type: 'line', name: s.label, data: s.cumulative, symbol: 'none', lineStyle: { color: t.c[YCOL[s.key]], width: s.key === 'company' ? 3 : 1.6 }, itemStyle: { color: t.c[YCOL[s.key]] },
+      endLabel: { show: true, color: t.ink2, fontFamily: t.fMono, fontSize: 11, formatter: (p) => R.usd(p.value, 1) } })),
+  };
+});
 const card = (href, label, value, sub) => `<a class="kpi" href="${href}" style="text-decoration:none;color:inherit"><span class="k-label">${label}</span><span class="k-value">${value}</span><span class="k-sub">${sub}</span></a>`;
 const fg = D.fg;
 R.$('#kpis').innerHTML = [
@@ -338,23 +414,23 @@ R.$('#kpis').innerHTML = [
   card('mwd.html', 'Late transfer vs early transfer', R.usd(D.mwd.D.total), `8 weeks before EOL · ${R.usd(D.mwd.B.total)} with 30 weeks left`),
   card('lanes.html', 'Ocean, factory door to US MGI', R.num(D.lead.cn_us, 1) + ' days', `China · ${R.num(D.lead.id_us, 1)} days from Indonesia`),
   card('finished-goods.html', 'Price-protection bill at launch', R.usd(fg.plan.protection), `sales plan · ${R.usd(fg.lock_drain.protection)} with lock + drain`),
-  card('demand.html', "What the BU's KPIs cost the company", R.usd(D.dk.absorb_gap, 1), `${R.pct(D.dk.tariff)} tariff absorbed: BU ${D.dk.absorb_bu === 'stay' ? 'stays' : 'moves in week ' + D.dk.absorb_bu.slice(1)}, company ${D.dk.absorb_company === 'stay' ? 'stays' : 'moves in week ' + D.dk.absorb_company.slice(1)} · ${D.dk.bu === D.dk.company ? 'they agree when the tariff is in the price' : R.usd(D.dk.gap, 1) + ' with the tariff in the price'}`),
-  card('ramp.html', 'New-site ramp, pulled in', R.num(D.rb.tb, 1) + ' weeks', `median, from ${R.num(D.rb.t0, 1)} without pull-in · board runs: ${Object.entries(D.rb.covers).map(([m, c]) => m + ' ' + c + ' wk').join(', ')}`),
+  card('demand.html', "What the BU's KPIs cost the company", R.usd(D.dk.absorb_gap, 1), `when the company absorbs a ${R.pct(D.dk.tariff)} tariff: BU ${D.dk.absorb_bu === 'stay' ? 'stays' : 'moves in week ' + D.dk.absorb_bu.slice(1)}, company ${D.dk.absorb_company === 'stay' ? 'stays' : 'in week ' + D.dk.absorb_company.slice(1)}`),
+  card('ramp.html', 'New-site ramp, pulled in', R.num(D.rb.tb, 1) + ' weeks', `median, from ${R.num(D.rb.t0, 1)} · boards per run ${Object.values(D.rb.covers).join(' / ')} wk, weak GSM ${Object.values(D.rb.covers_weak).join(' / ')}`),
   card('footprint.html', 'Most robust factory footprint', D.fp.robust.replace(' · own boards', ''), `${D.fp.robust.includes('own boards') ? 'boards made on site · ' : ''}never more than ${R.usd(D.fp.robust_regret, 1)} a year off`),
 ].join('');
 
 const MODS = [
-  { href: 'atlas.html', id: 'Network', name: 'Atlas and lanes', q: 'Where does each laptop travel, how long does it take, what duty does it pay?', num: R.num(D.lead.cn_eu_cape, 1) + ' d', sub: 'China to Europe via the Cape' },
-  { href: 'mwd.html', id: 'Module 1', name: 'MWD engine', q: 'When plans are cancelled, how much material is left with no demand?', num: R.usd(D.mwd.C.total), sub: 'US transfer, EOL week 20' },
+  { href: 'market.html', id: 'Inputs', name: 'The 2026 market', q: 'Which real readings feed the model, and which decisions move when memory prices do?', num: '×' + R.num(MK.memory.dram_index, 1), sub: 'DRAM since Q2 2025' },
+  { href: 'demand.html', id: 'Module 5', name: 'Demand and KPI view', q: 'A tariff raises the price and costs units: does the BU, scored on shipments and MWD, move when the company would?', num: D.dk.absorb_bu === D.dk.absorb_company ? 'Agree' : R.usd(D.dk.absorb_gap, 1), sub: D.dk.absorb_bu === D.dk.absorb_company ? 'BU and company pick the same' : `cost of the BU's pick when the company absorbs a ${R.pct(D.dk.tariff)} tariff` },
   { href: 'transfer.html', id: 'Module 2', name: 'Cutover timing', q: 'Which week should the US stop building in China?', num: 'Week ' + D.transfer.best_week, sub: 'at a 25% tariff' },
+  { href: 'mwd.html', id: 'Module 1', name: 'MWD engine', q: 'When plans are cancelled, how much material is left with no demand?', num: R.usd(D.mwd.C.total), sub: 'US transfer, EOL week 20' },
+  { href: 'ramp.html', id: 'Module 6', name: 'Ramp and risk board', q: 'How fast does the new site ramp, and how many weeks of boards should each SMT run build when the ODM may give the line away?', num: D.rb.pull + ' wk', sub: `pulled in · median ramp ${R.num(D.rb.t0, 1)} → ${R.num(D.rb.tb, 1)} weeks` },
   { href: 'business-case.html', id: 'Module 3', name: 'Business case', q: 'Does the tariff saved pay for a longer chain and a slow ramp?', num: R.pct(D.breakeven.strong, 1), sub: 'break-even tariff' },
   { href: 'finished-goods.html', id: 'Module 4', name: 'Finished goods', q: 'What does old stock cost when the successor launches?', num: R.usd(fg.lock.avoidable), sub: 'avoidable cost, sales lock' },
-  { href: 'footprint.html', id: 'Module 7', name: 'Factory footprint', q: 'Which sites should build for which markets under real duties, and is a second site worth opening before a tariff?', num: D.fp.robust.replace(' · own boards', ''), sub: `robust choice · build now only if a China tariff is over ${R.pct(D.fp.hedge_weight)} likely` },
-  { href: 'demand.html', id: 'Module 5', name: 'Demand and KPI view', q: 'A tariff raises the price and costs units: does the BU, scored on shipments and MWD, move when the company would?', num: D.dk.absorb_bu === D.dk.absorb_company ? 'Agree' : R.usd(D.dk.absorb_gap, 1), sub: D.dk.absorb_bu === D.dk.absorb_company ? 'BU and company pick the same' : `cost of the BU's pick when the company absorbs a ${R.pct(D.dk.tariff)} tariff` },
-  { href: 'ramp.html', id: 'Module 6', name: 'Ramp and risk board', q: 'How fast does the new site ramp, is pulling it in worth it, and how many weeks of boards should each SMT run build?', num: D.rb.pull + ' wk', sub: `pulled in · median ramp ${R.num(D.rb.t0, 1)} → ${R.num(D.rb.tb, 1)} weeks` },
+  { href: 'footprint.html', id: 'Module 7', name: 'Factory footprint', q: 'Which sites should build for which markets under real duties, freight and Hormuz (map on the Atlas page)?', num: D.fp.robust.replace(' · own boards', ''), sub: `robust choice · build now only if a China tariff is over ${R.pct(D.fp.hedge_weight)} likely` },
 ];
 R.$('#flow').innerHTML = MODS.map((m) => {
-  const inner = `<div class="m-top"><span class="m-id">${m.id}</span>${m.href ? '' : '<span class="chip">planned</span>'}</div><span class="m-name">${m.name}</span><span class="m-q">${m.q}</span><span class="m-num">${m.num}${m.sub ? '<small>' + m.sub + '</small>' : ''}</span>`;
+  const inner = `<div class="m-top"><span class="m-id">${m.id}</span><span class="m-step">${MODS.indexOf(m) + 1}</span></div><span class="m-name">${m.name}</span><span class="m-q">${m.q}</span><span class="m-num">${m.num}${m.sub ? '<small>' + m.sub + '</small>' : ''}</span>`;
   return m.href ? `<a class="mod" href="${m.href}">${inner}</a>` : `<div class="mod planned">${inner}</div>`;
 }).join('');
 
@@ -391,6 +467,7 @@ R.chart('c-src', (t) => {
 
 const STATE = { done: ['good', 'Done'], active: ['warn', 'In progress'], next: ['', 'Next'] };
 R.$('#road').innerHTML = D.roadmap.map((p) => `<li><b>${R.esc(p.name)}</b><span>${R.esc(p.scope)}</span><span class="chip ${STATE[p.state][0]}">${STATE[p.state][1]}</span></li>`).join('');
+R.$('#h-qs').textContent = `${D.open_count} open · sent together`;
 R.$('#qs').innerHTML = D.open_questions.map((q) => `<li><code>${q.id}</code><span>${q.q}</span></li>`).join('') || '<li>No open questions.</li>';
 </script>
 

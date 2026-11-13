@@ -74,7 +74,7 @@ def dk_input(region="US"):
     for k, m in models.items():
         r = dm[k]
         mods.append({"model": k, "customs_value": m["customs_value"],
-                     "price": float(r["channel_net_price_usd"]), "elasticity": float(r["elasticity"]),
+                     "price": float(r["channel_net_price_usd"]) * E.price_scale(m), "elasticity": float(r["elasticity"]),
                      "gross_margin": float(r["gross_margin_pct"]) / 100,
                      "demand": [E.model_weekly_demand(m, w) * share for w in range(WEEKS)]})
     window = int(params["liability_window_weeks"])

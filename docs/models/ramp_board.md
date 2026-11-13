@@ -35,13 +35,23 @@ F(w, h) = D(w) × max(0, 1 + bias × √(h/16) + σ16 × √(h/16) × u_w)     m
           σ16 = MAPE16 × √(π/2) × sigma_mult; 0 at or after end of life, and after a known cut
 ```
 
+Pushing builds back costs capacity, and how much depends heavily on the GSM (Q38). Each week the
+model sells, the ODM may move the model's line to another customer; the capacity then drops for
+`capacity_loss_weeks` weeks:
+
+```
+push   = max(0, (std − cover) / std)
+P(line moves in week w) = h_GSM × push                    (only while no loss is under way)
+down   = drop_GSM in the weeks of a loss, else 0           also cuts the rush budget left
+```
+
 Every `cover` weeks a run builds boards for the next `cover` weeks:
 
 ```
 need   = Σ_{j<cover} F(d + j, j + 1)
-cut    = κ_GSM × max(0, (std − cover) / std)              SMT capacity the ODM keeps back
-build  = min(need − on hand, need × (1 − cut))             + one setup
-budget = smt_flex × Σ_{j<cover} plan(d + j)                rush boards available in the run
+cut    = κ_GSM × push                                     line time given to other customers
+build  = min(need − on hand, need × (1 − cut) × (1 − down))      + one setup
+budget = smt_flex × Σ_{j<cover} plan(d + j) × (1 − down)  rush boards available in the run
 ```
 
 Each week boards on hand serve `D(w)`; a shortfall takes rush boards from the budget at a
@@ -52,5 +62,12 @@ at the carrying rate. When the model ends (end of life or cut), boards left over
 stranded cost = boards × (board value − on-board parts × (1 − migration)) × MWD cost rate
 ```
 
-The cover with the lowest mean cost (setups + rush + lost + carrying + stranded) is
-recommended; ties go to the longer cover.
+Each cover is scored on its cost per run (setups + rush + lost + carrying + stranded):
+
+```
+score = (1 − risk_weight) × mean + risk_weight × P90
+```
+
+The cover with the lowest score is recommended; ties go to the longer cover. The page also
+reports the share of years in which the line moves and the weeks under reduced capacity, and runs
+the same draws under the other GSM to compare.

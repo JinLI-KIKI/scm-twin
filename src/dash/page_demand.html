@@ -49,6 +49,7 @@
     <div class="ctl-foot">
       <div class="slicer"><span class="s-label" id="l-m">Transfer pattern</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
       <div class="slicer"><span class="s-label" id="l-c">Company also holds the fiscal-year target</span><div class="seg" role="group" aria-labelledby="l-c" id="f-c"></div></div>
+      <div class="slicer"><span class="s-label" id="l-mem">Memory prices</span><div class="seg" role="group" aria-labelledby="l-mem" id="f-mem"></div></div>
       <button type="button" class="btn" id="reset">Reset all</button>
       <span class="status" id="status"></span>
     </div>
@@ -107,7 +108,10 @@
 <script>/*__DKENGINE__*/</script>
 <script>
 const D = /*__DATA__*/null;
-const IN = D.input, OPT = IN.options;
+const MEMI = D.memory;
+let MEM = (() => { const v = R.load().mem; return v === 0 || v === 1 ? v : MEMI.default; })();
+let IN = D.inputs[MEM], OPT = IN.options;
+const MEMLAB = (m) => [['0', '2025 base'], ['1', m.quarter.slice(4) + ' ' + m.quarter.slice(0, 4) + ' contract']];
 const P0 = { ...IN.P };
 const EPS0 = IN.models[0].elasticity, GM0 = IN.models[0].gross_margin;
 const lab = (o) => (o.cutover === null ? 'Stay' : 'Wk ' + o.cutover);
@@ -153,13 +157,14 @@ CTL.forEach(([k]) => R.$('#p-' + k).addEventListener('input', (e) => { S.P[k] = 
 const PATTERN = [['0.9', 'One region moves (90% migrates)'], ['0.55', 'Whole model or platform (55%)']];
 const patOf = (v) => (Math.abs(v - 0.9) < 1e-9 ? '0.9' : Math.abs(v - 0.55) < 1e-9 ? '0.55' : '');
 const segM = R.seg(R.$('#f-m'), PATTERN, patOf(S.P.mwd_transferability), (v) => { S.P.mwd_transferability = +v; R.$('#p-mwd_transferability').value = +v; paintCtl(); schedule(); });
+R.seg(R.$('#f-mem'), MEMLAB(MEMI), String(MEM), (v) => { MEM = +v; IN = D.inputs[MEM]; OPT = IN.options; schedule(); });
 const segC = R.seg(R.$('#f-c'), [['1', 'Yes'], ['0', 'No, cost only']], String(S.P.company_holds_target >= 0.5 ? 1 : 0), (v) => { S.P.company_holds_target = +v; schedule(); });
 R.$('#reset').addEventListener('click', () => { S.P = { ...DEF }; CTL.forEach(([k]) => { R.$('#p-' + k).value = S.P[k]; }); segC.set(String(S.P.company_holds_target)); segM.set(patOf(S.P.mwd_transferability)); paintCtl(); schedule(); });
 function paintCtl() {
   if (typeof segM !== 'undefined') segM.set(patOf(S.P.mwd_transferability));
   CTL.forEach(([k, , , , , f]) => { R.$('#o-' + k).textContent = fmt(f, S.P[k]); R.$(`.sl[data-k="${k}"]`).classList.toggle('changed', Math.abs(S.P[k] - DEF[k]) > 1e-12); });
 }
-function schedule() { try { R.save({ P: S.P, bx: S.bx }); } catch (e) { /* storage blocked */ } clearTimeout(timer); timer = setTimeout(compute, 40); }
+function schedule() { try { R.save({ P: S.P, bx: S.bx, mem: MEM }); } catch (e) { /* storage blocked */ } clearTimeout(timer); timer = setTimeout(compute, 40); }
 
 const MR = [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5];
 const XCOL = (k) => (k === 'mwd_transferability' ? Array.from({ length: 11 }, (_, i) => 0.45 + i * 0.05) : Array.from({ length: 11 }, (_, i) => i / 10));
@@ -167,7 +172,7 @@ let XC = XCOL('mwd_transferability');
 const XK = { mwd_transferability: 'Share of claimed MWD that migrates', bu_funds_support: 'Share of the points the BU funds', points_effect: 'Share of the points that reaches the shelf' };
 S.bx = XK[saved.bx] ? saved.bx : 'mwd_transferability';
 let BG = null, FLIP = null;
-R.seg(R.$('#f-x'), Object.entries(XK).map(([k, l]) => [k, l.replace('Share of ', '')]), S.bx, (v) => { S.bx = v; try { R.save({ P: S.P, bx: S.bx }); } catch (e) { /* storage blocked */ } compute(); });
+R.seg(R.$('#f-x'), Object.entries(XK).map(([k, l]) => [k, l.replace('Share of ', '')]), S.bx, (v) => { S.bx = v; try { R.save({ P: S.P, bx: S.bx, mem: MEM }); } catch (e) { /* storage blocked */ } compute(); });
 function compute() {
   const t0 = performance.now();
   const inp = inputFor(S.P);

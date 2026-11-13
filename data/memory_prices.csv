@@ -1,0 +1,8 @@
+quarter,dram_index,nand_index,dram_qoq,nand_qoq,status,dram_source,nand_source
+2025Q2,1.000,1.000,,,BASE,"Base: the BOM prices in data/materials.csv (16GB memory $40, 512GB SSD $35)",Base
+2025Q3,1.125,1.000,0.125,0.000,WEB,"TrendForce, conventional DRAM contract +10-15% (24 Sep 2025)",Assumed flat (no print found; the 2025Q3 256GB TLC SSD contract price of $33.30 anchors the NAND series)
+2025Q4,1.659,1.318,0.475,0.318,WEB / DERIVED,"TrendForce, conventional DRAM contract +45-50% (2 Feb 2026)",DERIVED: 256GB TLC SSD contract $33.30 (Q3 2025) to $134.20 (Q3 2026) = 4.03x (Notebookcheck) less the TrendForce quarters below
+2026Q1,3.244,2.076,0.955,0.575,WEB,"TrendForce, conventional DRAM contract +93-98% (31 Mar 2026; PC DRAM +105-110% forecast 2 Feb 2026)","TrendForce, NAND contract +55-60%"
+2026Q2,5.207,3.581,0.605,0.725,WEB,"TrendForce, conventional DRAM contract +58-63% (31 Mar 2026); Gartner: DRAM cost about 5x year on year in Q2","TrendForce, NAND contract +70-75%"
+2026Q3,6.014,4.028,0.155,0.125,WEB,"TrendForce, conventional DRAM contract +13-18% (3 Jul 2026)","TrendForce, NAND contract +10-15% (3 Jul 2026)"
+2026Q4,6.766,4.733,0.125,0.175,WEB (forecast),"TrendForce forecast, conventional DRAM contract +10-15%; PC DRAM +13-18% (30 Sep 2026)","TrendForce forecast, NAND contract +15-20% (30 Sep 2026)"

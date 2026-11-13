@@ -12,3 +12,4 @@ boards_built_ahead_weeks,2,PLACEHOLDER (Q10): SMT runs this many weeks ahead of 
 relocation_weeks,3,PLACEHOLDER: old factory -> new factory transit + receiving
 new_site_lt_adder_weeks,4,"Practitioner input (virtualized): new SE Asia site, +4 weeks lead time by default"
 relocation_cost_rate,0.03,"PLACEHOLDER: freight + handling as share of material value; bonded, no duty"
+memory_market,0,"Memory prices in the BOM: 0 = 2025 base (data/materials.csv), 1 = the latest quarter of data/memory_prices.csv (Q4 2026 contract: DRAM x6.8, NAND x4.7 against the base). The ODM passes the memory cost on at cost (customs value rises by the same dollars) and channel prices keep their markup"

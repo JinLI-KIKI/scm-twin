@@ -20,22 +20,28 @@ Part B, risk board hedge (R19). Each SMT run of a model builds boards for the ne
 weeks of forecast demand. A board locks its CPU and memory to the model and to the site's origin
 (R13): if demand stops (end of life, or the model is cut early), boards left over are MWD at full
 board value, while loose parts would mostly migrate (Module 5: 90%). Short covers keep material
-loose but cost setups, and the ODM takes away SMT capacity it is not loaded with (stronger with a
-weak GSM). Per model and cover, a Monte Carlo over the year:
+loose but cost setups and capacity: the ODM gives line time it is not loaded with to other
+customers, and pushing back risks a lasting capacity drop; both far larger with a weak GSM (Q38).
+Per model and cover, a Monte Carlo over the year:
 
   actual     D(w)     = plan(w) x max(0, 1 + noise x z)                0 after an early cut
   forecast   F(w, h)  = D(w) x (1 + bias x sqrt(h/16) + sigma(h) x u),  sigma(h) = MAPE16 x 1.2533 x sqrt(h/16)
                         made h weeks ahead; 0 for weeks at or after the end of life, and after a
                         cut once it is known
-  run week d (every `cover` weeks): build = min(need - boards on hand, need x (1 - cut))
-                        need = sum of F(d + j, j + 1), cut = kappa x max(0, (std - cover) / std)
+  push       = max(0, (std - cover) / std)                            how far builds are pushed back
+  capacity   each week the model sells, with chance hazard x push the ODM moves the line to another
+             customer: for the next `capacity_loss_weeks` weeks builds and rush are cut by `drop`
+             (hazard and drop by GSM, Q38)
+  run week d (every `cover` weeks): build = min(need - boards on hand, need x (1 - cut) x (1 - down))
+                        need = sum of F(d + j, j + 1), cut = kappa x push, down = drop during a loss
   each week  boards used = min(on hand, D); short -> rush boards at a premium from the run's rush
-             budget (smt_flex x the plan of the run's weeks), the rest short: lost_share lost at
-             gross margin
+             budget (smt_flex x the plan of the run's weeks x (1 - down)), the rest short:
+             lost_share lost at gross margin
   cost       = setups + rush + lost margin + carrying + stranded boards x
                (board value - on-board parts x (1 - migration)) x MWD cost rate
 
-The cover with the lowest expected cost is the recommended board-build cover for the model.
+The cover with the lowest score = (1 - risk_weight) x expected cost + risk_weight x P90 is the
+recommended board-build cover for the model: the bad case counts, not only the average.
 
 src/dash/rb_engine.js is the same model for the browser; tests/test_rb_parity.py checks it.
 Run:  python3 src/ramp_board.py
@@ -75,7 +81,7 @@ def rb_input(region="US"):
                      "sigma_mult": float(r["sigma_mult"]), "cut_prob": float(r["cut_prob"]),
                      "eol": m["eol"] if m["eol"] <= WEEKS else None,
                      "board_value": m["board_extra"] + onboard, "onboard_parts": onboard,
-                     "margin": float(dm[k]["channel_net_price_usd"]) * float(dm[k]["gross_margin_pct"]) / 100,
+                     "margin": float(dm[k]["channel_net_price_usd"]) * E.price_scale(m) * float(dm[k]["gross_margin_pct"]) / 100,
                      "plan": [E.model_weekly_demand(m, w) for w in range(WEEKS)]})
     P = {r["key"]: float(r["value"]) for r in _csv("ramp_params.csv")}
     P.update(carry=params["carrying_rate_annual"], migration=dp["mwd_transferability"],
@@ -150,8 +156,10 @@ def ramp_sweep(inp, P, seed=11):
 
 # ----------------------------------------------------------------------------- Part B: board cover
 def board_draws(inp, P, m, seed):
-    """Per run: weekly demand noise z, forecast noise u, and the early-cut week (None if none)."""
+    """Per run: weekly demand noise z, forecast noise u, the early-cut week (None if none) and the
+    weekly draws v for the capacity-loss risk."""
     rng = PortableRandom(seed)
+    rng_cap = PortableRandom(seed + 5000)                 # own stream: the capacity risk leaves z, u, cut unchanged
     runs = []
     for _ in range(int(P["board_runs"])):
         z = [rng.gauss() for _ in range(inp["weeks"])]
@@ -161,20 +169,27 @@ def board_draws(inp, P, m, seed):
         cut = None
         if c1 < m["cut_prob"] and len(live) > 8:
             cut = live[0] + 4 + int(c2 * (len(live) - 4))
-        runs.append((z, u, cut))
+        v = [rng_cap.random() for _ in range(inp["weeks"])]
+        runs.append((z, u, cut, v))
     return runs
 
 
 def board_run(inp, P, m, cover, draw):
-    z, u, cut = draw
+    z, u, cut, v = draw
     W = inp["weeks"]
     s16 = P["forecast_mape_16w"] * math.sqrt(math.pi / 2) * m["sigma_mult"]
     D = [0.0 if (cut is not None and w >= cut) else m["plan"][w] * max(0.0, 1 + P["demand_noise"] * z[w])
          for w in range(W)]
-    kappa = P["capacity_cut_strong"] if P["gsm_strong"] >= 0.5 else P["capacity_cut_weak"]
-    cutcap = kappa * max(0.0, (P["board_cover_std_weeks"] - cover) / P["board_cover_std_weeks"])
+    strong = P["gsm_strong"] >= 0.5
+    push = max(0.0, (P["board_cover_std_weeks"] - cover) / P["board_cover_std_weeks"])
+    cutcap = (P["capacity_cut_strong"] if strong else P["capacity_cut_weak"]) * push
+    hazard = (P["capacity_loss_hazard_strong"] if strong else P["capacity_loss_hazard_weak"]) * push
+    drop = P["capacity_loss_strong"] if strong else P["capacity_loss_weak"]
+    span = int(P["capacity_loss_weeks"])
     inv = setups = rush = lost = carry = 0.0
     budget = 0.0                                          # rush boards the ODM can still add in this run
+    until = -1                                            # last week of a capacity loss under way
+    events = down_weeks = 0
 
     def forecast(w, h, d):
         if m["eol"] is not None and w >= m["eol"]:
@@ -186,13 +201,21 @@ def board_run(inp, P, m, cover, draw):
         return base * max(0.0, 1 + m["bias"] * g + s16 * g * u[w])
 
     for w in range(W):
+        live = m["plan"][w] > 0 and not (cut is not None and w >= cut)
+        if live and w > until and v[w] < hazard:          # the ODM gives the line to another customer
+            until = w + span - 1
+            events += 1
+            budget *= 1 - drop
+        down = drop if w <= until else 0.0
+        if down > 0 and live:
+            down_weeks += 1
         if w % cover == 0:
             need = sum(forecast(w + j, j + 1, w) for j in range(cover) if w + j < W)
-            build = min(max(0.0, need - inv), need * (1 - cutcap))
+            build = min(max(0.0, need - inv), need * (1 - cutcap) * (1 - down))
             if build > 1e-9:
                 inv += build
                 setups += P["setup_usd_per_run"]
-            budget = P["smt_flex"] * sum(m["plan"][w + j] for j in range(cover) if w + j < W)
+            budget = P["smt_flex"] * sum(m["plan"][w + j] for j in range(cover) if w + j < W) * (1 - down)
         use = min(inv, D[w])
         inv -= use
         short = D[w] - use
@@ -206,7 +229,8 @@ def board_run(inp, P, m, cover, draw):
     stranded = inv if ended else 0.0
     lock = (m["board_value"] - m["onboard_parts"] * (1 - P["migration"])) * P["mwd_cost_rate"]
     parts = {"setups": setups, "rush": rush, "lost": lost, "carry": carry, "stranded": stranded * lock}
-    return {"parts": parts, "total": sum(parts.values()), "stranded_boards": stranded}
+    return {"parts": parts, "total": sum(parts.values()), "stranded_boards": stranded, "events": events,
+            "down_weeks": down_weeks}
 
 
 def board_eval(inp, P, m, seed):
@@ -217,9 +241,13 @@ def board_eval(inp, P, m, seed):
         n = len(runs)
         parts = {k: sum(r["parts"][k] for r in runs) / n for k in runs[0]["parts"]}
         tot = [r["total"] for r in runs]
-        rows.append({"cover": cover, "parts": parts, "total": sum(tot) / n, "p90": pct(tot, 0.9),
-                     "stranded_boards": sum(r["stranded_boards"] for r in runs) / n})
-    best = min(rows, key=lambda r: (r["total"], -r["cover"]))
+        mean, p90 = sum(tot) / n, pct(tot, 0.9)
+        rows.append({"cover": cover, "parts": parts, "total": mean, "p90": p90,
+                     "score": (1 - P["risk_weight"]) * mean + P["risk_weight"] * p90,
+                     "stranded_boards": sum(r["stranded_boards"] for r in runs) / n,
+                     "loss_chance": sum(1 for r in runs if r["events"] > 0) / n,
+                     "down_weeks": sum(r["down_weeks"] for r in runs) / n})
+    best = min(rows, key=lambda r: (r["score"], -r["cover"]))
     return {"model": m["model"], "risk": m["risk"], "rows": rows, "best": best["cover"]}
 
 
@@ -241,15 +269,19 @@ def main():
         mark = "  <- best" if r["pull"] == rs["best"] else ""
         print(f"  {r['pull']:>4}{r['T_mean']:>8.1f}{r['T_p10']:>6.1f}{r['T_p50']:>6.1f}{r['T_p90']:>6.1f}"
               f"{r['leakage'] / 1e6:>10.2f}M{r['scrap'] / 1e6:>8.2f}M{r['pull_cost'] / 1e6:>8.2f}M{r['total'] / 1e6:>10.2f}M{mark}")
-    print(f"\n== Part B, board-build cover per SMT run (standard {P['board_cover_std_weeks']:.0f} weeks), "
-          f"{int(P['board_runs'])} runs")
-    for b in boards(inp, P):
-        print(f"  {b['model']} ({b['risk']}): recommended cover {b['best']} week{'s' if b['best'] > 1 else ''}")
-        for r in b["rows"]:
-            p = r["parts"]
-            print(f"    cover {r['cover']}: expected ${r['total'] / 1e3:,.0f}k (P90 ${r['p90'] / 1e3:,.0f}k) · setups "
-                  f"{p['setups'] / 1e3:,.0f}k · rush {p['rush'] / 1e3:,.0f}k · lost {p['lost'] / 1e3:,.0f}k · carry "
-                  f"{p['carry'] / 1e3:,.0f}k · stranded {p['stranded'] / 1e3:,.0f}k ({r['stranded_boards']:,.0f} boards)")
+    for g in (1, 0):
+        Q = dict(P, gsm_strong=g)
+        print(f"\n== Part B, board-build cover per SMT run (standard {Q['board_cover_std_weeks']:.0f} weeks), "
+              f"{'strong' if g else 'weak'} GSM, {int(Q['board_runs'])} runs, pick on {1 - Q['risk_weight']:.0%} "
+              f"expected + {Q['risk_weight']:.0%} P90")
+        for b in boards(inp, Q):
+            print(f"  {b['model']} ({b['risk']}): recommended cover {b['best']} week{'s' if b['best'] > 1 else ''}")
+            for r in b["rows"]:
+                p = r["parts"]
+                print(f"    cover {r['cover']}: expected ${r['total'] / 1e3:,.0f}k (P90 ${r['p90'] / 1e3:,.0f}k, score "
+                      f"${r['score'] / 1e3:,.0f}k) · capacity lost in {r['loss_chance']:.0%} of years · setups "
+                      f"{p['setups'] / 1e3:,.0f}k · rush {p['rush'] / 1e3:,.0f}k · lost {p['lost'] / 1e3:,.0f}k · carry "
+                      f"{p['carry'] / 1e3:,.0f}k · stranded {p['stranded'] / 1e3:,.0f}k ({r['stranded_boards']:,.0f} boards)")
 
 
 if __name__ == "__main__":

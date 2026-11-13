@@ -40,7 +40,7 @@ units/week) on the ocean landed costs; each line is loaded up to its commitment 
 costs less than the fee, and the fee is paid on the rest.
 
 Freight: ocean rates per 40-ft container are published lane benchmarks (Far East to each region):
-pre-war (late Feb 2026), long-term contract (Aug 2026) and spot (Oct 2026); freight_basis 0, 1, 2
+pre-war (late Feb 2026), long-term contract (Aug 2026) and spot (Nov 2026); freight_basis 0, 1, 2
 picks them, with straight lines in between. Lanes without a benchmark use the distance formula. The Strait of Hormuz has been closed to normal
 shipping since 28 Feb 2026: with hormuz_closed = 1, Gulf cargo lands at Khor Fakkan and trucks
 to and from Dubai.
@@ -83,6 +83,7 @@ import csv
 import json
 import os
 
+import mwd_engine as E
 from prng import PortableRandom
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -167,6 +168,10 @@ def fp_input():
                             "open": r["open_default"] == "1", "board_local": r["board_local"] == "1",
                             "status": r["status"], "note": r["note"]}
     P = {r["key"]: float(r["value"]) for r in _csv("footprint_params.csv")}
+    ref = E.load()[1]["P1-14"]                     # memory prices (2026 market) raise the unit and parts value
+    P["memory_delta_usd"] = ref["memory_delta"]
+    P["customs_value_cn_usd"] += ref["memory_delta"]
+    P["parts_value_usd"] += ref["memory_delta"]
     for o, r in zip(sites, _csv("sites.csv")):        # blank = derived from capex per unit of capacity
         yearly = sites[o]["capacity"] * 52
         if not r["nre_usd"]:
@@ -218,7 +223,7 @@ def route(inp, o, mgi, mode, red_sea, hormuz):
 
 def feu_rate(inp, P, lane, nm):
     """Ocean rate per 40-ft container on a lane: freight_basis 0 = pre-war (late Feb 2026),
-    1 = long-term contract (Aug 2026), 2 = spot (Oct 2026), straight lines in between. Lanes
+    1 = long-term contract (Aug 2026), 2 = spot (Nov 2026), straight lines in between. Lanes
     without a benchmark use the distance formula, scaled by the contract and spot factors."""
     if lane in inp["freight"]:
         a, c, b = inp["freight"][lane]

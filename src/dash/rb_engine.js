@@ -67,7 +67,7 @@ const RBE = (() => {
 
   // ---------------------------------------------------------------- Part B: board cover
   function boardDraws(inp, P, m, seed) {
-    const rng = makeRng(seed), runs = [];
+    const rng = makeRng(seed), rngCap = makeRng(seed + 5000), runs = [];
     for (let r = 0; r < Math.trunc(P.board_runs); r++) {
       const z = [], u = [];
       for (let w = 0; w < inp.weeks; w++) z.push(rng.gauss());
@@ -76,18 +76,23 @@ const RBE = (() => {
       const live = []; for (let w = 0; w < inp.weeks; w++) if (m.plan[w] > 0) live.push(w);
       let cut = null;
       if (c1 < m.cut_prob && live.length > 8) cut = live[0] + 4 + Math.trunc(c2 * (live.length - 4));
-      runs.push([z, u, cut]);
+      const v = []; for (let w = 0; w < inp.weeks; w++) v.push(rngCap.random());
+      runs.push([z, u, cut, v]);
     }
     return runs;
   }
   function boardRun(inp, P, m, cover, draw) {
-    const [z, u, cut] = draw, W = inp.weeks;
+    const [z, u, cut, v] = draw, W = inp.weeks;
     const s16 = P.forecast_mape_16w * Math.sqrt(Math.PI / 2) * m.sigma_mult;
     const D = [];
     for (let w = 0; w < W; w++) D.push(cut !== null && w >= cut ? 0 : m.plan[w] * Math.max(0, 1 + P.demand_noise * z[w]));
-    const kappa = P.gsm_strong >= 0.5 ? P.capacity_cut_strong : P.capacity_cut_weak;
-    const cutcap = kappa * Math.max(0, (P.board_cover_std_weeks - cover) / P.board_cover_std_weeks);
+    const strong = P.gsm_strong >= 0.5;
+    const push = Math.max(0, (P.board_cover_std_weeks - cover) / P.board_cover_std_weeks);
+    const cutcap = (strong ? P.capacity_cut_strong : P.capacity_cut_weak) * push;
+    const hazard = (strong ? P.capacity_loss_hazard_strong : P.capacity_loss_hazard_weak) * push;
+    const drop = strong ? P.capacity_loss_strong : P.capacity_loss_weak, span = Math.trunc(P.capacity_loss_weeks);
     let inv = 0, setups = 0, rush = 0, lost = 0, carry = 0, budget = 0;
+    let until = -1, events = 0, downWeeks = 0;   // last week of a capacity loss under way
     const forecast = (w, h, d) => {
       if (m.eol !== null && w >= m.eol) return 0;
       if (cut !== null && d >= cut) return 0;
@@ -96,13 +101,17 @@ const RBE = (() => {
       return base * Math.max(0, 1 + m.bias * g + s16 * g * u[w]);
     };
     for (let w = 0; w < W; w++) {
+      const live = m.plan[w] > 0 && !(cut !== null && w >= cut);
+      if (live && w > until && v[w] < hazard) { until = w + span - 1; events += 1; budget *= 1 - drop; }  // the line goes to another customer
+      const down = w <= until ? drop : 0;
+      if (down > 0 && live) downWeeks += 1;
       if (w % cover === 0) {
         let need = 0;
         for (let j = 0; j < cover; j++) if (w + j < W) need += forecast(w + j, j + 1, w);
-        const build = Math.min(Math.max(0, need - inv), need * (1 - cutcap));
+        const build = Math.min(Math.max(0, need - inv), need * (1 - cutcap) * (1 - down));
         if (build > 1e-9) { inv += build; setups += P.setup_usd_per_run; }
         let pl = 0; for (let j = 0; j < cover; j++) if (w + j < W) pl += m.plan[w + j];
-        budget = P.smt_flex * pl;
+        budget = P.smt_flex * pl * (1 - down);
       }
       const use = Math.min(inv, D[w]);
       inv -= use;
@@ -119,7 +128,7 @@ const RBE = (() => {
     const stranded = ended ? inv : 0;
     const lock = (m.board_value - m.onboard_parts * (1 - P.migration)) * P.mwd_cost_rate;
     const parts = { setups, rush, lost, carry, stranded: stranded * lock };
-    return { parts, total: parts.setups + parts.rush + parts.lost + parts.carry + parts.stranded, stranded_boards: stranded };
+    return { parts, total: parts.setups + parts.rush + parts.lost + parts.carry + parts.stranded, stranded_boards: stranded, events, down_weeks: downWeeks };
   }
   function boardEval(inp, P, m, seed) {
     const draws = boardDraws(inp, P, m, seed), rows = [];
@@ -130,10 +139,13 @@ const RBE = (() => {
       const tot = runs.map((r) => r.total);
       let st = 0; for (const r of runs) st += r.stranded_boards;
       let tt = 0; for (const x of tot) tt += x;
-      rows.push({ cover, parts, total: tt / n, p90: pct(tot, 0.9), stranded_boards: st / n });
+      let lc = 0, dw = 0; for (const r of runs) { if (r.events > 0) lc += 1; dw += r.down_weeks; }
+      const mean = tt / n, p90 = pct(tot, 0.9);
+      rows.push({ cover, parts, total: mean, p90, score: (1 - P.risk_weight) * mean + P.risk_weight * p90,
+        stranded_boards: st / n, loss_chance: lc / n, down_weeks: dw / n });
     }
     let best = rows[0];
-    for (const r of rows) if (r.total < best.total || (r.total === best.total && -r.cover < -best.cover)) best = r;
+    for (const r of rows) if (r.score < best.score || (r.score === best.score && -r.cover < -best.cover)) best = r;
     return { model: m.model, risk: m.risk, rows, best: best.cover };
   }
   const boards = (inp, P) => inp.models.map((m, i) => boardEval(inp, P, m, 101 + i));

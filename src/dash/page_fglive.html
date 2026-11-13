@@ -30,6 +30,7 @@
         <div class="slicer"><span class="s-label" id="l-m">Inputs as</span><div class="seg" role="group" aria-labelledby="l-m" id="f-m"></div></div>
         <div class="slicer slider-ctl"><span class="s-label"><label for="runs">Monte Carlo runs</label><output id="o-runs"></output></span><input type="range" id="runs" min="50" max="1000" step="50"></div>
         <div class="slicer"><span class="s-label" id="l-v">Whose cost</span><div class="seg" role="group" aria-labelledby="l-v" id="f-v"></div></div>
+        <div class="slicer"><span class="s-label" id="l-mem">Memory prices</span><div class="seg" role="group" aria-labelledby="l-mem" id="f-mem"></div></div>
         <span class="status" id="status" aria-live="polite">Starting…</span>
       </section>
 
@@ -68,7 +69,9 @@
 <script id="fge">/*__ENGINE__*/</script>
 <script>
 const D = /*__DATA__*/null;
-const IN = D.input, P0 = { ...IN.P };
+let MEM = (() => { const v = R.load().mem; return v === 0 || v === 1 ? v : D.memory.default; })();
+let IN = D.inputs[MEM];
+const P0 = { ...IN.P };
 const ST = Object.keys(IN.strategies);
 const SHORT = { push: 'Push, no lock', plan: 'Plan, no lock', lock: 'Sales lock', lock_drain: 'Lock + drain', lock_push: 'Lock + push', lock_ibp: 'Lock + IBP hedge' };
 const CUST = { base: ['Current duties', null, false], us25_post: ['US 25% · post-customs', { US: 0.25 }, false], us25_ftz: ['US 25% · FTZ', { US: 0.25 }, true] };
@@ -212,7 +215,7 @@ let pending = 0;
 async function compute() {
   const my = ++pending;
   R.$('#status').textContent = 'Running…'; R.$('#status').classList.add('busy');
-  const baseKey = `${S.c}|${S.n}`;
+  const baseKey = `${S.c}|${S.n}|${MEM}`;
   if (!BASE[baseKey]) {
     const b = await run(P0, jobsFor(P0, false).map((j) => ({ ...j, traj: false, ranges: {} })));
     BASE[baseKey] = Object.fromEntries(b.out.map((r) => [r.strategy, r]));
@@ -225,7 +228,8 @@ async function compute() {
   R.$('#status').classList.remove('busy');
   draw();
 }
-function schedule() { R.save({ s: S.s, c: S.c, m: S.m, n: S.n, v: S.v, P: S.P, lo: S.lo, hi: S.hi }); clearTimeout(timer); timer = setTimeout(compute, 160); }
+R.seg(R.$('#f-mem'), [['0', '2025 base'], ['1', D.memory.quarter.slice(4) + ' ' + D.memory.quarter.slice(0, 4) + ' contract']], String(MEM), (v) => { MEM = +v; IN = D.inputs[MEM]; schedule(); });
+function schedule() { R.save({ s: S.s, c: S.c, m: S.m, n: S.n, v: S.v, P: S.P, lo: S.lo, hi: S.hi, mem: MEM }); clearTimeout(timer); timer = setTimeout(compute, 160); }
 
 // ---------------------------------------------------------------- scenario controls
 R.seg(R.$('#f-s'), ST.map((s) => [s, SHORT[s]]), S.s, (v) => { S.s = v; schedule(); });

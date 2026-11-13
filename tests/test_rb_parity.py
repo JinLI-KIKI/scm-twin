@@ -1,7 +1,8 @@
 """
 Check that the browser engine (src/dash/rb_engine.js) reproduces src/ramp_board.py exactly:
 the ramp sweep (ramp weeks, costs, the share band) and the board-cover Monte Carlo (costs by
-cover, P90, stranded boards, the recommended cover) under several parameter sets. Needs Node.js.
+cover, P90, the risk-weighted score, stranded boards, the chance of a capacity loss, the recommended
+cover) under several parameter sets. Needs Node.js.
 
 Run:  python3 tests/test_rb_parity.py
 """
@@ -18,7 +19,9 @@ import ramp_board as RB  # noqa: E402
 
 VARIANTS = [{}, {"gsm_strong": 0, "ramp_tariff": 0.1, "ramp_runs": 300, "board_runs": 150},
             {"pull_cost_usd_per_unit": 40, "slip_supplier_prob": 0.9, "board_cover_std_weeks": 6,
-             "smt_flex": 0.05, "ramp_runs": 300, "board_runs": 150}]
+             "smt_flex": 0.05, "ramp_runs": 300, "board_runs": 150},
+            {"gsm_strong": 0, "capacity_loss_hazard_weak": 0.12, "capacity_loss_weeks": 6, "risk_weight": 1,
+             "ramp_runs": 200, "board_runs": 150}]
 
 JS = """
 const RBE = require(process.argv[2]);
@@ -30,8 +33,8 @@ const out = V.map((v) => {
   const b = RBE.boards(inp, P);
   return { ramp: r.rows.map((x) => [x.T_mean, x.T_p10, x.T_p50, x.T_p90, x.leakage, x.scrap, x.pull_cost, x.total,
       x.band[5][0], x.band[10][1], x.band[15][2]]).concat([[r.best], r.slip_share, r.slip_mean]),
-    boards: b.map((m) => m.rows.map((x) => [x.total, x.p90, x.stranded_boards, x.parts.setups, x.parts.rush,
-      x.parts.lost, x.parts.carry, x.parts.stranded]).concat([[m.best]])) };
+    boards: b.map((m) => m.rows.map((x) => [x.total, x.p90, x.score, x.stranded_boards, x.loss_chance, x.down_weeks,
+      x.parts.setups, x.parts.rush, x.parts.lost, x.parts.carry, x.parts.stranded]).concat([[m.best]])) };
 });
 process.stdout.write(JSON.stringify(out));
 """
@@ -58,8 +61,9 @@ def main(tol=1e-9):
         ramp = [[x["T_mean"], x["T_p10"], x["T_p50"], x["T_p90"], x["leakage"], x["scrap"], x["pull_cost"], x["total"],
                  x["band"][5][0], x["band"][10][1], x["band"][15][2]] for x in r["rows"]] + [[r["best"]], r["slip_share"],
                                                                                          r["slip_mean"]]
-        bd = [[[x["total"], x["p90"], x["stranded_boards"], x["parts"]["setups"], x["parts"]["rush"], x["parts"]["lost"],
-                x["parts"]["carry"], x["parts"]["stranded"]] for x in m["rows"]] + [[m["best"]]] for m in RB.boards(inp, P)]
+        bd = [[[x["total"], x["p90"], x["score"], x["stranded_boards"], x["loss_chance"], x["down_weeks"],
+                x["parts"]["setups"], x["parts"]["rush"], x["parts"]["lost"], x["parts"]["carry"], x["parts"]["stranded"]]
+               for x in m["rows"]] + [[m["best"]]] for m in RB.boards(inp, P)]
         pairs = [(a, b) for ra, rb in zip(ramp, J["ramp"]) for a, b in zip(ra, rb)]
         pairs += [(a, b) for ma, mb in zip(bd, J["boards"]) for ra, rb in zip(ma, mb) for a, b in zip(ra, rb)]
         for a, b in pairs:

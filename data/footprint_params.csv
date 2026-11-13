@@ -22,10 +22,10 @@ ramp_months_odm,6,PLACEHOLDER,"Months from deciding to qualified volume on a lin
 ramp_months_buy,9,PLACEHOLDER,"Months from signing to qualified laptop volume in a bought electronics plant (re-tooling, re-qualification, staff transfer)"
 rush_premium_usd,1000000,PLACEHOLDER,One-off extra cost of opening a site in a hurry after a tariff is announced
 duty_change_prob,0.2,PLACEHOLDER,"Chance that a market changes its laptop duties within the horizon, drawn per market and Monte Carlo run; a change moves every origin to the same point of its range"
-freight_basis,1,WEB,"Which ocean rate the plan pays: 0 = pre-war (late Feb 2026), 1 = long-term contract (Xeneta, Aug 2026), 2 = spot (Oct 2026), straight lines in between. 1 = an annual-contract shipper (Q30)"
-fallback_now_factor,2.5,DERIVED,Lanes without a published benchmark (from Brazil and the Gulf): October 2026 rate = pre-war distance formula x this factor (median now/pre-war ratio of the benchmark lanes)
+freight_basis,1,WEB,"Which ocean rate the plan pays: 0 = pre-war (late Feb 2026), 1 = long-term contract (Xeneta, Aug 2026), 2 = spot (Nov 2026), straight lines in between. 1 = an annual-contract shipper (Q30)"
+fallback_now_factor,2.8,DERIVED,Lanes without a published benchmark (from Brazil and the Gulf): November 2026 spot rate = pre-war distance formula x this factor (median now/pre-war ratio of the eight benchmark lanes: 2.77)
 fallback_contract_factor,1.41,DERIVED,"Lanes without a benchmark: long-term contract = pre-war distance formula x this factor (Xeneta long-term uplift on FE-USWC and FE-NEUR, 28 Feb to 12 Aug 2026: +41%)"
-hormuz_closed,1,WEB,"1 = Strait of Hormuz closed to normal shipping (since 28 Feb 2026, still closed in Oct 2026); Gulf cargo goes through Khor Fakkan and trucks to Dubai"
+hormuz_closed,1,WEB,"1 = Strait of Hormuz closed to normal shipping (since 28 Feb 2026, still closed on 12 Nov 2026, day 257: 3 transits a day against 85 before the war, IMF PortWatch); Gulf cargo goes through Khor Fakkan and trucks to Dubai"
 gulf_surcharge_feu,0,PLACEHOLDER,Extra per FEU on Gulf lanes beyond the benchmark (the SCFI Gulf rate already includes conflict surcharges; carriers quoted 3000 per FEU in March 2026)
 bypass_truck_usd_feu,1200,PLACEHOLDER,Trucking a 40-ft container between Khor Fakkan and Dubai under bypass congestion (Semafor: overland routing 4-5x the cost of sailing to Jebel Ali)
 shortfall_fee_usd,12,PLACEHOLDER,Take-or-pay fee per unit the brand buys below its minimum volume commitment at an ODM line (the ODM's lost margin and fixed-cost absorption)

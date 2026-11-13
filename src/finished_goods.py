@@ -306,7 +306,7 @@ def simulate(strategy="lock", overrides=None, duty_override=None, ftz=False, run
         plat = models[m]["platform"]
         dies = ssum(mats[x]["unit_cost"] * q for x, q in bom[sku].items()
                    if all(models[s.split("_")[0]]["platform"] == plat for s in used_by[x]))
-        info_m[m] = dict(price=float(info["channel_net_price_usd"]),
+        info_m[m] = dict(price=float(info["channel_net_price_usd"]) * E.price_scale(models[m]),
                          cost=models[m]["customs_value"] + P["inbound_freight_usd"],
                          cv=models[m]["customs_value"], kit_mwd=dies, eol=models[m]["eol"],
                          shape=market_shape(models[m], launch, P["tail_weeks"], horizon),
@@ -401,7 +401,7 @@ def engine_input(duty_override=None):
         plat = models[m]["platform"]
         dies = ssum(mats[x]["unit_cost"] * q for x, q in bom[sku].items()
                     if all(models[s.split("_")[0]]["platform"] == plat for s in used_by[x]))
-        out_models.append({"name": m, "price": float(info["channel_net_price_usd"]),
+        out_models.append({"name": m, "price": float(info["channel_net_price_usd"]) * E.price_scale(models[m]),
                            "cv": models[m]["customs_value"], "kit_mwd": dies, "eol": models[m]["eol"],
                            "peak": models[m]["peak"], "rw": float(info["rework_cost_pct"]),
                            "td": float(info["teardown_recovery_pct"]),

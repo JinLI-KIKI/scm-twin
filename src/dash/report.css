@@ -126,3 +126,5 @@ table.tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabula
 code { font: 12px var(--f-mono); background: var(--chip); padding: 0 4px; border-radius: 3px; }
 .legend-inline { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
 .sw { width: 12px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+/* section headers (pages that use .sec): stack the note under the title on phones */
+@media (max-width: 640px) { main .sec { flex-wrap: wrap; row-gap: 2px; } main .sec .rule { display: none; } main .sec .note { flex-basis: 100%; text-align: left; max-width: none; } }
