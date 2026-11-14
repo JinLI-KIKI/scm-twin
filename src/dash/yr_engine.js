@@ -15,11 +15,11 @@ const YRE = (() => {
     const best = rs.rows.find((r) => r.pull === rs.best);
     const rg = rbi.region, scrap = [];
     for (let w = 0; w < rbi.ramp_weeks; w++) {
-      const y = Q6.yield_full - (Q6.yield_full - Q6.yield_start) * Math.exp(-w / Q6.yield_tau_weeks);
+      const y = RB.yieldAt(Q6, w);
       scrap.push((1 / y - 1) * rg.bom * Q6.scrap_share_of_bom);
     }
     return { dk: dki, P, band: best.band, pull: rs.best, pull_cost: best.pull_cost, T50: best.T_p50, T90: best.T_p90, scrap,
-      gsm_strong: gsm, expedite_unit: P.expedite_usd_per_unit * (gsm >= 0.5 ? 1 : 2),
+      gsm_strong: gsm, expedite_unit: P.expedite_usd_per_unit * (gsm >= 0.5 ? 1 : P.expedite_weak_mult),
       extra_transit_weeks: (ex.days_new - ex.days_cn) / 7, days_cn: ex.days_cn, days_new: ex.days_new,
       fg_rate: ex.fg_rate, fg_week: Math.trunc(ex.fg_week), tariff };
   }
@@ -73,7 +73,7 @@ const YRE = (() => {
       cost.expedite[C] += ctx.expedite_unit * cs.weekly_units * cs.lt_adder;
       for (let w = C; w < W; w++) {
         cost.chain[w] += (cs.eol_mwd_year + cs.pipeline_year) / W;
-        cost.conversion[w] += newUnits[w] * cs.conv_cost * P.conv_uplift;
+        cost.conversion[w] += newUnits[w] * cs.conv_cost * P.conv_uplift * DK.upliftLeft(P, w, C);
         const k = w - C;
         if (k < ctx.scrap.length) cost.ramp[w] += newUnits[w] * ctx.scrap[k];
       }
@@ -82,10 +82,11 @@ const YRE = (() => {
     }
     const quarters = [0, 1, 2, 3].map((q) => [sum(plan, q * 13, (q + 1) * 13), sum(units, q * 13, (q + 1) * 13)]);
     const frac = moved ? (W - C) / W : 0;
-    const eol = cs.eol_mwd_year * frac, t = P.mwd_transferability, promo = sum(cost.promotion);
-    const buMwd = moved ? opt.claimed_mwd - t * (opt.claimed_mwd - opt.mwd) + eol : 0;
+    const eol = cs.eol_mwd_year * frac, promo = sum(cost.promotion);
+    const [buStd, buCus] = moved ? DK.buMwdParts(opt, P, eol) : [0, 0];
+    const buMwd = buStd + buCus;
     return { units, cn_units: cnUnits, plan, cost, discount: disc, rise: riseAvg.map((r, w) => (units[w] ? r / units[w] : 0)),
-      quarters, attainment: sum(units) / totalPlan, bu_cost: P.mwd_cost_rate * buMwd + P.bu_funds_support * promo, bu_mwd: buMwd, share_cn: ch };
+      quarters, attainment: sum(units) / totalPlan, bu_cost: P.mwd_cost_rate_std * buStd + P.mwd_cost_rate * buCus + P.bu_funds_support * promo, bu_mwd: buMwd, share_cn: ch };
   }
   function runOption(ctx, opt) {
     const P = ctx.P, neg = replay(ctx, opt, P.passthrough), p = P.absorb_prob;

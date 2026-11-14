@@ -45,9 +45,9 @@ price points     Σ_i q_i(w) × d × p_i                       from the catch-up
 cutover          holding + relocation + rework of option c (Module 2), in week c
 MWD              physical MWD of option c, in week 51 (year-end reconciliation, R8)
 ramp             Module 6 pull-in cost in week c; yield scrap on new-site units while it learns
-expediting       expedite per unit × weekly units × lead-time adder, in week c (×2 weak GSM)
+expediting       expedite per unit × weekly units × lead-time adder, in week c (×1.5 weak GSM, Q51)
 longer chain     (end-of-life MWD + pipeline carrying per year, Module 3) / 52, every week from c
-conversion       new-site units × conversion cost × uplift
+conversion       new-site units × conversion cost × uplift × max(0, 1 − (w − c) / 26)  (temporary, Q51)
 end of life      Module 4 rate × extra transit weeks (Indonesia − China to the US MGI, Module 7
                  routes) × units the new site ships before week 30, booked in week 30
 ```
@@ -61,8 +61,9 @@ negotiated case, attainment the lower of the two.
 ```
 hit      = options shipping at least target × plan (both cases)
 company  = lowest Σ_w cost among hit (all options if the company does not hold the target)
-BU       = lowest mwd_cost_rate × (claimed − migration × (claimed − physical) + EOL MWD)
-           + funded share of the price points, among hit (ties: the later week)
+BU       = lowest $0.60 × standard-part MWD + $0.90 × (custom-part MWD + EOL MWD), each claimed
+           less the share that migrates (Q52), + funded share of the price points, among hit
+           (ties: the later week)
 ```
 
 The page follows four strategies: stay, the company's pick, the BU's pick and a move at the

@@ -43,7 +43,7 @@
 
   <footer class="notes">
     <p><b>Benefit.</b> Tariff saved = US weekly units × customs value × (China rate − Indonesia rate) × 52.</p>
-    <p><b>Recurring costs.</b> Extra end-of-life MWD because plans are committed 20 instead of 16 weeks ahead with forecast accuracy about 8 points worse (R17, R18); carrying cost of 4 more weeks of material in the chain; new-site conversion cost +5–10% (R20). <b>One-time costs.</b> Tariff still paid on volume the new site cannot cover while it ramps (R16); expediting parts while the longer lead time is not yet covered (R21). Ramp length depends on GSM strength.</p>
+    <p><b>Recurring costs.</b> Extra end-of-life MWD because plans are committed 20 instead of 16 weeks ahead with forecast accuracy about 8 points worse (R17, R18); carrying cost of 4 more weeks of material in the chain. <b>One-time costs.</b> Tariff still paid on volume the new site cannot cover while it ramps (R16); expediting parts while the longer lead time is not yet covered (R21; $6 a unit with a strong GSM, 1.5× with a weak one, Q51); the new site's conversion uplift of 5–10% while the line learns, falling to nothing over about six months (R20, Q51). The site's steady-state cost against China is a footprint input (Module 7, Q50), so it is not counted twice here. Ramp length depends on GSM strength.</p>
     <p id="n-link"></p>
     <p><b>Status.</b> Lead-time adder, forecast-accuracy gap and conversion uplift are practitioner input (virtualized); ramp weeks, expediting cost and error correlation are placeholders. Details in the <a href="rules.html">Rules register</a>; code in <code>src/business_case.py</code>.</p>
   </footer>
@@ -76,8 +76,8 @@ const cWf = R.chart('c-wf', (t) => {
   const o = R.base(t), c = C();
   const steps = [
     ['Tariff saved', c.tariff_saved[1], 'up'], ['EOL MWD', -c.eol_mwd[1], 'down'], ['Chain carry', -c.pipeline[1], 'down'],
-    ['Conversion', -c.conv[1], 'down'], ['Steady state', c.net_steady[1], 'total'], ['Ramp tariff', -c.ramp_leak[1], 'down'],
-    ['Expediting', -c.expedite[1], 'down'], ['Transfer year', c.net_year1[1], 'total']];
+    ['Steady state', c.net_steady[1], 'total'], ['Ramp tariff', -c.ramp_leak[1], 'down'],
+    ['Expediting', -c.expedite[1], 'down'], ['Ramp conversion', -c.conv[1], 'down'], ['Transfer year', c.net_year1[1], 'total']];
   let run = 0; const base = [], val = [], colors = [];
   steps.forEach(([_, v, kind]) => {
     if (kind === 'total') { base.push(Math.min(0, v)); val.push(Math.abs(v)); colors.push(v >= 0 ? t.good : t.bad); run = v; }

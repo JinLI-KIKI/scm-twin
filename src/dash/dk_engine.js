@@ -6,6 +6,14 @@ const DKE = (() => {
     return ramp > 0 ? Math.max(0, 1 - (w - cutover) / ramp) : 0;
   }
   const ssum = (a) => { let t = 0; for (const x of a) t += x; return t; };
+  // Q51: the new-site conversion uplift is temporary, falling to 0 over conv_uplift_weeks
+  const upliftLeft = (P, w, cutover) => (cutover === null || w < cutover ? 0 : Math.max(0, 1 - (w - cutover) / P.conv_uplift_weeks));
+  // R43, Q52: MWD as the BU weighs it, standard and custom parts apart
+  function buMwdParts(opt, P, eol) {
+    const t = P.mwd_transferability, std = opt.claimed_std, physStd = opt.mwd_std;
+    const cus = opt.claimed_mwd - std, physCus = opt.mwd - physStd;
+    return [std - t * (std - physStd), cus - t * (cus - physCus) + eol];
+  }
   function catchUp(inp, P, base, gap) {        // R45: discount from catchup_from_week that closes the gap
     const cw = Math.trunc(P.catchup_from_week);
     const h2 = base.map((row) => ssum(row.slice(cw)));
@@ -52,7 +60,7 @@ const DKE = (() => {
         quarters[k][0] += q0; quarters[k][1] += q;
         paid += q * tariff * ch; recovered += q * rise;
         lost += (q0 - q) * m.price * m.gross_margin;
-        convUnits += q * (1 - ch);
+        convUnits += q * (1 - ch) * upliftLeft(P, w, C);
         if (w >= cw) promo += q * disc * m.price;
       }
     });
@@ -65,9 +73,9 @@ const DKE = (() => {
     const conv = convUnits * cs.conv_cost * P.conv_uplift;
     const transfer = opt.mwd + opt.holding + opt.relocation + opt.rework;
     const parts = { absorbed: paid - recovered, lost_margin: lost, promotion: promo, transfer, expedite, chain, conversion: conv };
-    const tr = P.mwd_transferability;                     // R43: claimed -> physical as material migrates
-    const buMwd = opt.claimed_mwd - tr * (opt.claimed_mwd - opt.mwd) + eol;
-    const buMwdCost = P.mwd_cost_rate * buMwd;
+    const [buStd, buCus] = buMwdParts(opt, P, eol);        // R43: claimed -> physical as material migrates
+    const buMwd = buStd + buCus;
+    const buMwdCost = P.mwd_cost_rate_std * buStd + P.mwd_cost_rate * buCus;
     const buSupport = P.bu_funds_support * promo;
     const companyCost = parts.absorbed + parts.lost_margin + parts.promotion + parts.transfer + parts.expedite + parts.chain + parts.conversion;
     return { id: opt.id, cutover: C, plan, units, attainment: plan ? units / plan : 1, before_catch_up: plan ? before / plan : 1, discount: disc, quarters,
@@ -112,6 +120,6 @@ const DKE = (() => {
       return { bu: s.bu, company: s.company, gap: s.gap };
     }));
   }
-  return { chinaShare, catchUp, evaluate, evaluateMix, score, grid, buGrid };
+  return { chinaShare, catchUp, upliftLeft, buMwdParts, evaluate, evaluateMix, score, grid, buGrid };
 })();
 if (typeof module !== 'undefined') module.exports = DKE;

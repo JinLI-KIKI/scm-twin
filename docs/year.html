@@ -219,7 +219,7 @@ details.more > summary { cursor: pointer; font: 500 12.5px var(--f-body); color:
       <h1>The Year, Week by Week</h1>
       <p class="sub">A US tariff on China-made laptops starts in week 0. The year is replayed week by week four ways: stay in China, the company's pick, the BU's pick, or wait for the model change. Module 5 turns the price rise into units and the second-half catch-up; Module 6 ramps the new site on its S-curve; Modules 1–2 price the cancelled plans and settle MWD at year-end; Module 3 adds expediting and the longer chain; Module 4 the finished goods left at end of life; Module 7 the longer transit and today's memory prices.</p>
     </div>
-    <div class="asof">Built 2026-11-13 · US region · China to Indonesia · recomputes live · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/year_run.md">formulas</a></div>
+    <div class="asof">Built 2026-11-14 · US region · China to Indonesia · recomputes live · <a href="https://github.com/jinli-kiki/scm-twin/blob/main/docs/models/year_run.md">formulas</a></div>
   </div>
 
   <section class="slicers" aria-label="Scenario">
@@ -275,7 +275,7 @@ details.more > summary { cursor: pointer; font: 500 12.5px var(--f-body); color:
   <footer class="notes">
     <p><b>How the year is replayed.</b> Weekly US units per model come from Module 1's lifecycle curves. From the repricing week the channel price rises by the negotiated pass-through × tariff × the share of the week's units still made in China; units follow a constant elasticity (Module 5). After the cutover, the new site's share follows the median S-curve of Module 6's Monte Carlo, with the pull-in Module 6 recommends at this tariff and GSM. From week 26 a channel discount, up to the cap, closes the gap to the fiscal-year target (R42, R45). Costs: the tariff the company absorbs (paid on China-made units, less what the price recovers), gross margin on units lost to the price rise, the catch-up discount, holding, relocation and rework of the plans cancelled at the cutover (Module 2), the physical MWD at the year-end reconciliation (R8), pull-in and yield scrap during the ramp (Module 6), parts expediting at the cutover, the longer chain week by week (end-of-life MWD of the longer window and pipeline carrying, Module 3), the new site's conversion uplift, and the extra finished goods at platform P1's end of life from the longer transit (Module 4 linkage × extra transit, Module 7 routes). With a chance the company ends up absorbing the tariff, every cost is the expected value over the two cases (R44).</p>
     <p><b>Picks.</b> Company: the lowest company cost among the options that make the target. BU: the lowest MWD as the BU weighs it (claimed MWD less the share that migrates, plus the longer window's end-of-life MWD, at what a dollar of MWD costs it) plus the price points it funds, among the options that make the target (R43, R45). These are Module 5's rules; the ramp is Module 6's instead of a straight line, so the picks can differ by a few weeks from the <a href="demand.html">Demand &amp; KPI</a> page.</p>
-    <p><b>Status.</b> Composition only: every number comes from Modules 1–7 and their sources (<a href="rules.html">rules register</a>). A weak GSM doubles the parts expediting per unit (Module 3) and slows the ramp (Module 6). The page runs <code>src/dash/yr_engine.js</code>, a port of <code>src/year_run.py</code> built on the Module 5 and 6 engines; <code>tests/test_yr_parity.py</code> checks both give the same numbers.</p>
+    <p><b>Status.</b> Composition only: every number comes from Modules 1–7 and their sources (<a href="rules.html">rules register</a>). A weak GSM makes parts expediting 1.5× dearer per unit (Q51) and slows the ramp (Module 6); the new site's conversion uplift fades to nothing over about six months (Q51); MWD left after migration costs the BU about $0.60 per dollar of standard parts and $0.90 of custom ones (Q52). The page runs <code>src/dash/yr_engine.js</code>, a port of <code>src/year_run.py</code> built on the Module 5 and 6 engines; <code>tests/test_yr_parity.py</code> checks both give the same numbers.</p>
   </footer>
 </main>
 <script>/* Shared helpers for the report pages: theme-aware ECharts, number formats, slicers. */
@@ -383,6 +383,14 @@ const DKE = (() => {
     return ramp > 0 ? Math.max(0, 1 - (w - cutover) / ramp) : 0;
   }
   const ssum = (a) => { let t = 0; for (const x of a) t += x; return t; };
+  // Q51: the new-site conversion uplift is temporary, falling to 0 over conv_uplift_weeks
+  const upliftLeft = (P, w, cutover) => (cutover === null || w < cutover ? 0 : Math.max(0, 1 - (w - cutover) / P.conv_uplift_weeks));
+  // R43, Q52: MWD as the BU weighs it, standard and custom parts apart
+  function buMwdParts(opt, P, eol) {
+    const t = P.mwd_transferability, std = opt.claimed_std, physStd = opt.mwd_std;
+    const cus = opt.claimed_mwd - std, physCus = opt.mwd - physStd;
+    return [std - t * (std - physStd), cus - t * (cus - physCus) + eol];
+  }
   function catchUp(inp, P, base, gap) {        // R45: discount from catchup_from_week that closes the gap
     const cw = Math.trunc(P.catchup_from_week);
     const h2 = base.map((row) => ssum(row.slice(cw)));
@@ -429,7 +437,7 @@ const DKE = (() => {
         quarters[k][0] += q0; quarters[k][1] += q;
         paid += q * tariff * ch; recovered += q * rise;
         lost += (q0 - q) * m.price * m.gross_margin;
-        convUnits += q * (1 - ch);
+        convUnits += q * (1 - ch) * upliftLeft(P, w, C);
         if (w >= cw) promo += q * disc * m.price;
       }
     });
@@ -442,9 +450,9 @@ const DKE = (() => {
     const conv = convUnits * cs.conv_cost * P.conv_uplift;
     const transfer = opt.mwd + opt.holding + opt.relocation + opt.rework;
     const parts = { absorbed: paid - recovered, lost_margin: lost, promotion: promo, transfer, expedite, chain, conversion: conv };
-    const tr = P.mwd_transferability;                     // R43: claimed -> physical as material migrates
-    const buMwd = opt.claimed_mwd - tr * (opt.claimed_mwd - opt.mwd) + eol;
-    const buMwdCost = P.mwd_cost_rate * buMwd;
+    const [buStd, buCus] = buMwdParts(opt, P, eol);        // R43: claimed -> physical as material migrates
+    const buMwd = buStd + buCus;
+    const buMwdCost = P.mwd_cost_rate_std * buStd + P.mwd_cost_rate * buCus;
     const buSupport = P.bu_funds_support * promo;
     const companyCost = parts.absorbed + parts.lost_margin + parts.promotion + parts.transfer + parts.expedite + parts.chain + parts.conversion;
     return { id: opt.id, cutover: C, plan, units, attainment: plan ? units / plan : 1, before_catch_up: plan ? before / plan : 1, discount: disc, quarters,
@@ -489,7 +497,7 @@ const DKE = (() => {
       return { bu: s.bu, company: s.company, gap: s.gap };
     }));
   }
-  return { chinaShare, catchUp, evaluate, evaluateMix, score, grid, buGrid };
+  return { chinaShare, catchUp, upliftLeft, buMwdParts, evaluate, evaluateMix, score, grid, buGrid };
 })();
 if (typeof module !== 'undefined') module.exports = DKE;
 </script>
@@ -517,27 +525,47 @@ const RBE = (() => {
       const row = [];
       for (const g of ['material', 'yield', 'supplier']) {
         const u1 = rng.random(), u2 = rng.random();
-        const p = Math.min(1, P[`slip_${g}_prob`] * mult), lo = P[`slip_${g}_lo`], hi = P[`slip_${g}_hi`];
+        const base = g === 'supplier' && P.site_campus >= 0.5 ? P.slip_supplier_prob_campus : P[`slip_${g}_prob`];
+        const p = Math.min(1, base * mult), lo = P[`slip_${g}_lo`], hi = P[`slip_${g}_hi`];
         row.push(u1 < p ? lo + (hi - lo) * u2 : 0);
       }
       out.push(row);
     }
     return out;
   }
-  function rampRun(inp, P, pull, slips) {
+  const YIELD_SHAPE = [0, 6 / 13, 10 / 13, 12 / 13, 1];   // 85 -> 91 -> 95 -> 97 -> 98% at quarter points (Q48)
+  function yieldAt(P, w) {
+    const x = P.yield_weeks_to_full > 0 ? Math.max(0, w / P.yield_weeks_to_full) * 4 : 4;
+    let f;
+    if (x >= 4) f = 1; else { const i = Math.trunc(x); f = YIELD_SHAPE[i] + (YIELD_SHAPE[i + 1] - YIELD_SHAPE[i]) * (x - i); }
+    return P.yield_start + (P.yield_full - P.yield_start) * f;
+  }
+  const plannedT = (P, pull) => Math.max(P.ramp_min_weeks, P.ramp_base_weeks - pull);
+  function pullCost(inp, P, pull) {             // Q48: only the volume brought forward is paid for
+    const rg = inp.region, W = inp.ramp_weeks;
+    const curve = (T) => { const c = []; for (let w = 0; w < W; w++) c.push(T > 0 ? smoothstep(w / T) : 1); return c; };
+    let cost = 0, prev = curve(plannedT(P, 0));
+    for (let i = 1; i <= Math.trunc(pull); i++) {
+      const cur = curve(plannedT(P, i));
+      let d = 0; for (let w = 0; w < W; w++) d += cur[w] - prev[w];
+      cost += P.pull_cost_usd_per_unit * (1 + P.pull_cost_growth) ** (i - 1) * rg.weekly_units * d;
+      prev = cur;
+    }
+    return cost;
+  }
+  function rampRun(inp, P, pull, slips, pcIn) {
     const rg = inp.region;
     let sl = 0; for (const x of slips) sl += x;
-    const T = Math.max(P.ramp_min_weeks, P.ramp_base_weeks - pull) + sl;
+    const T = plannedT(P, pull) + Math.min(P.slip_cap_weeks, sl);
     const share = [];
     for (let w = 0; w < inp.ramp_weeks; w++) share.push(T > 0 ? smoothstep(w / T) : 1);
     let leak = 0, scrap = 0;
     share.forEach((s, w) => {
       leak += (1 - s) * rg.weekly_units * rg.customs * P.ramp_tariff;
-      const y = P.yield_full - (P.yield_full - P.yield_start) * Math.exp(-w / P.yield_tau_weeks);
+      const y = yieldAt(P, w);
       scrap += s * rg.weekly_units * (1 / y - 1) * rg.bom * P.scrap_share_of_bom;
     });
-    let g = 0; for (let i = 0; i < Math.trunc(pull); i++) g += 1 + P.pull_cost_growth * i;
-    const pc = rg.weekly_units * P.pull_cost_usd_per_unit * g;
+    const pc = pcIn === undefined ? pullCost(inp, P, pull) : pcIn;
     return { T, share, leakage: leak, scrap, pull: pc, total: leak + scrap + pc };
   }
   function rampSweep(inp, P, seed = 11) {
@@ -545,7 +573,8 @@ const RBE = (() => {
     const top = Math.trunc(Math.max(0, P.ramp_base_weeks - P.ramp_min_weeks));
     const rows = [];
     for (let pull = 0; pull <= top; pull++) {
-      const runs = slips.map((s) => rampRun(inp, P, pull, s)), n = runs.length;
+      const pc = pullCost(inp, P, pull);
+      const runs = slips.map((s) => rampRun(inp, P, pull, s, pc)), n = runs.length;
       const mean = (k) => { let t = 0; for (const r of runs) t += r[k]; return t / n; };
       const Ts = runs.map((r) => r.T);
       const band = [];
@@ -576,6 +605,7 @@ const RBE = (() => {
     }
     return runs;
   }
+  const rushPremium = (P, m) => Math.min(P.rush_premium_max, Math.max(P.rush_premium_min, P.rush_premium_share * m.board_extra));   // Q49
   function boardRun(inp, P, m, cover, draw) {
     const [z, u, cut, v] = draw, W = inp.weeks;
     const s16 = P.forecast_mape_16w * Math.sqrt(Math.PI / 2) * m.sigma_mult;
@@ -588,6 +618,7 @@ const RBE = (() => {
     const drop = strong ? P.capacity_loss_strong : P.capacity_loss_weak, span = Math.trunc(P.capacity_loss_weeks);
     let inv = 0, setups = 0, rush = 0, lost = 0, carry = 0, budget = 0;
     let until = -1, events = 0, downWeeks = 0;   // last week of a capacity loss under way
+    const premium = rushPremium(P, m);
     const forecast = (w, h, d) => {
       if (m.eol !== null && w >= m.eol) return 0;
       if (cut !== null && d >= cut) return 0;
@@ -614,7 +645,7 @@ const RBE = (() => {
       if (short > 1e-9) {
         const r = Math.min(short, budget);
         budget -= r;
-        rush += r * P.rush_premium_usd;
+        rush += r * premium;
         lost += (short - r) * P.lost_share * m.margin;
       }
       carry += inv * m.board_value * P.carry / 52;
@@ -644,7 +675,7 @@ const RBE = (() => {
     return { model: m.model, risk: m.risk, rows, best: best.cover };
   }
   const boards = (inp, P) => inp.models.map((m, i) => boardEval(inp, P, m, 101 + i));
-  return { makeRng, smoothstep, rampSlips, rampRun, rampSweep, boardDraws, boardRun, boardEval, boards };
+  return { makeRng, smoothstep, yieldAt, plannedT, pullCost, rampSlips, rampRun, rampSweep, rushPremium, boardDraws, boardRun, boardEval, boards };
 })();
 if (typeof module !== 'undefined') module.exports = RBE;
 </script>
@@ -665,11 +696,11 @@ const YRE = (() => {
     const best = rs.rows.find((r) => r.pull === rs.best);
     const rg = rbi.region, scrap = [];
     for (let w = 0; w < rbi.ramp_weeks; w++) {
-      const y = Q6.yield_full - (Q6.yield_full - Q6.yield_start) * Math.exp(-w / Q6.yield_tau_weeks);
+      const y = RB.yieldAt(Q6, w);
       scrap.push((1 / y - 1) * rg.bom * Q6.scrap_share_of_bom);
     }
     return { dk: dki, P, band: best.band, pull: rs.best, pull_cost: best.pull_cost, T50: best.T_p50, T90: best.T_p90, scrap,
-      gsm_strong: gsm, expedite_unit: P.expedite_usd_per_unit * (gsm >= 0.5 ? 1 : 2),
+      gsm_strong: gsm, expedite_unit: P.expedite_usd_per_unit * (gsm >= 0.5 ? 1 : P.expedite_weak_mult),
       extra_transit_weeks: (ex.days_new - ex.days_cn) / 7, days_cn: ex.days_cn, days_new: ex.days_new,
       fg_rate: ex.fg_rate, fg_week: Math.trunc(ex.fg_week), tariff };
   }
@@ -723,7 +754,7 @@ const YRE = (() => {
       cost.expedite[C] += ctx.expedite_unit * cs.weekly_units * cs.lt_adder;
       for (let w = C; w < W; w++) {
         cost.chain[w] += (cs.eol_mwd_year + cs.pipeline_year) / W;
-        cost.conversion[w] += newUnits[w] * cs.conv_cost * P.conv_uplift;
+        cost.conversion[w] += newUnits[w] * cs.conv_cost * P.conv_uplift * DK.upliftLeft(P, w, C);
         const k = w - C;
         if (k < ctx.scrap.length) cost.ramp[w] += newUnits[w] * ctx.scrap[k];
       }
@@ -732,10 +763,11 @@ const YRE = (() => {
     }
     const quarters = [0, 1, 2, 3].map((q) => [sum(plan, q * 13, (q + 1) * 13), sum(units, q * 13, (q + 1) * 13)]);
     const frac = moved ? (W - C) / W : 0;
-    const eol = cs.eol_mwd_year * frac, t = P.mwd_transferability, promo = sum(cost.promotion);
-    const buMwd = moved ? opt.claimed_mwd - t * (opt.claimed_mwd - opt.mwd) + eol : 0;
+    const eol = cs.eol_mwd_year * frac, promo = sum(cost.promotion);
+    const [buStd, buCus] = moved ? DK.buMwdParts(opt, P, eol) : [0, 0];
+    const buMwd = buStd + buCus;
     return { units, cn_units: cnUnits, plan, cost, discount: disc, rise: riseAvg.map((r, w) => (units[w] ? r / units[w] : 0)),
-      quarters, attainment: sum(units) / totalPlan, bu_cost: P.mwd_cost_rate * buMwd + P.bu_funds_support * promo, bu_mwd: buMwd, share_cn: ch };
+      quarters, attainment: sum(units) / totalPlan, bu_cost: P.mwd_cost_rate_std * buStd + P.mwd_cost_rate * buCus + P.bu_funds_support * promo, bu_mwd: buMwd, share_cn: ch };
   }
   function runOption(ctx, opt) {
     const P = ctx.P, neg = replay(ctx, opt, P.passthrough), p = P.absorb_prob;
@@ -793,7 +825,7 @@ const YRE = (() => {
 if (typeof module !== 'undefined') module.exports = YRE;
 </script>
 <script>
-const D = {"inputs":[{"dk":{"weeks":52,"window":16,"models":[{"model":"P1-14","customs_value":480.0,"price":650.0,"elasticity":-0.7,"gross_margin":0.25,"demand":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","customs_value":560.0,"price":760.0,"elasticity":-0.7,"gross_margin":0.25,"demand":[800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,600.0,400.0,200.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","customs_value":520.0,"price":704.0,"elasticity":-0.7,"gross_margin":0.25,"demand":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,600.0,1200.0,1800.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0]}],"options":[{"id":"C0","cutover":0,"claimed_mwd":16898400.0,"mwd":0.0,"holding":526572.3076923076,"relocation":40320.0,"rework":0.0},{"id":"C1","cutover":1,"claimed_mwd":15754400.0,"mwd":0.0,"holding":489419.23076923075,"relocation":37800.0,"rework":0.0},{"id":"C2","cutover":2,"claimed_mwd":14610400.0,"mwd":0.0,"holding":455611.5384615384,"relocation":35280.0,"rework":0.0},{"id":"C3","cutover":3,"claimed_mwd":13566800.0,"mwd":0.0,"holding":405018.46153846156,"relocation":32760.0,"rework":0.0},{"id":"C4","cutover":4,"claimed_mwd":12523200.0,"mwd":0.0,"holding":360470.76923076925,"relocation":30240.0,"rework":0.0},{"id":"C5","cutover":5,"claimed_mwd":11479600.0,"mwd":0.0,"holding":319290.7692307692,"relocation":27720.0,"rework":0.0},{"id":"C6","cutover":6,"claimed_mwd":10436000.0,"mwd":0.0,"holding":279633.0769230769,"relocation":25200.0,"rework":0.0},{"id":"C7","cutover":7,"claimed_mwd":9392400.0,"mwd":0.0,"holding":241497.69230769228,"relocation":22680.0,"rework":0.0},{"id":"C8","cutover":8,"claimed_mwd":8348800.0,"mwd":0.0,"holding":206729.99999999997,"relocation":20160.0,"rework":0.0},{"id":"C9","cutover":9,"claimed_mwd":7305200.0,"mwd":0.0,"holding":173484.6153846154,"relocation":17640.0,"rework":0.0},{"id":"C10","cutover":10,"claimed_mwd":6261600.0,"mwd":0.0,"holding":141761.53846153844,"relocation":15120.0,"rework":0.0},{"id":"C11","cutover":11,"claimed_mwd":5218000.0,"mwd":0.0,"holding":113406.15384615384,"relocation":12600.0,"rework":0.0},{"id":"C12","cutover":12,"claimed_mwd":4174400.0,"mwd":0.0,"holding":86573.07692307694,"relocation":10080.0,"rework":0.0},{"id":"C13","cutover":13,"claimed_mwd":3130800.0,"mwd":0.0,"holding":61262.307692307695,"relocation":7560.0,"rework":0.0},{"id":"C14","cutover":14,"claimed_mwd":2087200.0,"mwd":0.0,"holding":39319.23076923077,"relocation":5040.0,"rework":0.0},{"id":"C15","cutover":15,"claimed_mwd":1043600.0,"mwd":0.0,"holding":18898.461538461535,"relocation":2520.0,"rework":0.0},{"id":"C16","cutover":16,"claimed_mwd":0.0,"mwd":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C20","cutover":20,"claimed_mwd":0.0,"mwd":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C26","cutover":26,"claimed_mwd":0.0,"mwd":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C39","cutover":39,"claimed_mwd":0.0,"mwd":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"stay","cutover":null,"claimed_mwd":0.0,"mwd":0.0,"holding":0.0,"relocation":0.0,"rework":0.0}],"case":{"eol_mwd_year":749746.4677665766,"pipeline_year":834880.0,"conv_cost":25.0,"lt_adder":4.0,"weekly_units":2800.0},"P":{"tariff_cn":0.25,"passthrough":0.85,"absorb_prob":0.1,"reprice_lag_weeks":2.0,"exporter_absorb":0.04,"ramp_weeks":12.0,"target_tolerance":0.97,"catchup_from_week":26.0,"max_promo_discount":0.1,"bu_funds_support":1.0,"points_effect":1.0,"company_holds_target":1.0,"mwd_transferability":0.9,"mwd_cost_rate":0.9,"conv_uplift":0.075,"expedite_usd_per_unit":6.0}},"rb":{"models":[{"model":"P1-14","risk":"normal","bias":0.0,"sigma_mult":1.0,"cut_prob":0.0,"eol":30,"board_value":195.0,"onboard_parts":160.0,"margin":162.5,"plan":[5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,3750.0,2500.0,1250.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","risk":"risky","bias":0.1,"sigma_mult":1.5,"cut_prob":0.15,"eol":30,"board_value":198.0,"onboard_parts":160.0,"margin":190.0,"plan":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","risk":"new","bias":0.05,"sigma_mult":1.3,"cut_prob":0.1,"eol":null,"board_value":211.0,"onboard_parts":175.0,"margin":176.0,"plan":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1500.0,3000.0,4500.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0]}],"region":{"weekly_units":2800.0,"customs":502.85714285714283,"bom":372.7142857142857},"P":{"ramp_base_weeks":13.0,"ramp_min_weeks":6.0,"pull_cost_usd_per_unit":6.0,"pull_cost_growth":0.5,"slip_material_prob":0.4,"slip_material_lo":1.0,"slip_material_hi":4.0,"slip_yield_prob":0.3,"slip_yield_lo":1.0,"slip_yield_hi":3.0,"slip_supplier_prob":0.5,"slip_supplier_lo":2.0,"slip_supplier_hi":6.0,"gsm_strong":1.0,"gsm_mult_strong":0.6,"gsm_mult_weak":1.4,"yield_start":0.85,"yield_full":0.98,"yield_tau_weeks":4.0,"scrap_share_of_bom":0.3,"ramp_tariff":0.25,"ramp_runs":1000.0,"board_cover_std_weeks":8.0,"forecast_mape_16w":0.32,"demand_noise":0.1,"capacity_cut_strong":0.35,"capacity_cut_weak":0.8,"capacity_loss_hazard_strong":0.005,"capacity_loss_hazard_weak":0.03,"capacity_loss_strong":0.25,"capacity_loss_weak":0.5,"capacity_loss_weeks":13.0,"smt_flex":0.2,"rush_premium_usd":8.0,"setup_usd_per_run":1500.0,"lost_share":0.5,"board_runs":400.0,"risk_weight":0.25,"carry":0.2,"migration":0.9,"mwd_cost_rate":0.9},"covers":[1,2,3,4,5,6,7,8],"weeks":52,"ramp_weeks":40},"extra":{"days_cn":31.0,"days_new":37.3,"fg_rate":1.7128195151471268,"fg_week":30}},{"dk":{"weeks":52,"window":16,"models":[{"model":"P1-14","customs_value":841.295,"price":1139.2536458333332,"elasticity":-0.7,"gross_margin":0.25,"demand":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","customs_value":921.295,"price":1250.3289285714284,"elasticity":-0.7,"gross_margin":0.25,"demand":[800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,600.0,400.0,200.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","customs_value":881.295,"price":1193.137846153846,"elasticity":-0.7,"gross_margin":0.25,"demand":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,600.0,1200.0,1800.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0]}],"options":[{"id":"C0","cutover":0,"claimed_mwd":33084416.0,"mwd":0.0,"holding":896736.6423076923,"relocation":40320.0,"rework":0.0},{"id":"C1","cutover":1,"claimed_mwd":30928790.0,"mwd":0.0,"holding":841457.0115384617,"relocation":37800.0,"rework":0.0},{"id":"C2","cutover":2,"claimed_mwd":28773164.0,"mwd":0.0,"holding":792171.7269230771,"relocation":35280.0,"rework":0.0},{"id":"C3","cutover":3,"claimed_mwd":26717938.0,"mwd":0.0,"holding":700724.5230769231,"relocation":32760.0,"rework":0.0},{"id":"C4","cutover":4,"claimed_mwd":24662712.0,"mwd":0.0,"holding":617268.1384615385,"relocation":30240.0,"rework":0.0},{"id":"C5","cutover":5,"claimed_mwd":22607486.0,"mwd":0.0,"holding":541070.3153846153,"relocation":27720.0,"rework":0.0},{"id":"C6","cutover":6,"claimed_mwd":20552260.0,"mwd":0.0,"holding":468340.2346153846,"relocation":25200.0,"rework":0.0},{"id":"C7","cutover":7,"claimed_mwd":18497034.0,"mwd":0.0,"holding":399077.89615384623,"relocation":22680.0,"rework":0.0},{"id":"C8","cutover":8,"claimed_mwd":16441808.0,"mwd":0.0,"holding":337074.11923076917,"relocation":20160.0,"rework":0.0},{"id":"C9","cutover":9,"claimed_mwd":14386582.0,"mwd":0.0,"holding":278538.08461538464,"relocation":17640.0,"rework":0.0},{"id":"C10","cutover":10,"claimed_mwd":12331356.0,"mwd":0.0,"holding":223469.79230769235,"relocation":15120.0,"rework":0.0},{"id":"C11","cutover":11,"claimed_mwd":10276130.0,"mwd":0.0,"holding":175660.0615384615,"relocation":12600.0,"rework":0.0},{"id":"C12","cutover":12,"claimed_mwd":8220904.0,"mwd":0.0,"holding":131318.0730769231,"relocation":10080.0,"rework":0.0},{"id":"C13","cutover":13,"claimed_mwd":6165678.0,"mwd":0.0,"holding":90443.82692307695,"relocation":7560.0,"rework":0.0},{"id":"C14","cutover":14,"claimed_mwd":4110452.0,"mwd":0.0,"holding":56828.1423076923,"relocation":5040.0,"rework":0.0},{"id":"C15","cutover":15,"claimed_mwd":2055226.0,"mwd":0.0,"holding":26680.199999999993,"relocation":2520.0,"rework":0.0},{"id":"C16","cutover":16,"claimed_mwd":0.0,"mwd":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C20","cutover":20,"claimed_mwd":0.0,"mwd":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C26","cutover":26,"claimed_mwd":0.0,"mwd":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C39","cutover":39,"claimed_mwd":0.0,"mwd":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"stay","cutover":null,"claimed_mwd":0.0,"mwd":0.0,"holding":0.0,"relocation":0.0,"rework":0.0}],"case":{"eol_mwd_year":749746.4677665766,"pipeline_year":1644180.8,"conv_cost":25.0,"lt_adder":4.0,"weekly_units":2800.0},"P":{"tariff_cn":0.25,"passthrough":0.85,"absorb_prob":0.1,"reprice_lag_weeks":2.0,"exporter_absorb":0.04,"ramp_weeks":12.0,"target_tolerance":0.97,"catchup_from_week":26.0,"max_promo_discount":0.1,"bu_funds_support":1.0,"points_effect":1.0,"company_holds_target":1.0,"mwd_transferability":0.9,"mwd_cost_rate":0.9,"conv_uplift":0.075,"expedite_usd_per_unit":6.0}},"rb":{"models":[{"model":"P1-14","risk":"normal","bias":0.0,"sigma_mult":1.0,"cut_prob":0.0,"eol":30,"board_value":425.64,"onboard_parts":390.64,"margin":284.8134114583333,"plan":[5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,3750.0,2500.0,1250.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","risk":"risky","bias":0.1,"sigma_mult":1.5,"cut_prob":0.15,"eol":30,"board_value":428.64,"onboard_parts":390.64,"margin":312.5822321428571,"plan":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","risk":"new","bias":0.05,"sigma_mult":1.3,"cut_prob":0.1,"eol":null,"board_value":441.64,"onboard_parts":405.64,"margin":298.2844615384615,"plan":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1500.0,3000.0,4500.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0]}],"region":{"weekly_units":2800.0,"customs":864.1521428571428,"bom":734.0092857142857},"P":{"ramp_base_weeks":13.0,"ramp_min_weeks":6.0,"pull_cost_usd_per_unit":6.0,"pull_cost_growth":0.5,"slip_material_prob":0.4,"slip_material_lo":1.0,"slip_material_hi":4.0,"slip_yield_prob":0.3,"slip_yield_lo":1.0,"slip_yield_hi":3.0,"slip_supplier_prob":0.5,"slip_supplier_lo":2.0,"slip_supplier_hi":6.0,"gsm_strong":1.0,"gsm_mult_strong":0.6,"gsm_mult_weak":1.4,"yield_start":0.85,"yield_full":0.98,"yield_tau_weeks":4.0,"scrap_share_of_bom":0.3,"ramp_tariff":0.25,"ramp_runs":1000.0,"board_cover_std_weeks":8.0,"forecast_mape_16w":0.32,"demand_noise":0.1,"capacity_cut_strong":0.35,"capacity_cut_weak":0.8,"capacity_loss_hazard_strong":0.005,"capacity_loss_hazard_weak":0.03,"capacity_loss_strong":0.25,"capacity_loss_weak":0.5,"capacity_loss_weeks":13.0,"smt_flex":0.2,"rush_premium_usd":8.0,"setup_usd_per_run":1500.0,"lost_share":0.5,"board_runs":400.0,"risk_weight":0.25,"carry":0.2,"migration":0.9,"mwd_cost_rate":0.9},"covers":[1,2,3,4,5,6,7,8],"weeks":52,"ramp_weeks":40},"extra":{"days_cn":31.0,"days_new":37.3,"fg_rate":1.7128195151471268,"fg_week":30}}],"cats":["tariff","lost_margin","promotion","transfer","mwd","ramp","expedite","chain","conversion","fg_eol"],"memory":{"quarter":"2026Q4","dram":6.766,"nand":4.733,"default":0,"delta_p1_14":361.29499999999996}};
+const D = {"inputs":[{"dk":{"weeks":52,"window":16,"models":[{"model":"P1-14","customs_value":480.0,"price":650.0,"elasticity":-0.7,"gross_margin":0.25,"demand":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","customs_value":560.0,"price":760.0,"elasticity":-0.7,"gross_margin":0.25,"demand":[800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,600.0,400.0,200.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","customs_value":520.0,"price":704.0,"elasticity":-0.7,"gross_margin":0.25,"demand":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,600.0,1200.0,1800.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0]}],"options":[{"id":"C0","cutover":0,"claimed_mwd":16898400.0,"mwd":0.0,"claimed_std":10720000.0,"mwd_std":0.0,"holding":526572.3076923076,"relocation":40320.0,"rework":0.0},{"id":"C1","cutover":1,"claimed_mwd":15754400.0,"mwd":0.0,"claimed_std":10442000.0,"mwd_std":0.0,"holding":489419.23076923075,"relocation":37800.0,"rework":0.0},{"id":"C2","cutover":2,"claimed_mwd":14610400.0,"mwd":0.0,"claimed_std":10164000.0,"mwd_std":0.0,"holding":455611.5384615384,"relocation":35280.0,"rework":0.0},{"id":"C3","cutover":3,"claimed_mwd":13566800.0,"mwd":0.0,"claimed_std":9438000.0,"mwd_std":0.0,"holding":405018.46153846156,"relocation":32760.0,"rework":0.0},{"id":"C4","cutover":4,"claimed_mwd":12523200.0,"mwd":0.0,"claimed_std":8712000.0,"mwd_std":0.0,"holding":360470.76923076925,"relocation":30240.0,"rework":0.0},{"id":"C5","cutover":5,"claimed_mwd":11479600.0,"mwd":0.0,"claimed_std":7986000.0,"mwd_std":0.0,"holding":319290.7692307692,"relocation":27720.0,"rework":0.0},{"id":"C6","cutover":6,"claimed_mwd":10436000.0,"mwd":0.0,"claimed_std":7260000.0,"mwd_std":0.0,"holding":279633.0769230769,"relocation":25200.0,"rework":0.0},{"id":"C7","cutover":7,"claimed_mwd":9392400.0,"mwd":0.0,"claimed_std":6534000.0,"mwd_std":0.0,"holding":241497.69230769228,"relocation":22680.0,"rework":0.0},{"id":"C8","cutover":8,"claimed_mwd":8348800.0,"mwd":0.0,"claimed_std":5808000.0,"mwd_std":0.0,"holding":206729.99999999997,"relocation":20160.0,"rework":0.0},{"id":"C9","cutover":9,"claimed_mwd":7305200.0,"mwd":0.0,"claimed_std":5082000.0,"mwd_std":0.0,"holding":173484.6153846154,"relocation":17640.0,"rework":0.0},{"id":"C10","cutover":10,"claimed_mwd":6261600.0,"mwd":0.0,"claimed_std":4356000.0,"mwd_std":0.0,"holding":141761.53846153844,"relocation":15120.0,"rework":0.0},{"id":"C11","cutover":11,"claimed_mwd":5218000.0,"mwd":0.0,"claimed_std":3630000.0,"mwd_std":0.0,"holding":113406.15384615384,"relocation":12600.0,"rework":0.0},{"id":"C12","cutover":12,"claimed_mwd":4174400.0,"mwd":0.0,"claimed_std":2904000.0,"mwd_std":0.0,"holding":86573.07692307694,"relocation":10080.0,"rework":0.0},{"id":"C13","cutover":13,"claimed_mwd":3130800.0,"mwd":0.0,"claimed_std":2178000.0,"mwd_std":0.0,"holding":61262.307692307695,"relocation":7560.0,"rework":0.0},{"id":"C14","cutover":14,"claimed_mwd":2087200.0,"mwd":0.0,"claimed_std":1452000.0,"mwd_std":0.0,"holding":39319.23076923077,"relocation":5040.0,"rework":0.0},{"id":"C15","cutover":15,"claimed_mwd":1043600.0,"mwd":0.0,"claimed_std":726000.0,"mwd_std":0.0,"holding":18898.461538461535,"relocation":2520.0,"rework":0.0},{"id":"C16","cutover":16,"claimed_mwd":0.0,"mwd":0.0,"claimed_std":0.0,"mwd_std":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C20","cutover":20,"claimed_mwd":0.0,"mwd":0.0,"claimed_std":0.0,"mwd_std":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C26","cutover":26,"claimed_mwd":0.0,"mwd":0.0,"claimed_std":0.0,"mwd_std":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C39","cutover":39,"claimed_mwd":0.0,"mwd":0.0,"claimed_std":0.0,"mwd_std":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"stay","cutover":null,"claimed_mwd":0.0,"mwd":0.0,"claimed_std":0.0,"mwd_std":0.0,"holding":0.0,"relocation":0.0,"rework":0.0}],"case":{"eol_mwd_year":749746.4677665766,"pipeline_year":834880.0,"conv_cost":25.0,"lt_adder":4.0,"weekly_units":2800.0},"P":{"tariff_cn":0.25,"passthrough":0.85,"absorb_prob":0.1,"reprice_lag_weeks":2.0,"exporter_absorb":0.04,"ramp_weeks":12.0,"target_tolerance":0.97,"catchup_from_week":26.0,"max_promo_discount":0.1,"bu_funds_support":1.0,"points_effect":1.0,"company_holds_target":1.0,"mwd_transferability":0.9,"mwd_cost_rate":0.9,"mwd_cost_rate_std":0.6,"conv_uplift":0.075,"conv_uplift_weeks":26.0,"expedite_usd_per_unit":6.0,"expedite_weak_mult":1.5}},"rb":{"models":[{"model":"P1-14","risk":"normal","bias":0.0,"sigma_mult":1.0,"cut_prob":0.0,"eol":30,"board_value":195.0,"onboard_parts":160.0,"board_extra":35.0,"margin":162.5,"plan":[5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,3750.0,2500.0,1250.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","risk":"risky","bias":0.1,"sigma_mult":1.5,"cut_prob":0.15,"eol":30,"board_value":198.0,"onboard_parts":160.0,"board_extra":38.0,"margin":190.0,"plan":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","risk":"new","bias":0.05,"sigma_mult":1.3,"cut_prob":0.1,"eol":null,"board_value":211.0,"onboard_parts":175.0,"board_extra":36.0,"margin":176.0,"plan":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1500.0,3000.0,4500.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0]}],"region":{"weekly_units":2800.0,"customs":502.85714285714283,"bom":372.7142857142857},"P":{"ramp_base_weeks":13.0,"ramp_min_weeks":6.0,"pull_cost_usd_per_unit":6.0,"pull_cost_growth":0.5,"slip_material_prob":0.4,"slip_material_lo":1.0,"slip_material_hi":4.0,"slip_yield_prob":0.3,"slip_yield_lo":1.0,"slip_yield_hi":3.0,"slip_supplier_prob":0.5,"slip_supplier_prob_campus":0.375,"site_campus":1.0,"slip_supplier_lo":2.0,"slip_supplier_hi":6.0,"slip_cap_weeks":7.0,"gsm_strong":1.0,"gsm_mult_strong":0.6,"gsm_mult_weak":1.4,"yield_start":0.85,"yield_full":0.98,"yield_weeks_to_full":4.0,"scrap_share_of_bom":0.3,"ramp_tariff":0.25,"ramp_runs":1000.0,"board_cover_std_weeks":8.0,"forecast_mape_16w":0.32,"demand_noise":0.1,"capacity_cut_strong":0.35,"capacity_cut_weak":0.8,"capacity_loss_hazard_strong":0.005,"capacity_loss_hazard_weak":0.03,"capacity_loss_strong":0.25,"capacity_loss_weak":0.5,"capacity_loss_weeks":13.0,"smt_flex":0.2,"rush_premium_share":0.25,"rush_premium_min":3.0,"rush_premium_max":10.0,"setup_usd_per_run":1500.0,"lost_share":0.3,"board_runs":400.0,"risk_weight":0.25,"carry":0.2,"migration":0.9,"mwd_cost_rate":0.9},"covers":[1,2,3,4,5,6,7,8],"weeks":52,"ramp_weeks":40},"extra":{"days_cn":31.0,"days_new":37.3,"fg_rate":1.7128195151471268,"fg_week":30}},{"dk":{"weeks":52,"window":16,"models":[{"model":"P1-14","customs_value":841.295,"price":1139.2536458333332,"elasticity":-0.7,"gross_margin":0.25,"demand":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","customs_value":921.295,"price":1250.3289285714284,"elasticity":-0.7,"gross_margin":0.25,"demand":[800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,800.0,600.0,400.0,200.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","customs_value":881.295,"price":1193.137846153846,"elasticity":-0.7,"gross_margin":0.25,"demand":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,600.0,1200.0,1800.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0,2400.0]}],"options":[{"id":"C0","cutover":0,"claimed_mwd":33084416.0,"mwd":0.0,"claimed_std":25614432.0,"mwd_std":0.0,"holding":896736.6423076923,"relocation":40320.0,"rework":0.0},{"id":"C1","cutover":1,"claimed_mwd":30928790.0,"mwd":0.0,"claimed_std":24970598.0,"mwd_std":0.0,"holding":841457.0115384617,"relocation":37800.0,"rework":0.0},{"id":"C2","cutover":2,"claimed_mwd":28773164.0,"mwd":0.0,"claimed_std":24326764.0,"mwd_std":0.0,"holding":792171.7269230771,"relocation":35280.0,"rework":0.0},{"id":"C3","cutover":3,"claimed_mwd":26717938.0,"mwd":0.0,"claimed_std":22589138.0,"mwd_std":0.0,"holding":700724.5230769231,"relocation":32760.0,"rework":0.0},{"id":"C4","cutover":4,"claimed_mwd":24662712.0,"mwd":0.0,"claimed_std":20851512.0,"mwd_std":0.0,"holding":617268.1384615385,"relocation":30240.0,"rework":0.0},{"id":"C5","cutover":5,"claimed_mwd":22607486.0,"mwd":0.0,"claimed_std":19113886.0,"mwd_std":0.0,"holding":541070.3153846153,"relocation":27720.0,"rework":0.0},{"id":"C6","cutover":6,"claimed_mwd":20552260.0,"mwd":0.0,"claimed_std":17376260.0,"mwd_std":0.0,"holding":468340.2346153846,"relocation":25200.0,"rework":0.0},{"id":"C7","cutover":7,"claimed_mwd":18497034.0,"mwd":0.0,"claimed_std":15638634.0,"mwd_std":0.0,"holding":399077.89615384623,"relocation":22680.0,"rework":0.0},{"id":"C8","cutover":8,"claimed_mwd":16441808.0,"mwd":0.0,"claimed_std":13901008.0,"mwd_std":0.0,"holding":337074.11923076917,"relocation":20160.0,"rework":0.0},{"id":"C9","cutover":9,"claimed_mwd":14386582.0,"mwd":0.0,"claimed_std":12163382.0,"mwd_std":0.0,"holding":278538.08461538464,"relocation":17640.0,"rework":0.0},{"id":"C10","cutover":10,"claimed_mwd":12331356.0,"mwd":0.0,"claimed_std":10425756.0,"mwd_std":0.0,"holding":223469.79230769235,"relocation":15120.0,"rework":0.0},{"id":"C11","cutover":11,"claimed_mwd":10276130.0,"mwd":0.0,"claimed_std":8688130.0,"mwd_std":0.0,"holding":175660.0615384615,"relocation":12600.0,"rework":0.0},{"id":"C12","cutover":12,"claimed_mwd":8220904.0,"mwd":0.0,"claimed_std":6950504.0,"mwd_std":0.0,"holding":131318.0730769231,"relocation":10080.0,"rework":0.0},{"id":"C13","cutover":13,"claimed_mwd":6165678.0,"mwd":0.0,"claimed_std":5212878.0,"mwd_std":0.0,"holding":90443.82692307695,"relocation":7560.0,"rework":0.0},{"id":"C14","cutover":14,"claimed_mwd":4110452.0,"mwd":0.0,"claimed_std":3475252.0,"mwd_std":0.0,"holding":56828.1423076923,"relocation":5040.0,"rework":0.0},{"id":"C15","cutover":15,"claimed_mwd":2055226.0,"mwd":0.0,"claimed_std":1737626.0,"mwd_std":0.0,"holding":26680.199999999993,"relocation":2520.0,"rework":0.0},{"id":"C16","cutover":16,"claimed_mwd":0.0,"mwd":0.0,"claimed_std":0.0,"mwd_std":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C20","cutover":20,"claimed_mwd":0.0,"mwd":0.0,"claimed_std":0.0,"mwd_std":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C26","cutover":26,"claimed_mwd":0.0,"mwd":0.0,"claimed_std":0.0,"mwd_std":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"C39","cutover":39,"claimed_mwd":0.0,"mwd":0.0,"claimed_std":0.0,"mwd_std":0.0,"holding":0.0,"relocation":0.0,"rework":0.0},{"id":"stay","cutover":null,"claimed_mwd":0.0,"mwd":0.0,"claimed_std":0.0,"mwd_std":0.0,"holding":0.0,"relocation":0.0,"rework":0.0}],"case":{"eol_mwd_year":749746.4677665766,"pipeline_year":1644180.8,"conv_cost":25.0,"lt_adder":4.0,"weekly_units":2800.0},"P":{"tariff_cn":0.25,"passthrough":0.85,"absorb_prob":0.1,"reprice_lag_weeks":2.0,"exporter_absorb":0.04,"ramp_weeks":12.0,"target_tolerance":0.97,"catchup_from_week":26.0,"max_promo_discount":0.1,"bu_funds_support":1.0,"points_effect":1.0,"company_holds_target":1.0,"mwd_transferability":0.9,"mwd_cost_rate":0.9,"mwd_cost_rate_std":0.6,"conv_uplift":0.075,"conv_uplift_weeks":26.0,"expedite_usd_per_unit":6.0,"expedite_weak_mult":1.5}},"rb":{"models":[{"model":"P1-14","risk":"normal","bias":0.0,"sigma_mult":1.0,"cut_prob":0.0,"eol":30,"board_value":425.64,"onboard_parts":390.64,"board_extra":35.0,"margin":284.8134114583333,"plan":[5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,5000.0,3750.0,2500.0,1250.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P1-16","risk":"risky","bias":0.1,"sigma_mult":1.5,"cut_prob":0.15,"eol":30,"board_value":428.64,"onboard_parts":390.64,"board_extra":38.0,"margin":312.5822321428571,"plan":[2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,2000.0,1500.0,1000.0,500.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"model":"P2-14","risk":"new","bias":0.05,"sigma_mult":1.3,"cut_prob":0.1,"eol":null,"board_value":441.64,"onboard_parts":405.64,"board_extra":36.0,"margin":298.2844615384615,"plan":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1500.0,3000.0,4500.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0,6000.0]}],"region":{"weekly_units":2800.0,"customs":864.1521428571428,"bom":734.0092857142857},"P":{"ramp_base_weeks":13.0,"ramp_min_weeks":6.0,"pull_cost_usd_per_unit":6.0,"pull_cost_growth":0.5,"slip_material_prob":0.4,"slip_material_lo":1.0,"slip_material_hi":4.0,"slip_yield_prob":0.3,"slip_yield_lo":1.0,"slip_yield_hi":3.0,"slip_supplier_prob":0.5,"slip_supplier_prob_campus":0.375,"site_campus":1.0,"slip_supplier_lo":2.0,"slip_supplier_hi":6.0,"slip_cap_weeks":7.0,"gsm_strong":1.0,"gsm_mult_strong":0.6,"gsm_mult_weak":1.4,"yield_start":0.85,"yield_full":0.98,"yield_weeks_to_full":4.0,"scrap_share_of_bom":0.3,"ramp_tariff":0.25,"ramp_runs":1000.0,"board_cover_std_weeks":8.0,"forecast_mape_16w":0.32,"demand_noise":0.1,"capacity_cut_strong":0.35,"capacity_cut_weak":0.8,"capacity_loss_hazard_strong":0.005,"capacity_loss_hazard_weak":0.03,"capacity_loss_strong":0.25,"capacity_loss_weak":0.5,"capacity_loss_weeks":13.0,"smt_flex":0.2,"rush_premium_share":0.25,"rush_premium_min":3.0,"rush_premium_max":10.0,"setup_usd_per_run":1500.0,"lost_share":0.3,"board_runs":400.0,"risk_weight":0.25,"carry":0.2,"migration":0.9,"mwd_cost_rate":0.9},"covers":[1,2,3,4,5,6,7,8],"weeks":52,"ramp_weeks":40},"extra":{"days_cn":31.0,"days_new":37.3,"fg_rate":1.7128195151471268,"fg_week":30}}],"cats":["tariff","lost_margin","promotion","transfer","mwd","ramp","expedite","chain","conversion","fg_eol"],"memory":{"quarter":"2026Q4","dram":6.766,"nand":4.733,"default":0,"delta_p1_14":361.29499999999996}};
 const M$ = (v, d = 2) => (v < 0 ? '−' : '') + '$' + R.num(Math.abs(v) / 1e6, d) + 'M';
 const saved = R.load();
 const P50 = D.inputs[0].dk.P, P60 = D.inputs[0].rb.P;
@@ -806,16 +838,21 @@ const CTL = [
   ['target_tolerance', 'Fiscal-year target as a share of the plan', 0.9, 1.05, 0.005, 'pct1', 5],
   ['max_promo_discount', 'Largest catch-up discount', 0, 0.3, 0.005, 'pct1', 5],
   ['mwd_transferability', 'Share of claimed MWD that migrates', 0.45, 0.95, 0.01, 'pct', 5],
-  ['mwd_cost_rate', 'What $1 of MWD costs the BU', 0, 1.5, 0.05, 'usd2', 5],
-  ['conv_uplift', 'New-site conversion uplift', 0, 0.2, 0.005, 'pct1', 5],
+  ['mwd_cost_rate', 'What $1 of custom MWD costs the BU', 0, 1.5, 0.05, 'usd2', 5],
+  ['mwd_cost_rate_std', 'What $1 of standard-part MWD costs the BU', 0, 1.5, 0.05, 'usd2', 5],
+  ['conv_uplift', 'New-site conversion uplift during the ramp', 0, 0.2, 0.005, 'pct1', 5],
+  ['conv_uplift_weeks', 'Weeks until the uplift is gone', 1, 52, 1, 'wk', 5],
+  ['expedite_weak_mult', 'Expediting with a weak GSM, × strong', 1, 3, 0.1, 'x', 5],
   [null, 'Ramp (Module 6)'],
   ['ramp_base_weeks', 'Base ramp, trial build to full volume', 4, 30, 1, 'wk', 6],
   ['ramp_min_weeks', 'Fastest ramp when pulled in', 2, 20, 1, 'wk', 6],
   ['pull_cost_usd_per_unit', 'Cost per week pulled, per weekly unit', 0, 60, 1, 'usd', 6],
-  ['slip_supplier_prob', 'Chance supplier readiness slips', 0, 1, 0.05, 'pct', 6],
+  ['slip_supplier_prob_campus', 'Chance supplier readiness slips (ODM campus)', 0, 1, 0.025, 'pct1', 6],
+  ['slip_cap_weeks', 'Total slip capped at', 1, 15, 1, 'wk', 6],
+  ['yield_weeks_to_full', 'Weeks to full yield', 1, 12, 1, 'wk', 6],
   ['slip_material_prob', 'Chance material rhythm slips', 0, 1, 0.05, 'pct', 6],
 ];
-const fmt = (k, v) => ({ pct: () => R.pct(v), pct1: () => R.pct(v, 1), wk: () => R.num(v) + ' wk', usd: () => '$' + R.num(v), usd2: () => '$' + R.num(v, 2) }[k])();
+const fmt = (k, v) => ({ pct: () => R.pct(v), pct1: () => R.pct(v, 1), wk: () => R.num(v) + ' wk', usd: () => '$' + R.num(v), usd2: () => '$' + R.num(v, 2), x: () => R.num(v, 1) + '×' }[k])();
 const S = { t: 0.25, g: 1, m: D.memory.default, f: 'company', P5: { ...P50 }, P6: { ...P60 } };
 if (Number.isFinite(saved.t)) S.t = saved.t;
 if (saved.g === 0 || saved.g === 1) S.g = saved.g;

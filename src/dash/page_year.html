@@ -107,7 +107,7 @@ details.more > summary { cursor: pointer; font: 500 12.5px var(--f-body); color:
   <footer class="notes">
     <p><b>How the year is replayed.</b> Weekly US units per model come from Module 1's lifecycle curves. From the repricing week the channel price rises by the negotiated pass-through × tariff × the share of the week's units still made in China; units follow a constant elasticity (Module 5). After the cutover, the new site's share follows the median S-curve of Module 6's Monte Carlo, with the pull-in Module 6 recommends at this tariff and GSM. From week 26 a channel discount, up to the cap, closes the gap to the fiscal-year target (R42, R45). Costs: the tariff the company absorbs (paid on China-made units, less what the price recovers), gross margin on units lost to the price rise, the catch-up discount, holding, relocation and rework of the plans cancelled at the cutover (Module 2), the physical MWD at the year-end reconciliation (R8), pull-in and yield scrap during the ramp (Module 6), parts expediting at the cutover, the longer chain week by week (end-of-life MWD of the longer window and pipeline carrying, Module 3), the new site's conversion uplift, and the extra finished goods at platform P1's end of life from the longer transit (Module 4 linkage × extra transit, Module 7 routes). With a chance the company ends up absorbing the tariff, every cost is the expected value over the two cases (R44).</p>
     <p><b>Picks.</b> Company: the lowest company cost among the options that make the target. BU: the lowest MWD as the BU weighs it (claimed MWD less the share that migrates, plus the longer window's end-of-life MWD, at what a dollar of MWD costs it) plus the price points it funds, among the options that make the target (R43, R45). These are Module 5's rules; the ramp is Module 6's instead of a straight line, so the picks can differ by a few weeks from the <a href="demand.html">Demand &amp; KPI</a> page.</p>
-    <p><b>Status.</b> Composition only: every number comes from Modules 1–7 and their sources (<a href="rules.html">rules register</a>). A weak GSM doubles the parts expediting per unit (Module 3) and slows the ramp (Module 6). The page runs <code>src/dash/yr_engine.js</code>, a port of <code>src/year_run.py</code> built on the Module 5 and 6 engines; <code>tests/test_yr_parity.py</code> checks both give the same numbers.</p>
+    <p><b>Status.</b> Composition only: every number comes from Modules 1–7 and their sources (<a href="rules.html">rules register</a>). A weak GSM makes parts expediting 1.5× dearer per unit (Q51) and slows the ramp (Module 6); the new site's conversion uplift fades to nothing over about six months (Q51); MWD left after migration costs the BU about $0.60 per dollar of standard parts and $0.90 of custom ones (Q52). The page runs <code>src/dash/yr_engine.js</code>, a port of <code>src/year_run.py</code> built on the Module 5 and 6 engines; <code>tests/test_yr_parity.py</code> checks both give the same numbers.</p>
   </footer>
 </main>
 <script>/*__JS__*/</script>
@@ -128,16 +128,21 @@ const CTL = [
   ['target_tolerance', 'Fiscal-year target as a share of the plan', 0.9, 1.05, 0.005, 'pct1', 5],
   ['max_promo_discount', 'Largest catch-up discount', 0, 0.3, 0.005, 'pct1', 5],
   ['mwd_transferability', 'Share of claimed MWD that migrates', 0.45, 0.95, 0.01, 'pct', 5],
-  ['mwd_cost_rate', 'What $1 of MWD costs the BU', 0, 1.5, 0.05, 'usd2', 5],
-  ['conv_uplift', 'New-site conversion uplift', 0, 0.2, 0.005, 'pct1', 5],
+  ['mwd_cost_rate', 'What $1 of custom MWD costs the BU', 0, 1.5, 0.05, 'usd2', 5],
+  ['mwd_cost_rate_std', 'What $1 of standard-part MWD costs the BU', 0, 1.5, 0.05, 'usd2', 5],
+  ['conv_uplift', 'New-site conversion uplift during the ramp', 0, 0.2, 0.005, 'pct1', 5],
+  ['conv_uplift_weeks', 'Weeks until the uplift is gone', 1, 52, 1, 'wk', 5],
+  ['expedite_weak_mult', 'Expediting with a weak GSM, × strong', 1, 3, 0.1, 'x', 5],
   [null, 'Ramp (Module 6)'],
   ['ramp_base_weeks', 'Base ramp, trial build to full volume', 4, 30, 1, 'wk', 6],
   ['ramp_min_weeks', 'Fastest ramp when pulled in', 2, 20, 1, 'wk', 6],
   ['pull_cost_usd_per_unit', 'Cost per week pulled, per weekly unit', 0, 60, 1, 'usd', 6],
-  ['slip_supplier_prob', 'Chance supplier readiness slips', 0, 1, 0.05, 'pct', 6],
+  ['slip_supplier_prob_campus', 'Chance supplier readiness slips (ODM campus)', 0, 1, 0.025, 'pct1', 6],
+  ['slip_cap_weeks', 'Total slip capped at', 1, 15, 1, 'wk', 6],
+  ['yield_weeks_to_full', 'Weeks to full yield', 1, 12, 1, 'wk', 6],
   ['slip_material_prob', 'Chance material rhythm slips', 0, 1, 0.05, 'pct', 6],
 ];
-const fmt = (k, v) => ({ pct: () => R.pct(v), pct1: () => R.pct(v, 1), wk: () => R.num(v) + ' wk', usd: () => '$' + R.num(v), usd2: () => '$' + R.num(v, 2) }[k])();
+const fmt = (k, v) => ({ pct: () => R.pct(v), pct1: () => R.pct(v, 1), wk: () => R.num(v) + ' wk', usd: () => '$' + R.num(v), usd2: () => '$' + R.num(v, 2), x: () => R.num(v, 1) + '×' }[k])();
 const S = { t: 0.25, g: 1, m: D.memory.default, f: 'company', P5: { ...P50 }, P6: { ...P60 } };
 if (Number.isFinite(saved.t)) S.t = saved.t;
 if (saved.g === 0 || saved.g === 1) S.g = saved.g;

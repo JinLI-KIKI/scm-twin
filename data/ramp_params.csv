@@ -1,23 +1,26 @@
 key,value,status,note
 ramp_base_weeks,13,PRACTITIONER,Weeks from the first trial build at the new site to full volume: about three months (Q12)
 ramp_min_weeks,6,PLACEHOLDER,Fastest ramp when it is pulled in (Q12: it can be pulled in); slips still come on top
-pull_cost_usd_per_unit,6,PLACEHOLDER,"Cost of pulling the ramp in by one week, per unit of the region's weekly volume: air freight for parts, overtime, extra engineers (Module 3 expediting, strong GSM)"
-pull_cost_growth,0.5,PLACEHOLDER,Each further week pulled in costs this much more than the one before
-slip_material_prob,0.4,PRACTITIONER (gate) / PLACEHOLDER (size),Chance the material rhythm slips the ramp: parts ordered on the new site's longer lead time (+4 weeks) arrive late or out of step (Q12)
+pull_cost_usd_per_unit,6,PRACTITIONER (Q48),"Cost per unit brought forward by the first week pulled in (air freight for parts, overtime, extra engineers); only the volume pulled forward is paid for. About 24% of the $25 China assembly cost: for other price points scale it with the assembly cost"
+pull_cost_growth,0.5,PRACTITIONER (Q48),"Each further week pulled in costs this much more per unit, compounding: $6, $9, $13.50, $20.25 for weeks 1-4"
+slip_material_prob,0.4,"PRACTITIONER (gate, Q12; size, Q47)","Chance the material rhythm slips the ramp: parts ordered on the new site's longer lead time (+4 weeks) arrive late or out of step (Q12; sizes judged reasonable, on the conservative side, Q47)"
 slip_material_lo,1,PLACEHOLDER,"Shortest slip from material rhythm, weeks"
 slip_material_hi,4,PLACEHOLDER,"Longest slip from material rhythm, weeks"
-slip_yield_prob,0.3,PRACTITIONER (gate) / PLACEHOLDER (size),Chance that yield learning slips the ramp (Q12)
+slip_yield_prob,0.3,"PRACTITIONER (gate, Q12; size, Q47)","Chance that yield learning slips the ramp (Q12; sizes judged reasonable, on the conservative side, Q47)"
 slip_yield_lo,1,PLACEHOLDER,"Shortest slip from yield, weeks"
 slip_yield_hi,3,PLACEHOLDER,"Longest slip from yield, weeks"
-slip_supplier_prob,0.5,PRACTITIONER (gate) / WEB (context),"Chance that supplier readiness slips the ramp: local supply base and hubs not ready (Q12; Vietnam's electronics localization rate about 36%, Vietnam Briefing 2021)"
+slip_supplier_prob,0.5,PRACTITIONER (Q47) / WEB (context),"Chance supplier readiness slips the ramp at a new plant (Q12, Q47; Vietnam's electronics localization rate about 36%, Vietnam Briefing 2021)"
+slip_supplier_prob_campus,0.375,PRACTITIONER (Q47),"Same on an existing ODM campus, whose supply base is partly in place: 35-40% (Q47)"
+site_campus,1,"PRACTITIONER (Q29, Q47)","1 = the new site is a line on an existing ODM campus (the default in Module 7), 0 = a new or bought plant"
 slip_supplier_lo,2,PLACEHOLDER,"Shortest slip from supplier readiness, weeks"
 slip_supplier_hi,6,PLACEHOLDER,"Longest slip from supplier readiness, weeks"
+slip_cap_weeks,7,PRACTITIONER (Q47),Overlapping slips do not all add up: the total slip is capped at 6-8 weeks (Q47)
 gsm_strong,1,PRACTITIONER,"1 = strong GSM (R19, R21): slips less likely and the ODM keeps SMT capacity stable; 0 = weak"
 gsm_mult_strong,0.6,PLACEHOLDER,Slip chances times this with a strong GSM
 gsm_mult_weak,1.4,PLACEHOLDER,Slip chances times this with a weak GSM
-yield_start,0.85,PLACEHOLDER,First-pass yield at the first trial build
-yield_full,0.98,PLACEHOLDER,First-pass yield at full volume
-yield_tau_weeks,4,PLACEHOLDER,Weeks for the yield gap to fall to about a third (learning curve)
+yield_start,0.85,PRACTITIONER (Q48),First-pass yield at the first trial build
+yield_full,0.98,PRACTITIONER (Q48),First-pass yield at full volume
+yield_weeks_to_full,4,PRACTITIONER (Q48),"Weeks from the first build to full yield along 85% -> 91% -> 95% -> 97% -> 98%: about 4 for a mature product moving lines, 6-8 for a new product or new suppliers (Q48)"
 scrap_share_of_bom,0.3,PLACEHOLDER,"Cost of a unit that fails first pass, as a share of its BOM value, after rework and salvage (R16: yield loss consumes material)"
 ramp_tariff,0.25,PLACEHOLDER,"Extra US tariff on China-made units while China covers the gap (scenario, as Module 5)"
 ramp_runs,1000,DESIGN,Monte Carlo runs for the ramp
@@ -31,9 +34,11 @@ capacity_loss_hazard_weak,0.03,PRACTITIONER (direction Q38) / PLACEHOLDER (size)
 capacity_loss_strong,0.25,PLACEHOLDER,"Share of the model's SMT capacity, builds and rush, lost while the line is with another customer, strong GSM"
 capacity_loss_weak,0.5,PLACEHOLDER,Same with a weak GSM
 capacity_loss_weeks,13,PLACEHOLDER,"Weeks until the capacity comes back: about one quarter, to the next capacity allocation (open)"
-smt_flex,0.20,PLACEHOLDER,"Rush SMT capacity the ODM can add during a run, share of the planned volume of the run's weeks"
-rush_premium_usd,8,PLACEHOLDER,Extra cost per board built in a rush run
-setup_usd_per_run,1500,PLACEHOLDER,Changeover and setup cost per SMT run of a model
-lost_share,0.5,PLACEHOLDER,Share of units short of boards that are lost; the rest ship late
+smt_flex,0.20,PRACTITIONER (Q49),"Rush SMT capacity the ODM can add during a run, share of the planned volume of the run's weeks (Q49)"
+rush_premium_share,0.25,PRACTITIONER (Q49),"Extra cost of a rush board as a share of the board's own price (PCB, components and SMT, without CPU and memory): 20-30% (Q49)"
+rush_premium_min,3,PRACTITIONER (Q49),"Floor of the rush premium per board, USD"
+rush_premium_max,10,PRACTITIONER (Q49),"Cap of the rush premium per board, USD"
+setup_usd_per_run,1500,PRACTITIONER (Q49),"Changeover and setup cost per SMT run of a model, medium complexity (Q49)"
+lost_share,0.3,PRACTITIONER (direction Q49) / PLACEHOLDER (size),Share of units short of boards that are lost; the rest ship late. 0.5 is the stress case (Q49); contract (B2B) orders mostly ship late
 board_runs,400,DESIGN,Monte Carlo runs for the board-cover choice
 risk_weight,0.25,DESIGN,"Weight on the bad case when picking the cover: score = (1 - w) x expected cost + w x P90; 0 picks on the average alone, 1 on the bad case alone"

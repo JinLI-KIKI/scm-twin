@@ -1,69 +1,69 @@
 == Part A, new-site ramp: base 13 weeks, 25% tariff on what China still builds, strong GSM, 1000 runs
-  slip chance: material 24% (mean 0.6 wk), yield 18% (mean 0.4 wk), supplier 31% (mean 1.2 wk)
+  slip chance: material 24% (mean 0.6 wk), yield 18% (mean 0.4 wk), supplier 23% (mean 0.9 wk)
   pull  T mean   P10   P50   P90    leakage    scrap   pull $      total
-     0    15.2  13.0  14.7  18.9      2.86M    0.24M    0.00M      3.10M
-     1    14.2  12.0  13.7  17.9      2.68M    0.25M    0.02M      2.95M
-     2    13.2  11.0  12.7  16.9      2.51M    0.25M    0.04M      2.80M
-     3    12.2  10.0  11.7  15.9      2.33M    0.26M    0.08M      2.67M
-     4    11.2   9.0  10.7  14.9      2.15M    0.27M    0.12M      2.54M
-     5    10.2   8.0   9.7  13.9      1.98M    0.28M    0.17M      2.42M
-     6     9.2   7.0   8.7  12.9      1.80M    0.29M    0.23M      2.32M
-     7     8.2   6.0   7.7  11.9      1.63M    0.30M    0.29M      2.22M  <- best
+     0    14.9  13.0  14.2  18.4      2.80M    0.21M    0.00M      3.00M
+     1    13.9  12.0  13.2  17.4      2.62M    0.21M    0.01M      2.84M
+     2    12.9  11.0  12.2  16.4      2.44M    0.21M    0.02M      2.68M
+     3    11.9  10.0  11.2  15.4      2.27M    0.22M    0.04M      2.52M
+     4    10.9   9.0  10.2  14.4      2.09M    0.22M    0.07M      2.38M
+     5     9.9   8.0   9.2  13.4      1.92M    0.22M    0.11M      2.25M
+     6     8.9   7.0   8.2  12.4      1.74M    0.23M    0.17M      2.14M
+     7     7.9   6.0   7.2  11.4      1.56M    0.23M    0.27M      2.07M  <- best
 
 == Part B, board-build cover per SMT run (standard 8 weeks), strong GSM, 400 runs, pick on 75% expected + 25% P90
   P1-14 (normal): recommended cover 6 weeks
-    cover 1: expected $1,611k (P90 $1,811k, score $1,661k) · capacity lost in 11% of years · setups 45k · rush 224k · lost 1,343k · carry 0k · stranded 0k (0 boards)
-    cover 2: expected $1,130k (P90 $1,363k, score $1,188k) · capacity lost in 9% of years · setups 22k · rush 220k · lost 864k · carry 24k · stranded 0k (0 boards)
-    cover 3: expected $762k (P90 $990k, score $819k) · capacity lost in 8% of years · setups 15k · rush 207k · lost 482k · carry 58k · stranded 0k (0 boards)
-    cover 4: expected $526k (P90 $712k, score $572k) · capacity lost in 7% of years · setups 12k · rush 180k · lost 233k · carry 101k · stranded 0k (0 boards)
-    cover 5: expected $401k (P90 $530k, score $433k) · capacity lost in 5% of years · setups 9k · rush 142k · lost 97k · carry 152k · stranded 1k (8 boards)
-    cover 6: expected $368k (P90 $465k, score $392k) · capacity lost in 4% of years · setups 8k · rush 98k · lost 35k · carry 215k · stranded 12k (75 boards)
-    cover 7: expected $382k (P90 $429k, score $394k) · capacity lost in 2% of years · setups 7k · rush 55k · lost 12k · carry 293k · stranded 14k (86 boards)
-    cover 8: expected $507k (P90 $762k, score $571k) · capacity lost in 0% of years · setups 6k · rush 32k · lost 1k · carry 363k · stranded 105k (651 boards)
-  P1-16 (risky): recommended cover 6 weeks
-    cover 1: expected $676k (P90 $901k, score $732k) · capacity lost in 12% of years · setups 42k · rush 80k · lost 553k · carry 0k · stranded 0k (0 boards)
-    cover 2: expected $465k (P90 $660k, score $514k) · capacity lost in 11% of years · setups 21k · rush 75k · lost 348k · carry 12k · stranded 10k (58 boards)
-    cover 3: expected $333k (P90 $562k, score $391k) · capacity lost in 9% of years · setups 14k · rush 67k · lost 199k · carry 29k · stranded 25k (153 boards)
-    cover 4: expected $285k (P90 $654k, score $378k) · capacity lost in 7% of years · setups 11k · rush 53k · lost 105k · carry 54k · stranded 62k (378 boards)
-    cover 5: expected $273k (P90 $608k, score $357k) · capacity lost in 6% of years · setups 9k · rush 38k · lost 45k · carry 82k · stranded 99k (607 boards)
-    cover 6: expected $291k (P90 $532k, score $352k) · capacity lost in 4% of years · setups 7k · rush 23k · lost 19k · carry 114k · stranded 128k (782 boards)
-    cover 7: expected $356k (P90 $759k, score $456k) · capacity lost in 2% of years · setups 7k · rush 14k · lost 7k · carry 154k · stranded 173k (1,058 boards)
-    cover 8: expected $465k (P90 $774k, score $542k) · capacity lost in 0% of years · setups 6k · rush 9k · lost 3k · carry 190k · stranded 257k (1,569 boards)
+    cover 1: expected $1,095k (P90 $1,217k, score $1,126k) · capacity lost in 11% of years · setups 45k · rush 245k · lost 806k · carry 0k · stranded 0k (0 boards)
+    cover 2: expected $805k (P90 $947k, score $841k) · capacity lost in 9% of years · setups 22k · rush 240k · lost 518k · carry 24k · stranded 0k (0 boards)
+    cover 3: expected $588k (P90 $727k, score $623k) · capacity lost in 8% of years · setups 15k · rush 226k · lost 289k · carry 58k · stranded 0k (0 boards)
+    cover 4: expected $449k (P90 $565k, score $478k) · capacity lost in 7% of years · setups 12k · rush 197k · lost 140k · carry 101k · stranded 0k (0 boards)
+    cover 5: expected $376k (P90 $456k, score $396k) · capacity lost in 5% of years · setups 9k · rush 156k · lost 58k · carry 152k · stranded 1k (8 boards)
+    cover 6: expected $363k (P90 $440k, score $382k) · capacity lost in 4% of years · setups 8k · rush 108k · lost 21k · carry 215k · stranded 12k (75 boards)
+    cover 7: expected $382k (P90 $428k, score $394k) · capacity lost in 2% of years · setups 7k · rush 61k · lost 7k · carry 293k · stranded 14k (86 boards)
+    cover 8: expected $510k (P90 $763k, score $573k) · capacity lost in 0% of years · setups 6k · rush 36k · lost 1k · carry 363k · stranded 105k (651 boards)
+  P1-16 (risky): recommended cover 3 weeks
+    cover 1: expected $469k (P90 $608k, score $504k) · capacity lost in 12% of years · setups 42k · rush 95k · lost 332k · carry 0k · stranded 0k (0 boards)
+    cover 2: expected $341k (P90 $475k, score $374k) · capacity lost in 11% of years · setups 21k · rush 90k · lost 209k · carry 12k · stranded 10k (58 boards)
+    cover 3: expected $266k (P90 $401k, score $300k) · capacity lost in 9% of years · setups 14k · rush 79k · lost 119k · carry 29k · stranded 25k (153 boards)
+    cover 4: expected $253k (P90 $499k, score $315k) · capacity lost in 7% of years · setups 11k · rush 63k · lost 63k · carry 54k · stranded 62k (378 boards)
+    cover 5: expected $262k (P90 $459k, score $311k) · capacity lost in 6% of years · setups 9k · rush 45k · lost 27k · carry 82k · stranded 99k (607 boards)
+    cover 6: expected $288k (P90 $512k, score $344k) · capacity lost in 4% of years · setups 7k · rush 28k · lost 11k · carry 114k · stranded 128k (782 boards)
+    cover 7: expected $356k (P90 $754k, score $455k) · capacity lost in 2% of years · setups 7k · rush 17k · lost 4k · carry 154k · stranded 173k (1,058 boards)
+    cover 8: expected $465k (P90 $775k, score $543k) · capacity lost in 0% of years · setups 6k · rush 11k · lost 2k · carry 190k · stranded 257k (1,569 boards)
   P2-14 (new): recommended cover 5 weeks
-    cover 1: expected $1,654k (P90 $2,046k, score $1,752k) · capacity lost in 10% of years · setups 37k · rush 215k · lost 1,401k · carry 0k · stranded 0k (0 boards)
-    cover 2: expected $1,183k (P90 $1,579k, score $1,282k) · capacity lost in 9% of years · setups 19k · rush 207k · lost 906k · carry 30k · stranded 21k (121 boards)
-    cover 3: expected $849k (P90 $1,253k, score $950k) · capacity lost in 7% of years · setups 14k · rush 187k · lost 531k · carry 71k · stranded 46k (265 boards)
-    cover 4: expected $664k (P90 $1,056k, score $762k) · capacity lost in 6% of years · setups 10k · rush 157k · lost 286k · carry 128k · stranded 83k (476 boards)
-    cover 5: expected $559k (P90 $824k, score $625k) · capacity lost in 4% of years · setups 9k · rush 119k · lost 135k · carry 188k · stranded 109k (625 boards)
-    cover 6: expected $644k (P90 $693k, score $656k) · capacity lost in 2% of years · setups 7k · rush 77k · lost 50k · carry 275k · stranded 235k (1,351 boards)
-    cover 7: expected $741k (P90 $593k, score $704k) · capacity lost in 1% of years · setups 7k · rush 48k · lost 23k · carry 350k · stranded 313k (1,796 boards)
-    cover 8: expected $768k (P90 $647k, score $738k) · capacity lost in 0% of years · setups 6k · rush 33k · lost 10k · carry 443k · stranded 275k (1,582 boards)
+    cover 1: expected $1,120k (P90 $1,362k, score $1,181k) · capacity lost in 10% of years · setups 37k · rush 242k · lost 841k · carry 0k · stranded 0k (0 boards)
+    cover 2: expected $846k (P90 $1,115k, score $913k) · capacity lost in 9% of years · setups 19k · rush 233k · lost 543k · carry 30k · stranded 21k (121 boards)
+    cover 3: expected $661k (P90 $912k, score $723k) · capacity lost in 7% of years · setups 14k · rush 211k · lost 319k · carry 71k · stranded 46k (265 boards)
+    cover 4: expected $569k (P90 $789k, score $624k) · capacity lost in 6% of years · setups 10k · rush 176k · lost 171k · carry 128k · stranded 83k (476 boards)
+    cover 5: expected $520k (P90 $661k, score $555k) · capacity lost in 4% of years · setups 9k · rush 134k · lost 81k · carry 188k · stranded 109k (625 boards)
+    cover 6: expected $634k (P90 $570k, score $618k) · capacity lost in 2% of years · setups 7k · rush 86k · lost 30k · carry 275k · stranded 235k (1,351 boards)
+    cover 7: expected $737k (P90 $532k, score $686k) · capacity lost in 1% of years · setups 7k · rush 54k · lost 14k · carry 350k · stranded 313k (1,796 boards)
+    cover 8: expected $768k (P90 $593k, score $724k) · capacity lost in 0% of years · setups 6k · rush 37k · lost 6k · carry 443k · stranded 275k (1,582 boards)
 
 == Part B, board-build cover per SMT run (standard 8 weeks), weak GSM, 400 runs, pick on 75% expected + 25% P90
   P1-14 (normal): recommended cover 7 weeks
-    cover 1: expected $6,676k (P90 $7,510k, score $6,885k) · capacity lost in 56% of years · setups 45k · rush 203k · lost 6,428k · carry 0k · stranded 0k (0 boards)
-    cover 2: expected $5,483k (P90 $6,557k, score $5,751k) · capacity lost in 48% of years · setups 22k · rush 207k · lost 5,253k · carry 0k · stranded 0k (0 boards)
-    cover 3: expected $4,293k (P90 $5,596k, score $4,619k) · capacity lost in 40% of years · setups 15k · rush 210k · lost 4,053k · carry 15k · stranded 0k (0 boards)
-    cover 4: expected $3,125k (P90 $4,665k, score $3,510k) · capacity lost in 32% of years · setups 12k · rush 212k · lost 2,858k · carry 42k · stranded 0k (0 boards)
-    cover 5: expected $1,931k (P90 $3,504k, score $2,324k) · capacity lost in 26% of years · setups 9k · rush 214k · lost 1,622k · carry 86k · stranded 0k (0 boards)
-    cover 6: expected $968k (P90 $2,673k, score $1,394k) · capacity lost in 18% of years · setups 8k · rush 193k · lost 617k · carry 151k · stranded 0k (0 boards)
-    cover 7: expected $523k (P90 $581k, score $537k) · capacity lost in 9% of years · setups 8k · rush 108k · lost 157k · carry 248k · stranded 2k (11 boards)
-    cover 8: expected $507k (P90 $762k, score $571k) · capacity lost in 0% of years · setups 6k · rush 32k · lost 1k · carry 363k · stranded 105k (651 boards)
+    cover 1: expected $4,124k (P90 $4,610k, score $4,245k) · capacity lost in 56% of years · setups 45k · rush 222k · lost 3,857k · carry 0k · stranded 0k (0 boards)
+    cover 2: expected $3,401k (P90 $4,027k, score $3,558k) · capacity lost in 48% of years · setups 22k · rush 227k · lost 3,152k · carry 0k · stranded 0k (0 boards)
+    cover 3: expected $2,692k (P90 $3,450k, score $2,881k) · capacity lost in 40% of years · setups 15k · rush 230k · lost 2,432k · carry 15k · stranded 0k (0 boards)
+    cover 4: expected $2,001k (P90 $2,892k, score $2,224k) · capacity lost in 32% of years · setups 12k · rush 232k · lost 1,715k · carry 42k · stranded 0k (0 boards)
+    cover 5: expected $1,303k (P90 $2,215k, score $1,531k) · capacity lost in 26% of years · setups 9k · rush 234k · lost 973k · carry 86k · stranded 0k (0 boards)
+    cover 6: expected $739k (P90 $1,733k, score $988k) · capacity lost in 18% of years · setups 8k · rush 211k · lost 370k · carry 151k · stranded 0k (0 boards)
+    cover 7: expected $470k (P90 $503k, score $478k) · capacity lost in 9% of years · setups 8k · rush 119k · lost 94k · carry 248k · stranded 2k (11 boards)
+    cover 8: expected $510k (P90 $763k, score $573k) · capacity lost in 0% of years · setups 6k · rush 36k · lost 1k · carry 363k · stranded 105k (651 boards)
   P1-16 (risky): recommended cover 7 weeks
-    cover 1: expected $2,905k (P90 $3,468k, score $3,045k) · capacity lost in 52% of years · setups 42k · rush 77k · lost 2,786k · carry 0k · stranded 0k (0 boards)
-    cover 2: expected $2,367k (P90 $3,014k, score $2,529k) · capacity lost in 47% of years · setups 21k · rush 77k · lost 2,269k · carry 0k · stranded 0k (0 boards)
-    cover 3: expected $1,829k (P90 $2,576k, score $2,016k) · capacity lost in 41% of years · setups 14k · rush 78k · lost 1,724k · carry 7k · stranded 6k (36 boards)
-    cover 4: expected $1,296k (P90 $2,084k, score $1,493k) · capacity lost in 34% of years · setups 11k · rush 79k · lost 1,157k · carry 22k · stranded 26k (162 boards)
-    cover 5: expected $792k (P90 $1,575k, score $988k) · capacity lost in 28% of years · setups 9k · rush 76k · lost 617k · carry 44k · stranded 46k (282 boards)
-    cover 6: expected $431k (P90 $1,207k, score $625k) · capacity lost in 19% of years · setups 7k · rush 58k · lost 237k · carry 74k · stranded 55k (333 boards)
-    cover 7: expected $371k (P90 $1,031k, score $536k) · capacity lost in 11% of years · setups 7k · rush 26k · lost 77k · carry 131k · stranded 130k (793 boards)
-    cover 8: expected $465k (P90 $774k, score $542k) · capacity lost in 0% of years · setups 6k · rush 9k · lost 3k · carry 190k · stranded 257k (1,569 boards)
+    cover 1: expected $1,805k (P90 $2,139k, score $1,888k) · capacity lost in 52% of years · setups 42k · rush 91k · lost 1,671k · carry 0k · stranded 0k (0 boards)
+    cover 2: expected $1,474k (P90 $1,856k, score $1,570k) · capacity lost in 47% of years · setups 21k · rush 92k · lost 1,361k · carry 0k · stranded 0k (0 boards)
+    cover 3: expected $1,154k (P90 $1,592k, score $1,264k) · capacity lost in 41% of years · setups 14k · rush 93k · lost 1,034k · carry 7k · stranded 6k (36 boards)
+    cover 4: expected $848k (P90 $1,301k, score $961k) · capacity lost in 34% of years · setups 11k · rush 94k · lost 694k · carry 22k · stranded 26k (162 boards)
+    cover 5: expected $560k (P90 $1,091k, score $693k) · capacity lost in 28% of years · setups 9k · rush 91k · lost 370k · carry 44k · stranded 46k (282 boards)
+    cover 6: expected $347k (P90 $822k, score $466k) · capacity lost in 19% of years · setups 7k · rush 69k · lost 142k · carry 74k · stranded 55k (333 boards)
+    cover 7: expected $345k (P90 $806k, score $460k) · capacity lost in 11% of years · setups 7k · rush 31k · lost 46k · carry 131k · stranded 130k (793 boards)
+    cover 8: expected $465k (P90 $775k, score $543k) · capacity lost in 0% of years · setups 6k · rush 11k · lost 2k · carry 190k · stranded 257k (1,569 boards)
   P2-14 (new): recommended cover 8 weeks
-    cover 1: expected $7,085k (P90 $8,552k, score $7,452k) · capacity lost in 48% of years · setups 37k · rush 199k · lost 6,848k · carry 0k · stranded 0k (0 boards)
-    cover 2: expected $5,806k (P90 $7,497k, score $6,229k) · capacity lost in 42% of years · setups 19k · rush 203k · lost 5,584k · carry 0k · stranded 0k (1 boards)
-    cover 3: expected $4,547k (P90 $6,508k, score $5,037k) · capacity lost in 37% of years · setups 14k · rush 205k · lost 4,301k · carry 19k · stranded 7k (42 boards)
-    cover 4: expected $3,310k (P90 $5,275k, score $3,802k) · capacity lost in 32% of years · setups 10k · rush 206k · lost 3,005k · carry 56k · stranded 34k (197 boards)
-    cover 5: expected $2,107k (P90 $4,208k, score $2,633k) · capacity lost in 27% of years · setups 9k · rush 203k · lost 1,740k · carry 108k · stranded 48k (274 boards)
-    cover 6: expected $1,282k (P90 $3,409k, score $1,814k) · capacity lost in 20% of years · setups 7k · rush 166k · lost 744k · carry 195k · stranded 170k (977 boards)
-    cover 7: expected $872k (P90 $2,302k, score $1,229k) · capacity lost in 9% of years · setups 7k · rush 87k · lost 206k · carry 300k · stranded 272k (1,560 boards)
-    cover 8: expected $768k (P90 $647k, score $738k) · capacity lost in 0% of years · setups 6k · rush 33k · lost 10k · carry 443k · stranded 275k (1,582 boards)
+    cover 1: expected $4,371k (P90 $5,237k, score $4,587k) · capacity lost in 48% of years · setups 37k · rush 224k · lost 4,109k · carry 0k · stranded 0k (0 boards)
+    cover 2: expected $3,598k (P90 $4,590k, score $3,846k) · capacity lost in 42% of years · setups 19k · rush 228k · lost 3,351k · carry 0k · stranded 0k (1 boards)
+    cover 3: expected $2,852k (P90 $4,007k, score $3,141k) · capacity lost in 37% of years · setups 14k · rush 231k · lost 2,581k · carry 19k · stranded 7k (42 boards)
+    cover 4: expected $2,134k (P90 $3,273k, score $2,419k) · capacity lost in 32% of years · setups 10k · rush 232k · lost 1,803k · carry 56k · stranded 34k (197 boards)
+    cover 5: expected $1,437k (P90 $2,657k, score $1,742k) · capacity lost in 27% of years · setups 9k · rush 228k · lost 1,044k · carry 108k · stranded 48k (274 boards)
+    cover 6: expected $1,005k (P90 $2,264k, score $1,320k) · capacity lost in 20% of years · setups 7k · rush 186k · lost 446k · carry 195k · stranded 170k (977 boards)
+    cover 7: expected $800k (P90 $1,697k, score $1,025k) · capacity lost in 9% of years · setups 7k · rush 98k · lost 123k · carry 300k · stranded 272k (1,560 boards)
+    cover 8: expected $768k (P90 $593k, score $724k) · capacity lost in 0% of years · setups 6k · rush 37k · lost 6k · carry 443k · stranded 275k (1,582 boards)

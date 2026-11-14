@@ -39,7 +39,7 @@ Last updated: 2026-11-13
 | ✓ | Module 6 — new-site ramp (three-month S-curve, three gates, pull-in) and board-build cover per model (`src/ramp_board.py`) | done (day 5) |
 | ✓ | Phase A — core loop closure | **done (day 6): A4 year run across Modules 1–7** |
 | ✓ | E2 (first half) pulled forward — market monitor (Nov 2026 readings tied to inputs) and the memory price lens | done (day 6) |
-| → | Phase E — calibration | **Jin's answers to Q7, Q28, Q29, Q33, Q39–Q52 (sent together); then Phase B or C** |
+| → | Phase E — calibration | **Q7, Q28, Q29, Q33, Q47–Q52 answered and applied (day 6); Q39–Q46 open; then Phase B or C** |
 
 ## Phase A — core loop closure · 5 days → release v1
 
@@ -78,7 +78,7 @@ Last updated: 2026-11-13
 
 | Step | Scope | Done when |
 |---|---|---|
-| E1 | **Calibration.** Replace placeholders with public data and virtualized practitioner input. | No PLACEHOLDER left on any number that changes a decision. **Day 4: started** — ocean rates from lane benchmarks; Module 7 back-tested on US imports by origin (2025 and 2026 tariff gaps). |
+| E1 | **Calibration.** Replace placeholders with public data and virtualized practitioner input. | No PLACEHOLDER left on any number that changes a decision. **Day 4: started** — ocean rates from lane benchmarks; Module 7 back-tested on US imports by origin (2025 and 2026 tariff gaps). **Day 6:** ramp gates, slip cap, yield path, pull-in, SMT run costs, site cost ranges (with JETRO wages), the temporary conversion uplift, expediting and MWD prices by part class from practitioner answers. |
 | E2 | **Automated refresh.** Scheduled check of tariff and freight news; GitHub Actions rebuilds the site. | The live map rebuilds itself when data files change. **Day 6: first half** — readings collected in `data/market_watch.csv` with date, source and the input each feeds; `docs/market.html` shows them; ocean rates moved to Nov 2026, memory prices added as a lens (R48, R49). The scheduled refresh remains. |
 
 ## Phase F — product · 5–6 days → release v3

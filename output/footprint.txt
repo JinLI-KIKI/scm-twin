@@ -65,14 +65,14 @@
 
 == Duty ranges, 200 Monte Carlo draws (US up to its April 2025 peak, change probability 20% per market)
   open sites                     mean      P10      P90  cheapest   regret  P90 reg
-  CN+MY (boards)              336.10M  333.05M  347.95M       13%    4.28M    5.21M
-  CN+MY+BR (boards)           336.13M  333.08M  347.98M        0%    4.31M    5.24M
-  CN+ID+BR (boards)           337.04M  333.37M  351.59M        0%    5.23M    5.53M
-  CN+ID (boards)              337.08M  333.33M  351.55M        0%    5.26M    5.49M
-  CN+BR+AE (boards)           337.28M  332.22M  357.95M        0%    5.46M   10.00M
-  CN+VN+BR (boards)           337.93M  333.37M  356.82M        0%    6.11M    8.87M
-  CN+VN (boards)              338.29M  333.33M  357.34M        0%    6.47M    9.39M
-  CN+MY+AE (boards)           338.46M  335.76M  349.04M        2%    6.64M    7.92M
+  CN+MY (boards)              336.13M  333.05M  348.40M        8%    4.28M    5.41M
+  CN+MY+BR (boards)           336.17M  332.88M  348.25M        4%    4.33M    5.24M
+  CN+ID+BR (boards)           337.03M  333.16M  350.96M        0%    5.18M    5.53M
+  CN+ID (boards)              337.05M  333.33M  351.11M        0%    5.20M    5.72M
+  CN+BR+AE (boards)           337.30M  332.02M  357.82M        0%    5.45M    9.95M
+  CN+VN+BR (boards)           337.90M  333.16M  356.30M        0%    6.06M    8.34M
+  CN+VN (boards)              338.24M  333.33M  357.02M        0%    6.40M    8.77M
+  CN+MY+AE (boards)           338.48M  335.76M  349.46M        2%    6.64M    8.12M
   mean drawn US duty: CN 13.7%, VN 4.4%, ID 3.0%, MY 2.3%, BR 0.9%, AE 0.9%
 
 == Back-test against US import data (data/us_import_history.csv)

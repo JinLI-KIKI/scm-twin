@@ -45,6 +45,7 @@
     <div class="ctl-grid" id="ctl"></div>
     <div class="ctl-foot">
       <div class="slicer"><span class="s-label" id="l-g">GSM</span><div class="seg" role="group" aria-labelledby="l-g" id="f-g"></div></div>
+      <div class="slicer"><span class="s-label" id="l-site">New site</span><div class="seg" role="group" aria-labelledby="l-site" id="f-site"></div></div>
       <div class="slicer"><span class="s-label" id="l-mem">Memory prices</span><div class="seg" role="group" aria-labelledby="l-mem" id="f-mem"></div></div>
       <button type="button" class="btn" id="reset">Reset all</button>
       <span class="status" id="status"></span>
@@ -99,9 +100,9 @@
   <section class="insight" id="insight"></section>
 
   <footer class="notes">
-    <p><b>Ramp (R16, R21, R46).</b> From the first trial build the new site follows an S-curve (smoothstep) to full volume over T weeks: T = the base ramp less the weeks pulled in (never below the fastest ramp), plus the slips. Each gate, material rhythm, yield and supplier readiness, slips with its own chance (times the GSM factor) by a uniform number of weeks between its bounds. China builds what the new site cannot yet and pays the tariff on its customs value (leakage). Units that fail first pass consume material: yield rises from its start to its full level with the learning time, and each failed unit costs a share of its BOM value. Pulling in costs per unit of weekly volume for every week pulled, rising by the growth rate for each further week. The pull-in with the lowest expected cost is marked.</p>
-    <p><b>Board runs (R13, R19, R47).</b> Each SMT run builds boards for the next N weeks of forecast; forecasts get worse with the horizon (accuracy 68% at 16 weeks, falling with its square root) and run high for models that sold badly. A board locks CPU and memory to the model and the site's origin: when the model ends (end of life, or an early cut), boards left over cost their full value as MWD, where loose parts would mostly migrate (Module 5: 90%). The ODM builds about 8 weeks of boards per run by default and the brand can push builds later; runs shorter than the standard cost setups and capacity, and how much depends heavily on the GSM (Q38). In every run the ODM gives a share of the line time it is not loaded with to other customers. On top, each week the model sells there is a chance, rising with how far builds are pushed back, that the ODM moves the model's line to another customer: for about a quarter both builds and rush capacity drop. Short of boards, rush boards cover up to the flex share of the run's planned volume at a premium; the rest ships late or is lost at gross margin. Boards on hand carry at the carrying rate. The recommended cover has the lowest score, a blend of the expected cost and the P90, so the bad years count too.</p>
-    <p><b>Status.</b> The three-month ramp, the three gates and the risk-board rule are practitioner input; the 8-week standard cover and the direction of the capacity risk (much larger with a weak GSM) are practitioner input; how much capacity the ODM takes and for how long, the weight on the bad case, slip sizes, yields, pull-in and SMT costs are placeholders (<code>data/ramp_params.csv</code>, <code>data/board_models.csv</code>). Code in <code>src/ramp_board.py</code>, mirrored in <code>src/dash/rb_engine.js</code> and checked by <code>tests/test_rb_parity.py</code>.</p>
+    <p><b>Ramp (R16, R21, R46).</b> From the first trial build the new site follows an S-curve (smoothstep) to full volume over T weeks: T = the base ramp less the weeks pulled in (never below the fastest ramp), plus the slips. Each gate, material rhythm, yield and supplier readiness, slips with its own chance (times the GSM factor) by a uniform number of weeks between its bounds; supplier readiness slips less often on an existing ODM campus than at a new plant, and since slips overlap, their total is capped (Q47). China builds what the new site cannot yet and pays the tariff on its customs value (leakage). Units that fail first pass consume material: yield follows 85% → 91% → 95% → 97% → 98% over the weeks to full yield (about 4 for a mature product moving lines, 6–8 for a new product or new suppliers, Q48), and each failed unit costs a share of its BOM value. Pulling in is paid only on the volume it brings forward: the first week pulled costs $6 per unit moved forward, each further week 50% more, compounding ($6, $9, $13.50, $20.25, Q48). The pull-in with the lowest expected cost is marked.</p>
+    <p><b>Board runs (R13, R19, R47).</b> Each SMT run builds boards for the next N weeks of forecast; forecasts get worse with the horizon (accuracy 68% at 16 weeks, falling with its square root) and run high for models that sold badly. A board locks CPU and memory to the model and the site's origin: when the model ends (end of life, or an early cut), boards left over cost their full value as MWD, where loose parts would mostly migrate (Module 5: 90%). The ODM builds about 8 weeks of boards per run by default and the brand can push builds later; runs shorter than the standard cost setups and capacity, and how much depends heavily on the GSM (Q38). In every run the ODM gives a share of the line time it is not loaded with to other customers. On top, each week the model sells there is a chance, rising with how far builds are pushed back, that the ODM moves the model's line to another customer: for about a quarter both builds and rush capacity drop. Short of boards, rush boards cover up to the flex share of the run's planned volume at a premium of a quarter of the board's own price (without CPU and memory), between $3 and $10 a board (Q49); of the units still short, 30% are lost at gross margin and the rest ship late (half and half is the stress case). Boards on hand carry at the carrying rate. The recommended cover has the lowest score, a blend of the expected cost and the P90, so the bad years count too.</p>
+    <p><b>Status.</b> The three-month ramp, the three gates and the risk-board rule are practitioner input; the 8-week standard cover, the direction of the capacity risk (much larger with a weak GSM), slip sizes and the slip cap, the yield path, pull-in cost and SMT run costs are practitioner input (Q37, Q38, Q47–Q49); how much capacity the ODM takes and for how long, the weight on the bad case and the lost share are placeholders (<code>data/ramp_params.csv</code>, <code>data/board_models.csv</code>). Code in <code>src/ramp_board.py</code>, mirrored in <code>src/dash/rb_engine.js</code> and checked by <code>tests/test_rb_parity.py</code>.</p>
   </footer>
 </main>
 <script>/*__JS__*/</script>
@@ -121,13 +122,16 @@ const CTL = [
   [null, 'New-site ramp'],
   ['ramp_base_weeks', 'Base ramp, trial build to full volume', 4, 30, 1, 'wk'],
   ['ramp_min_weeks', 'Fastest ramp when pulled in', 2, 20, 1, 'wk'],
-  ['pull_cost_usd_per_unit', 'Cost per week pulled, per weekly unit', 0, 60, 1, 'usd'],
-  ['pull_cost_growth', 'Each further week costs more by', 0, 2, 0.05, 'pct'],
+  ['pull_cost_usd_per_unit', 'First week pulled in, per unit brought forward', 0, 60, 1, 'usd'],
+  ['pull_cost_growth', 'Each further week costs more, compounding, by', 0, 2, 0.05, 'pct'],
   ['slip_material_prob', 'Chance material rhythm slips', 0, 1, 0.05, 'pct'],
   ['slip_yield_prob', 'Chance yield learning slips', 0, 1, 0.05, 'pct'],
-  ['slip_supplier_prob', 'Chance supplier readiness slips', 0, 1, 0.05, 'pct'],
+  ['slip_supplier_prob', 'Chance supplier readiness slips, new plant', 0, 1, 0.05, 'pct'],
+  ['slip_supplier_prob_campus', 'Same on an existing ODM campus', 0, 1, 0.025, 'pct1'],
+  ['slip_cap_weeks', 'Total slip capped at (overlaps)', 1, 15, 1, 'wk'],
   ['ramp_tariff', 'Tariff on what China still builds', 0, 0.5, 0.01, 'pct'],
   ['yield_start', 'First-pass yield at the first build', 0.5, 0.99, 0.01, 'pct'],
+  ['yield_weeks_to_full', 'Weeks to full yield (4 mature, 6–8 new)', 1, 12, 1, 'wk'],
   ['scrap_share_of_bom', 'Cost of a failed unit, share of BOM', 0, 1, 0.05, 'pct'],
   [null, 'Board runs'],
   ['board_cover_std_weeks', "ODM's standard weeks of boards per run", 1, 8, 1, 'wk'],
@@ -141,11 +145,13 @@ const CTL = [
   ['capacity_loss_weeks', 'Weeks until the capacity comes back', 1, 26, 1, 'wk'],
   ['risk_weight', 'Weight on the bad case (P90) in the pick', 0, 1, 0.05, 'pct'],
   ['smt_flex', 'Rush SMT capacity, share of the run’s plan', 0, 0.6, 0.01, 'pct'],
-  ['rush_premium_usd', 'Rush premium per board', 0, 40, 0.5, 'usd'],
+  ['rush_premium_share', 'Rush premium, share of the board price', 0, 0.6, 0.01, 'pct'],
+  ['rush_premium_min', 'Rush premium floor per board', 0, 20, 0.5, 'usd'],
+  ['rush_premium_max', 'Rush premium cap per board', 0, 40, 0.5, 'usd'],
   ['setup_usd_per_run', 'Setup cost per SMT run', 0, 10000, 100, 'usd'],
-  ['lost_share', 'Share of short units lost', 0, 1, 0.05, 'pct'],
+  ['lost_share', 'Share of short units lost (0.5 = stress)', 0, 1, 0.05, 'pct'],
 ];
-const fmt = (k, v) => ({ pct: () => R.pct(v), wkp: () => R.pct(v, 1) + '/wk', wk: () => R.num(v) + ' wk', usd: () => '$' + R.num(v, v < 10 && v % 1 ? 1 : 0) }[k])();
+const fmt = (k, v) => ({ pct: () => R.pct(v), pct1: () => R.pct(v, 1), wkp: () => R.pct(v, 1) + '/wk', wk: () => R.num(v) + ' wk', usd: () => '$' + R.num(v, v < 10 && v % 1 ? 1 : 0) }[k])();
 const saved = R.load();
 const S = { P: { ...P0 }, models: JSON.parse(JSON.stringify(M0)), sel: 1 };
 if (saved.P) for (const k of Object.keys(S.P)) if (Number.isFinite(saved.P[k])) S.P[k] = saved.P[k];
@@ -156,6 +162,7 @@ let RES = null, timer = null;
 R.$('#ctl').innerHTML = CTL.map(([k, l, mn, mx, st]) => k === null ? `<div class="ctl-h">${l}</div>` : `<div class="sl" data-k="${k}"><span class="s-label"><label for="p-${k}">${l}</label><output id="o-${k}"></output></span>
   <input type="range" id="p-${k}" min="${mn}" max="${mx}" step="${st}" value="${S.P[k]}"></div>`).join('');
 CTL.forEach(([k]) => k && R.$('#p-' + k).addEventListener('input', (e) => { S.P[k] = +e.target.value; paintCtl(); schedule(); }));
+const segSite = R.seg(R.$('#f-site'), [['1', 'Line on an ODM campus'], ['0', 'New or bought plant']], String(S.P.site_campus >= 0.5 ? 1 : 0), (v) => { S.P.site_campus = +v; schedule(); });
 const segG = R.seg(R.$('#f-g'), [['1', 'Strong (capacity kept, fewer slips)'], ['0', 'Weak']], String(S.P.gsm_strong >= 0.5 ? 1 : 0), (v) => { S.P.gsm_strong = +v; schedule(); });
 const MS = [['bias', 'Forecast runs high by', -0.2, 0.4, 0.01], ['sigma_mult', 'Forecast error ×', 0.5, 3, 0.05], ['cut_prob', 'Chance of an early cut', 0, 0.8, 0.01]];
 R.$('#mods').innerHTML = S.models.map((m, i) => `<div class="mrow" data-i="${i}"><span class="mname">${m.model}<small>${m.risk}${m.eol !== null ? ' · EOL week ' + m.eol : ''}</small><small>board <span id="bv-${i}"></span></small></span>` +
@@ -171,7 +178,7 @@ R.$('#reset').addEventListener('click', () => {
   S.P = { ...P0 }; S.models = JSON.parse(JSON.stringify(M0));
   CTL.forEach(([k]) => { if (k) R.$('#p-' + k).value = S.P[k]; });
   S.models.forEach((m, i) => MS.forEach(([k]) => { R.$(`#m-${i}-${k}`).value = m[k]; }));
-  segG.set(String(S.P.gsm_strong)); paintCtl(); schedule();
+  segG.set(String(S.P.gsm_strong)); segSite.set(String(S.P.site_campus)); paintCtl(); schedule();
 });
 function paintCtl() {
   CTL.forEach(([k, , , , , f]) => { if (!k) return; R.$('#o-' + k).textContent = fmt(f, S.P[k]); R.$(`.sl[data-k="${k}"]`).classList.toggle('changed', Math.abs(S.P[k] - P0[k]) > 1e-12); });

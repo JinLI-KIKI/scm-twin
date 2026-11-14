@@ -89,7 +89,9 @@ def run_transfer(region, cutover, tariff_old, tariff_new=0.0, relocate=True,
 
     out = {"cutover": cutover, "tariff": tariff, "holding": 0.0, "relocation": 0.0,
            "rework": 0.0, "mwd_boards": 0.0, "mwd_loose": 0.0,
-           "relocated_usd": 0.0, "freed_usd": 0.0}
+           "relocated_usd": 0.0, "freed_usd": 0.0,
+           # by part class (Q52): standard parts other brands can use vs custom or model-locked
+           "freed_std": 0.0, "freed_custom": 0.0, "mwd_std": 0.0, "mwd_custom": 0.0}
 
     # ---- built boards: origin-locked; only other-region builds of the same model can use them
     for model, n in freed_boards.items():
@@ -102,11 +104,15 @@ def run_transfer(region, cutover, tariff_old, tariff_new=0.0, relocate=True,
         out["holding"] += hold
         out["mwd_boards"] += (n - absorbed) * board_val
         out["freed_usd"] += n * board_val
+        out["freed_custom"] += n * board_val                # a built board is locked to its model
+        out["mwd_custom"] += (n - absorbed) * board_val
 
     # ---- loose material
     for mat, qty in freed_loose.items():
         info = mats[mat]
+        cls = "std" if info["industry_standard"] else "custom"
         out["freed_usd"] += qty * info["unit_cost"]
+        out["freed_" + cls] += qty * info["unit_cost"]
         a1, h1 = _absorb(qty, info["cancel_window"], horizon, old_need(mat),
                          info["unit_cost"], carry)
         left = qty - a1
@@ -123,6 +129,7 @@ def run_transfer(region, cutover, tariff_old, tariff_new=0.0, relocate=True,
             out["rework"] += rw * info["rework_cost"]
             left -= rw
         out["mwd_loose"] += left * info["unit_cost"]
+        out["mwd_" + cls] += left * info["unit_cost"]
 
     out["mwd"] = out["mwd_boards"] + out["mwd_loose"]
     out["total"] = out["tariff"] + out["holding"] + out["relocation"] + out["rework"] + out["mwd"]

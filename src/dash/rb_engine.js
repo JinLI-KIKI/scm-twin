@@ -22,27 +22,47 @@ const RBE = (() => {
       const row = [];
       for (const g of ['material', 'yield', 'supplier']) {
         const u1 = rng.random(), u2 = rng.random();
-        const p = Math.min(1, P[`slip_${g}_prob`] * mult), lo = P[`slip_${g}_lo`], hi = P[`slip_${g}_hi`];
+        const base = g === 'supplier' && P.site_campus >= 0.5 ? P.slip_supplier_prob_campus : P[`slip_${g}_prob`];
+        const p = Math.min(1, base * mult), lo = P[`slip_${g}_lo`], hi = P[`slip_${g}_hi`];
         row.push(u1 < p ? lo + (hi - lo) * u2 : 0);
       }
       out.push(row);
     }
     return out;
   }
-  function rampRun(inp, P, pull, slips) {
+  const YIELD_SHAPE = [0, 6 / 13, 10 / 13, 12 / 13, 1];   // 85 -> 91 -> 95 -> 97 -> 98% at quarter points (Q48)
+  function yieldAt(P, w) {
+    const x = P.yield_weeks_to_full > 0 ? Math.max(0, w / P.yield_weeks_to_full) * 4 : 4;
+    let f;
+    if (x >= 4) f = 1; else { const i = Math.trunc(x); f = YIELD_SHAPE[i] + (YIELD_SHAPE[i + 1] - YIELD_SHAPE[i]) * (x - i); }
+    return P.yield_start + (P.yield_full - P.yield_start) * f;
+  }
+  const plannedT = (P, pull) => Math.max(P.ramp_min_weeks, P.ramp_base_weeks - pull);
+  function pullCost(inp, P, pull) {             // Q48: only the volume brought forward is paid for
+    const rg = inp.region, W = inp.ramp_weeks;
+    const curve = (T) => { const c = []; for (let w = 0; w < W; w++) c.push(T > 0 ? smoothstep(w / T) : 1); return c; };
+    let cost = 0, prev = curve(plannedT(P, 0));
+    for (let i = 1; i <= Math.trunc(pull); i++) {
+      const cur = curve(plannedT(P, i));
+      let d = 0; for (let w = 0; w < W; w++) d += cur[w] - prev[w];
+      cost += P.pull_cost_usd_per_unit * (1 + P.pull_cost_growth) ** (i - 1) * rg.weekly_units * d;
+      prev = cur;
+    }
+    return cost;
+  }
+  function rampRun(inp, P, pull, slips, pcIn) {
     const rg = inp.region;
     let sl = 0; for (const x of slips) sl += x;
-    const T = Math.max(P.ramp_min_weeks, P.ramp_base_weeks - pull) + sl;
+    const T = plannedT(P, pull) + Math.min(P.slip_cap_weeks, sl);
     const share = [];
     for (let w = 0; w < inp.ramp_weeks; w++) share.push(T > 0 ? smoothstep(w / T) : 1);
     let leak = 0, scrap = 0;
     share.forEach((s, w) => {
       leak += (1 - s) * rg.weekly_units * rg.customs * P.ramp_tariff;
-      const y = P.yield_full - (P.yield_full - P.yield_start) * Math.exp(-w / P.yield_tau_weeks);
+      const y = yieldAt(P, w);
       scrap += s * rg.weekly_units * (1 / y - 1) * rg.bom * P.scrap_share_of_bom;
     });
-    let g = 0; for (let i = 0; i < Math.trunc(pull); i++) g += 1 + P.pull_cost_growth * i;
-    const pc = rg.weekly_units * P.pull_cost_usd_per_unit * g;
+    const pc = pcIn === undefined ? pullCost(inp, P, pull) : pcIn;
     return { T, share, leakage: leak, scrap, pull: pc, total: leak + scrap + pc };
   }
   function rampSweep(inp, P, seed = 11) {
@@ -50,7 +70,8 @@ const RBE = (() => {
     const top = Math.trunc(Math.max(0, P.ramp_base_weeks - P.ramp_min_weeks));
     const rows = [];
     for (let pull = 0; pull <= top; pull++) {
-      const runs = slips.map((s) => rampRun(inp, P, pull, s)), n = runs.length;
+      const pc = pullCost(inp, P, pull);
+      const runs = slips.map((s) => rampRun(inp, P, pull, s, pc)), n = runs.length;
       const mean = (k) => { let t = 0; for (const r of runs) t += r[k]; return t / n; };
       const Ts = runs.map((r) => r.T);
       const band = [];
@@ -81,6 +102,7 @@ const RBE = (() => {
     }
     return runs;
   }
+  const rushPremium = (P, m) => Math.min(P.rush_premium_max, Math.max(P.rush_premium_min, P.rush_premium_share * m.board_extra));   // Q49
   function boardRun(inp, P, m, cover, draw) {
     const [z, u, cut, v] = draw, W = inp.weeks;
     const s16 = P.forecast_mape_16w * Math.sqrt(Math.PI / 2) * m.sigma_mult;
@@ -93,6 +115,7 @@ const RBE = (() => {
     const drop = strong ? P.capacity_loss_strong : P.capacity_loss_weak, span = Math.trunc(P.capacity_loss_weeks);
     let inv = 0, setups = 0, rush = 0, lost = 0, carry = 0, budget = 0;
     let until = -1, events = 0, downWeeks = 0;   // last week of a capacity loss under way
+    const premium = rushPremium(P, m);
     const forecast = (w, h, d) => {
       if (m.eol !== null && w >= m.eol) return 0;
       if (cut !== null && d >= cut) return 0;
@@ -119,7 +142,7 @@ const RBE = (() => {
       if (short > 1e-9) {
         const r = Math.min(short, budget);
         budget -= r;
-        rush += r * P.rush_premium_usd;
+        rush += r * premium;
         lost += (short - r) * P.lost_share * m.margin;
       }
       carry += inv * m.board_value * P.carry / 52;
@@ -149,6 +172,6 @@ const RBE = (() => {
     return { model: m.model, risk: m.risk, rows, best: best.cover };
   }
   const boards = (inp, P) => inp.models.map((m, i) => boardEval(inp, P, m, 101 + i));
-  return { makeRng, smoothstep, rampSlips, rampRun, rampSweep, boardDraws, boardRun, boardEval, boards };
+  return { makeRng, smoothstep, yieldAt, plannedT, pullCost, rampSlips, rampRun, rampSweep, rushPremium, boardDraws, boardRun, boardEval, boards };
 })();
 if (typeof module !== 'undefined') module.exports = RBE;

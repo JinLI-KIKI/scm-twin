@@ -40,3 +40,4 @@ labour_share_conversion,0.4,PLACEHOLDER,Share of conversion cost that is direct 
 cn_parts_premium,0.15,PLACEHOLDER,"In the China parts scenario: extra cost of parts for non-China sites as a share of the parts value (licences, delays, second sources outside China)"
 fg_eol_usd_per_unit_week,1.713,DERIVED (Module 4),Extra end-of-life finished-goods cost per unit for each week the factory-to-MGI transit is longer than from China (negative when shorter); src/integrate.py
 urgent_transition_usd_per_weekly_unit,226.5,DERIVED (Modules 1-3),"One-time cost per unit of weekly volume moved out of China in a hurry: cutover at once (holding, relocation, MWD) plus rush expediting; charged when a site is opened only after a tariff arrives"
+site_cost_draw,1,PRACTITIONER (Q50),"1 = the duty Monte Carlo also draws each site's steady-state cost index inside its range (data/sites.csv conv_lo-conv_hi); 0 = indices fixed"

@@ -10,15 +10,20 @@ from `data/demand_params.csv` (Module 5). Rules: R13, R16, R19, R21, R46, R47 in
 ## Part A — ramp (R46)
 
 Per Monte Carlo run, each gate g (material rhythm, yield, supplier readiness) slips with chance
-`p_g × GSM factor` by `lo_g + (hi_g − lo_g) × u` weeks. For `pull` weeks pulled in:
+`p_g × GSM factor` by `lo_g + (hi_g − lo_g) × u` weeks; supplier readiness uses its lower chance
+on an existing ODM campus (`site_campus`, Q47). For `pull` weeks pulled in:
 
 ```
-T(w)     = max(ramp_min, ramp_base − pull) + Σ_g slip_g
+T_plan(pull) = max(ramp_min, ramp_base − pull)
+T        = T_plan(pull) + min(slip_cap, Σ_g slip_g)          overlapping slips are capped (Q47)
 share(w) = smoothstep(min(1, w / T)) = 3x² − 2x³                 share of the region's volume
 leakage  = Σ_w (1 − share) × weekly units × customs value × tariff
-yield(w) = yield_full − (yield_full − yield_start) × e^(−w / τ)
+yield(w) = yield_start + (yield_full − yield_start) × f(4w / weeks_to_full)
+           f linear through 0, 6/13, 10/13, 12/13, 1:  85 → 91 → 95 → 97 → 98%   (Q48)
 scrap    = Σ_w share × weekly units × (1 / yield − 1) × BOM value × scrap_share
-pull     = weekly units × pull_cost × Σ_{i=0}^{pull−1} (1 + growth × i)
+pull     = Σ_{i=1}^{pull} pull_cost × (1 + growth)^(i−1) × moved_i                (Q48)
+moved_i  = weekly units × Σ_w [smoothstep(w / T_plan(i)) − smoothstep(w / T_plan(i − 1))]
+           the units the i-th week pulled brings forward on the planned curve
 ```
 
 Every pull-in is priced on the same draws; the one with the lowest mean of leakage + scrap +
@@ -55,7 +60,12 @@ budget = smt_flex × Σ_{j<cover} plan(d + j) × (1 − down)  rush boards avail
 ```
 
 Each week boards on hand serve `D(w)`; a shortfall takes rush boards from the budget at a
-premium, and `lost_share` of what is still short is lost at gross margin. Boards on hand carry
+premium, and `lost_share` of what is still short is lost at gross margin (30%; 50% is the stress
+case, Q49):
+
+```
+premium = min(cap, max(floor, share × board's own price))     25%, $3–$10 (Q49)
+``` Boards on hand carry
 at the carrying rate. When the model ends (end of life or cut), boards left over are stranded:
 
 ```

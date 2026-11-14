@@ -21,7 +21,9 @@ VARIANTS = [{}, {"gsm_strong": 0, "ramp_tariff": 0.1, "ramp_runs": 300, "board_r
             {"pull_cost_usd_per_unit": 40, "slip_supplier_prob": 0.9, "board_cover_std_weeks": 6,
              "smt_flex": 0.05, "ramp_runs": 300, "board_runs": 150},
             {"gsm_strong": 0, "capacity_loss_hazard_weak": 0.12, "capacity_loss_weeks": 6, "risk_weight": 1,
-             "ramp_runs": 200, "board_runs": 150}]
+             "ramp_runs": 200, "board_runs": 150},
+            {"site_campus": 0, "slip_cap_weeks": 3, "yield_weeks_to_full": 7, "pull_cost_growth": 1.0,
+             "rush_premium_share": 0.1, "rush_premium_min": 5, "ramp_runs": 200, "board_runs": 120}]
 
 JS = """
 const RBE = require(process.argv[2]);

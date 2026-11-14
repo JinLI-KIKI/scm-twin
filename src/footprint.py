@@ -160,6 +160,9 @@ def fp_input():
     sites = {}
     for r in _csv("sites.csv"):
         sites[r["site"]] = {"label": r["label"], "conv_index": float(r["conv_index"]),
+                            "conv_base": float(r["conv_index"]),
+                            "conv_lo": float(r.get("conv_lo") or r["conv_index"]),
+                            "conv_hi": float(r.get("conv_hi") or r["conv_index"]),
                             "parts_duty": float(r["parts_duty_pct"]) / 100,
                             "capacity": float(r["capacity_units_wk"]),
                             "fixed_cost": float(r["fixed_cost_usd_yr"]), "nre": float(r["nre_usd"] or 0),
@@ -524,21 +527,36 @@ def draw_duties(inp, base, ranges, p_change, rng):
     return d
 
 
+def draw_conv(inp, sites, rng):
+    """One draw of each site's steady-state cost index inside its range (Q50); a slider move on the
+    page shifts the range with it."""
+    out = {}
+    for o in inp["origins"]:
+        s, u = sites[o], rng.random()
+        shift = s["conv_index"] - s["conv_base"]
+        out[o] = s["conv_lo"] + shift + u * (s["conv_hi"] - s["conv_lo"])
+    return out
+
+
 def duty_monte_carlo(inp, P, sites, red_sea, ranges=None, runs=200, seed=7):
-    """Price every feasible footprint under random duty draws inside the ranges."""
+    """Price every feasible footprint under random duty draws inside the ranges and, with
+    site_cost_draw on, each site's steady-state cost index drawn inside its range (Q50)."""
     ranges = inp["ranges"] if ranges is None else ranges
     base = duty_matrix(inp, inp["scenarios"][0])
     cands = candidates(inp, sites)
     rng = PortableRandom(seed)
+    rng_conv = PortableRandom(seed + 991)            # own stream: the duty draws stay as they were
     cost = [[0.0] * len(cands) for _ in range(runs)]
     mean_duty = {}
     for k in range(runs):
         d = draw_duties(inp, base, ranges, P["duty_change_prob"], rng)
+        conv = draw_conv(inp, sites, rng_conv) if P["site_cost_draw"] >= 0.5 else None
         for key in ranges:
             t, o = key.split("|")
             mean_duty[key] = mean_duty.get(key, 0.0) + d[t][o] / runs
         for i, c in enumerate(cands):
-            cost[k][i] = yearly_costs(inp, P, c["sites"], c["open"], red_sea, [d])[1][0]
+            cs = c["sites"] if conv is None else {o: dict(v, conv_index=conv[o]) for o, v in c["sites"].items()}
+            cost[k][i] = yearly_costs(inp, P, cs, c["open"], red_sea, [d])[1][0]
     best = [min(row) for row in cost]
     win = [0] * len(cands)
     for row in cost:

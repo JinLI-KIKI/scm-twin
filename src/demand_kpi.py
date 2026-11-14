@@ -34,10 +34,13 @@ Only when even the cap cannot close it is the target lowered to what can be reac
 
 Sales negotiate the discount (price points) with the channel and the BU usually funds it, so the
 BU trades MWD against points (R43, R45). Neither always wins; it depends on
-  what a dollar of MWD costs the BU     mwd_cost_rate
+  what a dollar of MWD costs the BU     mwd_cost_rate (custom or model-locked parts, boards) and
+                                        mwd_cost_rate_std (standard parts), Q52
   how much of it migrates               mwd_transferability (claimed -> physical MWD)
   what a point costs and buys           bu_funds_support, points_effect, elasticity
-  BU cost = mwd_cost_rate x (claimed - t x (claimed - physical) + eol) + bu_funds_support x promotion
+  BU cost = rate_std x (claimed_std - t x (claimed_std - physical_std))
+          + rate x (claimed_custom - t x (claimed_custom - physical_custom) + eol) + bu_funds_support x promotion
+  conversion uplift is temporary (Q51): on new-site units, falling linearly to 0 over conv_uplift_weeks
 
 BU pick: among the options that reach the target, the lowest BU MWD + BU-funded price support
 (ties: the latest); if none does, the one closest to target. Company pick: the lowest total cost, among the options
@@ -83,8 +86,10 @@ def dk_input(region="US"):
     for c in list(range(window + 1)) + list(LATE):
         r = rows[min(c, window)]
         opts.append({"id": f"C{c}", "cutover": c, "claimed_mwd": r["freed_usd"], "mwd": r["mwd"],
+                     "claimed_std": r["freed_std"], "mwd_std": r["mwd_std"],
                      "holding": r["holding"], "relocation": r["relocation"], "rework": r["rework"]})
-    opts.append({"id": "stay", "cutover": None, "claimed_mwd": 0.0, "mwd": 0.0, "holding": 0.0,
+    opts.append({"id": "stay", "cutover": None, "claimed_mwd": 0.0, "mwd": 0.0, "claimed_std": 0.0, "mwd_std": 0.0,
+                 "holding": 0.0,
                  "relocation": 0.0, "rework": 0.0})
     p = BC.region_profile(region)
     c = BC.CASE
@@ -102,6 +107,23 @@ def china_share(w, cutover, ramp):
     if cutover is None or w < cutover:
         return 1.0
     return max(0.0, 1.0 - (w - cutover) / ramp) if ramp > 0 else 0.0
+
+
+def uplift_left(P, w, cutover):
+    """Share of the new-site conversion uplift still paid in week w (Q51: temporary, gone after
+    conv_uplift_weeks)."""
+    if cutover is None or w < cutover:
+        return 0.0
+    return max(0.0, 1.0 - (w - cutover) / P["conv_uplift_weeks"])
+
+
+def bu_mwd_parts(opt, P, eol):
+    """MWD as the BU weighs it, standard and custom parts apart (R43, Q52): claimed less the share
+    that migrates, plus the longer window's end-of-life MWD on the custom side."""
+    t = P["mwd_transferability"]
+    std, phys_std = opt["claimed_std"], opt["mwd_std"]
+    cus, phys_cus = opt["claimed_mwd"] - std, opt["mwd"] - phys_std
+    return std - t * (std - phys_std), cus - t * (cus - phys_cus) + eol
 
 
 def catch_up(inp, P, base, gap):
@@ -165,7 +187,7 @@ def evaluate(inp, P, opt):
             paid += q * tariff * ch
             recovered += q * rise
             lost += (q0 - q) * m["price"] * m["gross_margin"]
-            conv_units += q * (1 - ch)
+            conv_units += q * (1 - ch) * uplift_left(P, w, C)
             if w >= cw:
                 promo += q * disc * m["price"]
     cs = inp["case"]
@@ -180,10 +202,10 @@ def evaluate(inp, P, opt):
              "expedite": expedite, "chain": chain, "conversion": conv}
     # MWD as the BU weighs it (R43): claimed MWD less the share that migrates to other plans or
     # the new site (transferability, down to the physical MWD), plus the longer window's EOL MWD,
-    # at what each dollar of MWD really costs the BU (mwd_cost_rate)
-    t = P["mwd_transferability"]
-    bu_mwd = opt["claimed_mwd"] - t * (opt["claimed_mwd"] - opt["mwd"]) + eol
-    bu_mwd_cost = P["mwd_cost_rate"] * bu_mwd
+    # at what each dollar of MWD really costs the BU, standard and custom parts apart (Q52)
+    bu_std, bu_custom = bu_mwd_parts(opt, P, eol)
+    bu_mwd = bu_std + bu_custom
+    bu_mwd_cost = P["mwd_cost_rate_std"] * bu_std + P["mwd_cost_rate"] * bu_custom
     bu_support = P["bu_funds_support"] * promo          # the price points the BU funds (R45)
     return {"id": opt["id"], "cutover": C, "plan": plan, "units": units, "attainment": units / plan if plan else 1.0,
             "before_catch_up": before / plan if plan else 1.0, "discount": disc, "quarters": quarters,

@@ -4,14 +4,14 @@
   P2-14: BOM $386 -> $747 (memory 19% -> 58%) · board $211 -> $442 · customs $520 -> $881
   M1 US transfer: freed $16.70M -> $32.88M, MWD $1.16M -> $1.16M
   M2 cutover at 25%: week 0 ($0.57M) -> week 0 ($0.94M)
-  M3 year-1 net at 25%: $14.27M -> $25.09M; break-even tariff 3.0% -> 2.4%
+  M3 year-1 net at 25%: $14.47M -> $25.29M; break-even tariff 2.6% -> 2.3%
   M4 FG avoidable cost (lock): $7.93M -> $10.46M
   M5 picks: BU C11 / company C0 -> BU C11 / company C0
-  M6 P1-14|1: cover 6 -> 6 weeks
-  M6 P1-16|1: cover 6 -> 3 weeks
+  M6 P1-14|1: cover 6 -> 5 weeks
+  M6 P1-16|1: cover 3 -> 3 weeks
   M6 P2-14|1: cover 5 -> 5 weeks
   M6 P1-14|0: cover 7 -> 7 weeks
-  M6 P1-16|0: cover 7 -> 7 weeks
+  M6 P1-16|0: cover 7 -> 6 weeks
   M6 P2-14|0: cover 8 -> 8 weeks
   M6 ramp pull-in: 7 -> 7 weeks
   M7 best: CN + BR -> CN + MY + BR · own boards; robust: CN + MY · own boards -> CN + MY + BR · own boards

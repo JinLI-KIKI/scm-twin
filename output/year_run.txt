@@ -1,17 +1,17 @@
-== Year run, US region, tariff 25%, strong GSM; Module 6 ramp: pull in 7 weeks, median 7.7, P90 11.9 weeks; extra transit 6.3 days
+== Year run, US region, tariff 25%, strong GSM; Module 6 ramp: pull in 7 weeks, median 7.2, P90 11.4 weeks; extra transit 6.3 days
   Stay in China              cutover None · company $  9.64M · BU $ 4.05M · attainment 94.3% · tariff 4.38 · lost_margin 1.21 · promotion 4.05
       quarters: Q1 92.1%  Q2 90.6%  Q3 97.6%  Q4 97.6%
-  Company's pick             cutover    0 · company $  4.10M · BU $ 2.20M · attainment 99.5% · tariff 0.84 · lost_margin 0.10 · transfer 0.57 · ramp 0.59 · expedite 0.07 · chain 1.58 · conversion 0.24 · fg_eol 0.11
-      quarters: Q1 98.2%  Q2 100.0%  Q3 100.0%  Q4 100.0%
-  BU's pick                  cutover   13 · company $  4.58M · BU $ 0.79M · attainment 97.1% · tariff 1.83 · lost_margin 0.62 · transfer 0.07 · ramp 0.57 · expedite 0.07 · chain 1.19 · conversion 0.17 · fg_eol 0.06
-      quarters: Q1 92.1%  Q2 96.8%  Q3 100.0%  Q4 100.0%
-  Move at the model change   cutover   26 · company $  7.98M · BU $ 3.38M · attainment 97.0% · tariff 2.86 · lost_margin 0.63 · promotion 3.05 · ramp 0.49 · expedite 0.07 · chain 0.79 · conversion 0.10 · fg_eol 0.00
-      quarters: Q1 92.1%  Q2 90.6%  Q3 101.4%  Q4 105.3%
+  Company's pick             cutover    0 · company $  3.80M · BU $ 1.87M · attainment 99.6% · tariff 0.82 · lost_margin 0.09 · transfer 0.57 · ramp 0.50 · expedite 0.07 · chain 1.58 · conversion 0.05 · fg_eol 0.11
+      quarters: Q1 98.4%  Q2 100.0%  Q3 100.0%  Q4 100.0%
+  BU's pick                  cutover   14 · company $  4.46M · BU $ 0.72M · attainment 97.0% · tariff 1.89 · lost_margin 0.64 · promotion 0.08 · transfer 0.04 · ramp 0.47 · expedite 0.07 · chain 1.16 · conversion 0.05 · fg_eol 0.05
+      quarters: Q1 92.1%  Q2 96.2%  Q3 100.1%  Q4 100.1%
+  Move at the model change   cutover   26 · company $  7.77M · BU $ 3.33M · attainment 97.0% · tariff 2.84 · lost_margin 0.63 · promotion 2.99 · ramp 0.40 · expedite 0.07 · chain 0.79 · conversion 0.05 · fg_eol 0.00
+      quarters: Q1 92.1%  Q2 90.6%  Q3 101.5%  Q4 105.2%
   W0   US tariff of 25% on China-made laptops starts
   W0   Cutover, the company's pick: plans inside the 16-week window are cancelled; the new site's first build
   W2   The new channel price is in place (pass-through negotiated)
-  W8   New site at full volume (median, company's pick)
-  W13  Cutover, the BU's pick: plans inside the 16-week window are cancelled; the new site's first build
+  W7   New site at full volume (median, company's pick)
+  W14  Cutover, the BU's pick: plans inside the 16-week window are cancelled; the new site's first build
   W21  New site at full volume (median, BU's pick)
   W26  Successor P2-14 launches; second-half catch-up discount runs from here
   W30  Platform P1 end of life: finished goods left in the pipeline

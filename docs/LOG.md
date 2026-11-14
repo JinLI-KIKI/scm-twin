@@ -336,7 +336,52 @@ chart, the module cards in the order a tariff decision runs, eight KPI cards in 
 recovery, risk appetite, memory pass-through and default, memory configs, region vs model
 moves, decision lag, scenario chances, and six sets of placeholder sizes).
 
+## Day 6, continued — 2026-11-13: practitioner answers Q7, Q28, Q29, Q33, Q47–Q52
+
+**Confirmed as modelled:** Q7 (standard parts non-cancellable 2 weeks before delivery, custom
+parts their whole lead time), Q28 (50% minimum load, fee = max(0, 50% − utilization) × rated
+capacity × $12), Q29 (6 months on an existing ODM campus with the board line, 9 months to buy and
+refit a plant, counted from the formal project start; preparation is done beforehand but no heavy
+spending on rumours), Q33 (plan 3% above target, catch-up price points up to 10%).
+
+**Module 6 — ramp (Q47, Q48):**
+- Supplier readiness slips with 37.5% on an existing ODM campus (35–40%) and 50% at a new plant
+  (new switch on the page); the total slip is capped at 7 weeks because slips overlap (6–8).
+- Yield follows 85% → 91% → 95% → 97% → 98% over 4 weeks for a mature product moving lines,
+  6–8 weeks for a new product or new suppliers (slider).
+- Pull-in is paid only on the volume brought forward: $6, $9, $13.50, $20.25 per unit for the
+  first four weeks pulled (compounding ×1.5).
+- Result: median ramp without pull-in 14.2 weeks (was 14.7); pulling in 7 weeks still pays.
+
+**Module 6 — boards (Q49):** rush boards cost 25% of the board's own price (without CPU and
+memory), between $3 and $10; 30% of the units still short are lost (half is now the stress case).
+Strong GSM covers P1-14 6, P1-16 3, P2-14 5 weeks (P1-16 was 6: shortages cost less); weak GSM 7,
+7, 8.
+
+**Module 7 — site cost (Q50):** each site's index is a steady-state cost against China = 1.00 with
+a range (ID 1.00–1.10, VN 0.98–1.08, MY 1.08–1.20, BR 1.45–1.75, AE 1.25–1.50); the duty Monte
+Carlo now draws every site inside its range (`site_cost_draw`). Context from JETRO's Aug 2025
+survey: worker base pay China $629, Malaysia $549, Thailand $490, Indonesia $385, Vietnam $302
+a month.
+
+**Modules 3, 5 and the year run — temporary uplift (Q51):** the 7.5% conversion uplift is paid
+only while the new line ramps, falling to 0 over 26 weeks, so it is no longer a yearly cost in the
+business case (break-even tariff 3.0% → 2.6% with a strong GSM, 3.5% → 3.1% weak). Expediting
+with a weak GSM is 1.5× the strong rate ($9), 2× is the stress case.
+
+**Modules 5 and the year run — MWD price by part (Q52):** MWD that stays costs the BU $0.60 per
+dollar of standard parts (CPU, memory, SSD, panel) and $0.90 of custom or model-locked parts;
+`src/transfer.py` now splits freed material and MWD by class. Carrying 20% a year kept (APQC's
+realized median is about 10%; planning models use 20–25%).
+- Year run at 25%, strong GSM: stay $9.64M; company week 0 $3.80M (was $4.10M); BU week 14
+  $4.46M; model change $7.77M.
+
+**Parity:** Module 5 3,483, Module 6 1,810 (a new variant for the campus switch, slip cap, yield
+weeks and rush premium), footprint 3,524, year run 616 values identical.
+
 ## Next — Day 7
 
-- Jin's answers to the question batch; update the defaults and re-run the year.
+- Jin's answers to the rest of the batch (Q39–Q46: capacity recovery, risk appetite, memory
+  pass-through and default, memory configurations, region vs model moves, decision lag, scenario
+  chances).
 - Then Phase B (Mexico and Thailand, AI servers) or Phase C (inventory policy), Jin to choose.

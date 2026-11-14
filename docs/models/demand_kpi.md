@@ -29,7 +29,8 @@ frac       = (52 − C) / 52 if the volume moves this year, else 0
 eol        = extra end-of-life MWD of the longer window per year (Module 3) × frac
 chain      = eol + pipeline carrying per year (Module 3) × frac
 expedite   = expedite_per_unit × weekly US units × lead-time adder        if the volume moves
-conversion = Σ q × (1 − china) × conversion_CN × conv_uplift
+conversion = Σ_w q × (1 − china) × conversion_CN × conv_uplift × max(0, 1 − (w − C) / conv_uplift_weeks)
+             the uplift is temporary: it fades to 0 over about six months after the cutover (Q51)
 transfer   = physical MWD + holding + relocation + rework at cutover C (Module 2; 0 after week 16)
 ```
 
@@ -65,9 +66,12 @@ Units, weekly sell-in, quarters and the catch-up discount shown are those of cas
 
 ```
 company cost = absorbed + lost + promotion + transfer + expedite + chain + conversion
-BU MWD       = claimed − transferability × (claimed − physical) + eol
+BU MWD_std   = claimed_std − transferability × (claimed_std − physical_std)
+BU MWD_cus   = claimed_cus − transferability × (claimed_cus − physical_cus) + eol
+               std: CPU, memory, SSD, panel; cus: custom parts and built boards (Q52)
                claimed = plans cancelled in weeks C..15 at full BOM value (R1); physical from Module 2
-BU cost      = mwd_cost_rate × BU MWD + bu_funds_support × promotion        MWD against points (R43)
+BU cost      = mwd_cost_rate_std × BU MWD_std + mwd_cost_rate × BU MWD_cus   ($0.60 / $0.90, Q52)
+               + bu_funds_support × promotion                               MWD against points (R43)
 BU pick      = among options with units ≥ target: lowest BU cost (ties: the latest)
                none reaches it: highest units (the target is lowered to that)
 company pick = lowest company cost among options with units ≥ target (company_holds_target = 1)

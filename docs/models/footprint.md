@@ -169,6 +169,15 @@ d[m][o] = low + s × (high − low)        if u < duty_change_prob   (the market
 ```
 
 One `s` per market moves all of that market's origins together, as the US did in April 2025.
+With `site_cost_draw = 1` each draw also sets every site's steady-state cost index inside its range
+(Q50), from its own random stream so the duty draws stay the same:
+
+```
+conv[o] = conv_lo[o] + (conv_index[o] − conv_base[o]) + v × (conv_hi[o] − conv_lo[o]),  v ~ U(0, 1)
+          ID 1.00–1.10 · VN 0.98–1.08 · MY 1.08–1.20 · BR 1.45–1.75 · AE 1.25–1.50 · CN 1.00
+```
+
+A slider move on a site's index shifts its range with it.
 Each feasible footprint `F` is priced in every draw `k` (`C(F, k)`, yearly), then
 
 ```

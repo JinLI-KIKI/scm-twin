@@ -6,13 +6,19 @@ Part A, ramp. From the first trial build a new site takes about three months to 
 the new site's longer lead time arrive late or out of step), yield learning and supplier readiness.
 Each gate slips with a chance (lower with a strong GSM) by a random number of weeks:
 
-  T          = max(ramp_min, ramp_base - pull) + slip_material + slip_yield + slip_supplier
+  T          = max(ramp_min, ramp_base - pull) + min(slip cap, slip_material + slip_yield + slip_supplier)
+               (overlapping slips do not all add up: the total is capped, Q47; supplier readiness
+               slips less often on an existing ODM campus than at a new plant)
   share(w)   = smoothstep(w / T) = 3x^2 - 2x^3,  x = min(1, w / T)      share of the region's volume
   leakage    = sum over weeks of (1 - share) x weekly units x customs value x tariff
                (China builds what the new site cannot yet and pays the China tariff, R16)
-  yield(w)   = yield_full - (yield_full - yield_start) x exp(-w / tau)
+  yield(w)   = yield_start + (yield_full - yield_start) x f(w / weeks to full yield), f through
+               0, 46%, 77%, 92%, 100% of the gap at quarter points: 85% -> 91% -> 95% -> 97% -> 98%
+               for a mature product (Q48)
   scrap      = sum of share x units x (1 / yield - 1) x BOM value x scrap_share
-  pull cost  = weekly units x pull_cost x sum over pulled weeks i of (1 + growth x (i - 1))
+  pull cost  = sum over pulled weeks i of pull_cost x (1 + growth)^(i - 1) x the units the i-th week
+               pulls forward (weekly units x the gain in the planned share curve); only the volume
+               brought forward is paid for (Q48)
 
 The pull-in that minimises expected leakage + scrap + pull cost is recommended.
 
@@ -34,7 +40,8 @@ Per model and cover, a Monte Carlo over the year:
              (hazard and drop by GSM, Q38)
   run week d (every `cover` weeks): build = min(need - boards on hand, need x (1 - cut) x (1 - down))
                         need = sum of F(d + j, j + 1), cut = kappa x push, down = drop during a loss
-  each week  boards used = min(on hand, D); short -> rush boards at a premium from the run's rush
+  each week  boards used = min(on hand, D); short -> rush boards at a premium (a share of the board's
+             own price, without CPU and memory, kept between a floor and a cap, Q49) from the run's rush
              budget (smt_flex x the plan of the run's weeks x (1 - down)), the rest short:
              lost_share lost at gross margin
   cost       = setups + rush + lost margin + carrying + stranded boards x
@@ -81,6 +88,7 @@ def rb_input(region="US"):
                      "sigma_mult": float(r["sigma_mult"]), "cut_prob": float(r["cut_prob"]),
                      "eol": m["eol"] if m["eol"] <= WEEKS else None,
                      "board_value": m["board_extra"] + onboard, "onboard_parts": onboard,
+                     "board_extra": m["board_extra"],
                      "margin": float(dm[k]["channel_net_price_usd"]) * E.price_scale(m) * float(dm[k]["gross_margin_pct"]) / 100,
                      "plan": [E.model_weekly_demand(m, w) for w in range(WEEKS)]})
     P = {r["key"]: float(r["value"]) for r in _csv("ramp_params.csv")}
@@ -106,25 +114,57 @@ def ramp_slips(inp, P, seed=11):
         row = []
         for g in ("material", "yield", "supplier"):
             u1, u2 = rng.random(), rng.random()
-            p = min(1.0, P[f"slip_{g}_prob"] * mult)
+            base = P["slip_supplier_prob_campus"] if g == "supplier" and P["site_campus"] >= 0.5 else P[f"slip_{g}_prob"]
+            p = min(1.0, base * mult)
             lo, hi = P[f"slip_{g}_lo"], P[f"slip_{g}_hi"]
             row.append(lo + (hi - lo) * u2 if u1 < p else 0.0)
         out.append(row)
     return out
 
 
-def ramp_run(inp, P, pull, slips):
+YIELD_SHAPE = [0.0, 6 / 13, 10 / 13, 12 / 13, 1.0]      # 85 -> 91 -> 95 -> 97 -> 98% at quarter points (Q48)
+
+
+def yield_at(P, w):
+    """First-pass yield w weeks after the first build: Q48's path, stretched over the weeks to full."""
+    x = max(0.0, w / P["yield_weeks_to_full"]) * 4 if P["yield_weeks_to_full"] > 0 else 4.0
+    if x >= 4:
+        f = 1.0
+    else:
+        i = int(x)
+        f = YIELD_SHAPE[i] + (YIELD_SHAPE[i + 1] - YIELD_SHAPE[i]) * (x - i)
+    return P["yield_start"] + (P["yield_full"] - P["yield_start"]) * f
+
+
+def planned_T(P, pull):
+    return max(P["ramp_min_weeks"], P["ramp_base_weeks"] - pull)
+
+
+def pull_cost(inp, P, pull):
+    """Pull-in cost paid only on the volume brought forward (Q48): the i-th week pulled costs
+    pull_cost x (1 + growth)^(i - 1) per unit it moves forward on the planned curve."""
+    rg, W = inp["region"], inp["ramp_weeks"]
+    curve = lambda T: [smoothstep(w / T) if T > 0 else 1.0 for w in range(W)]
+    cost, prev = 0.0, curve(planned_T(P, 0))
+    for i in range(1, int(pull) + 1):
+        cur = curve(planned_T(P, i))
+        moved = rg["weekly_units"] * sum(c - p for c, p in zip(cur, prev))
+        cost += P["pull_cost_usd_per_unit"] * (1 + P["pull_cost_growth"]) ** (i - 1) * moved
+        prev = cur
+    return cost
+
+
+def ramp_run(inp, P, pull, slips, pc=None):
     """One run: ramp weeks, the share curve and the three costs."""
     rg = inp["region"]
-    T = max(P["ramp_min_weeks"], P["ramp_base_weeks"] - pull) + sum(slips)
+    T = planned_T(P, pull) + min(P["slip_cap_weeks"], sum(slips))
     share = [smoothstep(w / T) if T > 0 else 1.0 for w in range(inp["ramp_weeks"])]
     leak = scrap = 0.0
     for w, s in enumerate(share):
         leak += (1 - s) * rg["weekly_units"] * rg["customs"] * P["ramp_tariff"]
-        y = P["yield_full"] - (P["yield_full"] - P["yield_start"]) * math.exp(-w / P["yield_tau_weeks"])
+        y = yield_at(P, w)
         scrap += s * rg["weekly_units"] * (1 / y - 1) * rg["bom"] * P["scrap_share_of_bom"]
-    k = int(pull)
-    pc = rg["weekly_units"] * P["pull_cost_usd_per_unit"] * sum(1 + P["pull_cost_growth"] * i for i in range(k))
+    pc = pull_cost(inp, P, pull) if pc is None else pc
     return {"T": T, "share": share, "leakage": leak, "scrap": scrap, "pull": pc, "total": leak + scrap + pc}
 
 
@@ -139,7 +179,8 @@ def ramp_sweep(inp, P, seed=11):
     top = int(max(0.0, P["ramp_base_weeks"] - P["ramp_min_weeks"]))
     rows = []
     for pull in range(top + 1):
-        runs = [ramp_run(inp, P, pull, s) for s in slips]
+        pc = pull_cost(inp, P, pull)
+        runs = [ramp_run(inp, P, pull, s, pc) for s in slips]
         n = len(runs)
         rows.append({"pull": pull, "T_mean": sum(r["T"] for r in runs) / n,
                      "T_p10": pct([r["T"] for r in runs], 0.1), "T_p50": pct([r["T"] for r in runs], 0.5),
@@ -174,6 +215,12 @@ def board_draws(inp, P, m, seed):
     return runs
 
 
+def rush_premium(P, m):
+    """Extra cost of a rush board: a share of the board's own price (without CPU and memory),
+    between a floor and a cap (Q49)."""
+    return min(P["rush_premium_max"], max(P["rush_premium_min"], P["rush_premium_share"] * m["board_extra"]))
+
+
 def board_run(inp, P, m, cover, draw):
     z, u, cut, v = draw
     W = inp["weeks"]
@@ -190,6 +237,7 @@ def board_run(inp, P, m, cover, draw):
     budget = 0.0                                          # rush boards the ODM can still add in this run
     until = -1                                            # last week of a capacity loss under way
     events = down_weeks = 0
+    premium = rush_premium(P, m)
 
     def forecast(w, h, d):
         if m["eol"] is not None and w >= m["eol"]:
@@ -222,7 +270,7 @@ def board_run(inp, P, m, cover, draw):
         if short > 1e-9:
             r = min(short, budget)
             budget -= r
-            rush += r * P["rush_premium_usd"]
+            rush += r * premium
             lost += (short - r) * P["lost_share"] * m["margin"]
         carry += inv * m["board_value"] * P["carry"] / 52
     ended = cut is not None or m["eol"] is not None

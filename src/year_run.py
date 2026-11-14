@@ -37,7 +37,6 @@ replayed; the page shows the four strategies.
 
 Run:  python3 src/year_run.py
 """
-import math
 import os
 
 import demand_kpi as DK
@@ -73,11 +72,11 @@ def context(inp, tariff, gsm_strong=1, P5=None, P6=None):
     rg = rbi["region"]
     scrap = []
     for w in range(rbi["ramp_weeks"]):
-        y = P6["yield_full"] - (P6["yield_full"] - P6["yield_start"]) * math.exp(-w / P6["yield_tau_weeks"])
+        y = RB.yield_at(P6, w)
         scrap.append((1 / y - 1) * rg["bom"] * P6["scrap_share_of_bom"])   # per unit built at the new site
     return {"dk": dki, "P": P, "band": best["band"], "pull": rs["best"], "pull_cost": best["pull_cost"],
             "T50": best["T_p50"], "T90": best["T_p90"], "scrap": scrap, "gsm_strong": gsm_strong,
-            "expedite_unit": P["expedite_usd_per_unit"] * (1 if gsm_strong >= 0.5 else 2),
+            "expedite_unit": P["expedite_usd_per_unit"] * (1 if gsm_strong >= 0.5 else P["expedite_weak_mult"]),
             "extra_transit_weeks": (ex["days_new"] - ex["days_cn"]) / 7, "days_cn": ex["days_cn"],
             "days_new": ex["days_new"], "fg_rate": ex["fg_rate"], "fg_week": int(ex["fg_week"]), "tariff": tariff}
 
@@ -138,7 +137,7 @@ def replay(ctx, opt, passthrough):
         cost["expedite"][C] += ctx["expedite_unit"] * cs["weekly_units"] * cs["lt_adder"]
         for w in range(C, W):
             cost["chain"][w] += (cs["eol_mwd_year"] + cs["pipeline_year"]) / W
-            cost["conversion"][w] += new_units[w] * cs["conv_cost"] * P["conv_uplift"]
+            cost["conversion"][w] += new_units[w] * cs["conv_cost"] * P["conv_uplift"] * DK.uplift_left(P, w, C)
             k = w - C
             if k < len(ctx["scrap"]):
                 cost["ramp"][w] += new_units[w] * ctx["scrap"][k]
@@ -149,12 +148,12 @@ def replay(ctx, opt, passthrough):
     quarters = [[sum(plan[q * 13:(q + 1) * 13]), sum(units[q * 13:(q + 1) * 13])] for q in range(4)]
     frac = (W - C) / W if moved else 0.0
     eol = cs["eol_mwd_year"] * frac
-    t = P["mwd_transferability"]
     promo = sum(cost["promotion"])
-    bu_mwd = opt["claimed_mwd"] - t * (opt["claimed_mwd"] - opt["mwd"]) + eol if moved else 0.0
+    bu_std, bu_custom = DK.bu_mwd_parts(opt, P, eol) if moved else (0.0, 0.0)
+    bu_mwd = bu_std + bu_custom
     return {"units": units, "cn_units": cn_units, "plan": plan, "cost": cost, "discount": disc,
             "rise": [r / u if u else 0.0 for r, u in zip(rise_avg, units)], "quarters": quarters,
-            "attainment": sum(units) / total_plan, "bu_cost": P["mwd_cost_rate"] * bu_mwd + P["bu_funds_support"] * promo,
+            "attainment": sum(units) / total_plan, "bu_cost": P["mwd_cost_rate_std"] * bu_std + P["mwd_cost_rate"] * bu_custom + P["bu_funds_support"] * promo,
             "bu_mwd": bu_mwd, "share_cn": ch}
 
 

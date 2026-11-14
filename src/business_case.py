@@ -4,13 +4,15 @@ Module 3 — transfer business case under uncertainty (Monte Carlo).
 Annual view of moving one region's production (default: US) from China to a new site in Indonesia.
 
   benefit   tariff saved = units x customs value x (China rate - new-site rate)
-  recurring (R15/R18/R20, paid every year after transfer)
+  recurring (R15/R18, paid every year after transfer)
             + extra end-of-life MWD from the longer commitment window and worse forecast
             + carrying cost of 4 extra weeks of material in the chain
-            + new-site conversion cost uplift (5-10%)
-  one-time  (R16 + rush shortage, paid in the transfer year)
+  one-time  (R16, R20 + rush shortage, paid in the transfer year)
             + tariff still paid on volume the new factory cannot yet cover during ramp
             + expediting cost for parts while the +4 week lead time is not yet covered
+            + new-site conversion uplift (5-10%) while the line learns: it falls linearly to 0
+              over 26 weeks (Q51), so it costs about 13.5 weeks of the full uplift; the site's
+              steady-state cost index is a footprint input (Module 7, Q50), not double counted here
 
 End-of-life MWD logic (why the window matters):
   plans are committed W weeks ahead. When a platform hits EOL, the last W weeks of
@@ -37,14 +39,21 @@ CASE = {
     "fa_new": 0.60,                 # ~8 points worse at base + 4 weeks
     "window_old": 16,
     "window_new": 20,
-    "conv_uplift": (0.05, 0.10),    # new-site labour + new line
+    "conv_uplift": (0.05, 0.10),    # new-site labour + new line, during the ramp only (Q51)
+    "conv_uplift_weeks": 26,        # the uplift falls linearly to 0 over these weeks (Q51)
     # placeholders
     "conv_cost_per_unit": 25.0,     # assembly/test conversion cost, China
     "eol_events_per_year": 1,       # collective platform EOLs per year
     "rho": (0.3, 0.9),              # week-to-week forecast-error correlation range
     "ramp_weeks": {"strong": (8, 16), "weak": (16, 30)},   # GSM-dependent
-    "expedite_cost_per_unit": {"strong": 6.0, "weak": 12.0},
+    "expedite_cost_per_unit": {"strong": 6.0, "weak": 9.0},   # weak = 1.5x; 2x ($12) is the stress case (Q51)
 }
+
+
+def _uplift_weeks(c=None):
+    """Full-uplift weeks equivalent of an uplift that falls linearly to 0 over conv_uplift_weeks."""
+    W = int((c or CASE)["conv_uplift_weeks"])
+    return sum(1 - k / W for k in range(W))
 
 
 def _sigma(fa):
@@ -98,11 +107,11 @@ def simulate(tariff_old, tariff_new=0.0, gsm="strong", n=5000, region="US", seed
         eol_mwd = (_overcommit_weeks(s_new, c["window_new"], rho) -
                    _overcommit_weeks(s_old, c["window_old"], rho)) * p["weekly_locked"] \
             * c["eol_events_per_year"]
-        conv = units_yr * c["conv_cost_per_unit"] * uplift
-        recurring = eol_mwd + pipeline + conv
+        conv = p["weekly_units"] * _uplift_weeks(c) * c["conv_cost_per_unit"] * uplift
+        recurring = eol_mwd + pipeline
         ramp_leak = 0.5 * ramp * p["weekly_customs"] * (tariff_old - tariff_new)
         expedite = p["weekly_units"] * p["lt_adder"] * c["expedite_cost_per_unit"][gsm]
-        one_time = ramp_leak + expedite
+        one_time = ramp_leak + expedite + conv
         out.append({"tariff_saved": tariff_saved, "eol_mwd": eol_mwd, "pipeline": pipeline,
                     "conv": conv, "recurring": recurring, "ramp_leak": ramp_leak,
                     "expedite": expedite, "one_time": one_time,
@@ -132,7 +141,7 @@ def deterministic(tariff_old, tariff_new=0.0, gsm="strong", region="US", **ov):
     eol_mwd = (_overcommit_weeks(s_new, window_new, rho) -
                _overcommit_weeks(s_old, c["window_old"], rho)) * p["weekly_locked"] * c["eol_events_per_year"]
     pipeline = p["weekly_bom"] * p["lt_adder"] * carry
-    conv = p["weekly_units"] * 52 * conv_cost * uplift
+    conv = p["weekly_units"] * _uplift_weeks(c) * conv_cost * uplift
     ramp_leak = 0.5 * ramp * customs * (tariff_old - tariff_new)
     expedite = p["weekly_units"] * p["lt_adder"] * expedite_u
     return tariff_saved - eol_mwd - pipeline - conv - ramp_leak - expedite
@@ -178,11 +187,11 @@ def report(tariff_old, gsm):
     print(f"  tariff saved / yr        {mid('tariff_saved'):>13,.0f}")
     print(f"  - extra EOL MWD / yr     {mid('eol_mwd'):>13,.0f}")
     print(f"  - pipeline carry / yr    {mid('pipeline'):>13,.0f}")
-    print(f"  - new-site conv. / yr    {mid('conv'):>13,.0f}")
     print(f"  = net, steady state      {mid('net_steady'):>13,.0f}   "
           f"[{pct(col('net_steady'), .1):,.0f} .. {pct(col('net_steady'), .9):,.0f}]")
     print(f"  - ramp tariff leakage    {mid('ramp_leak'):>13,.0f}")
     print(f"  - rush expediting        {mid('expedite'):>13,.0f}")
+    print(f"  - ramp conversion uplift {mid('conv'):>13,.0f}")
     print(f"  = net, transfer year     {mid('net_year1'):>13,.0f}   "
           f"[{pct(col('net_year1'), .1):,.0f} .. {pct(col('net_year1'), .9):,.0f}]")
 

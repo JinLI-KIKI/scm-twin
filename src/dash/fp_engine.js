@@ -271,18 +271,30 @@ const FPE = (() => {
     }
     return d;
   }
+  function drawConv(inp, sites, rng) {          // Q50: steady-state cost index inside its range
+    const out = {};
+    for (const o of inp.origins) {
+      const s = sites[o], u = rng.random(), shift = s.conv_index - s.conv_base;
+      out[o] = s.conv_lo + shift + u * (s.conv_hi - s.conv_lo);
+    }
+    return out;
+  }
   function dutyMonteCarlo(inp, P, sites, redSea, ranges, runs, seed, onProgress) {
     ranges = ranges || inp.ranges; runs = runs || 200; seed = seed === undefined ? 7 : seed;
     const base = dutyMatrix(inp, inp.scenarios[0]);
-    const cands = candidates(inp, sites), rng = makeRng(seed);
+    const cands = candidates(inp, sites), rng = makeRng(seed), rngConv = makeRng(seed + 991);
     const cost = [], meanDuty = {};
     for (let k = 0; k < runs; k++) {
       const d = drawDuties(inp, base, ranges, P.duty_change_prob, rng);
+      const conv = P.site_cost_draw >= 0.5 ? drawConv(inp, sites, rngConv) : null;
       for (const key of Object.keys(ranges)) {
         const [t, o] = key.split('|');
         meanDuty[key] = (meanDuty[key] || 0) + d[t][o] / runs;
       }
-      cost.push(cands.map((c) => yearlyCosts(inp, P, c.sites, c.open, redSea, [d])[1][0]));
+      cost.push(cands.map((c) => {
+        const cs = conv === null ? c.sites : Object.fromEntries(Object.entries(c.sites).map(([o, v]) => [o, { ...v, conv_index: conv[o] }]));
+        return yearlyCosts(inp, P, cs, c.open, redSea, [d])[1][0];
+      }));
       if (onProgress && k % 10 === 9) onProgress((k + 1) / runs);
     }
     const best = cost.map((row) => Math.min(...row));
